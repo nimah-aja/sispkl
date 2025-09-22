@@ -1,0 +1,10 @@
+// install node
+// create project react with vite
+    // 1. npm install vite@latest my-project
+    // 2. npm install
+    // 3. npm run dev
+// install tailwind
+    // 1. npm install tailwindcss @tailwindcss/vite
+    // 2. add in vite.config.json import tailwindcss from '@tailwindcss/vite'
+    // 3. add in over React word => tailwindcss()
+    // 4. add in src/index.css @import "tailwindcss"
