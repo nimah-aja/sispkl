@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// import components
 import MouseRippleButton from "./components/MouseRippleButton";
+
+//import request
 import axios from "../utils/axiosInstance";
 import { refreshAccessToken, removeTokens, setTokens, getAccessToken } from "../utils/authHelper";
 
@@ -58,11 +62,13 @@ export default function PKLManagementSystem() {
     checkToken();
   }, []);
 
+  // notifikasi toast saat timeout
   const showToast = (msg, type = "success", dur = 4000) => {
     setToast({ show: true, message: msg, type });
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), dur);
   };
 
+  // ambil input
   const roles = ["Admin","Guru","Siswa"];
   const getInputConfig = () => {
     switch (activeRole) {
@@ -75,6 +81,7 @@ export default function PKLManagementSystem() {
   const inputConfig = getInputConfig();
   const isPasswordField = inputConfig.secondField.type === "password";
 
+  // handler role
   const handleRoleChange = (role) => {
     setActiveRole(role);
     setUsername("");
@@ -83,6 +90,7 @@ export default function PKLManagementSystem() {
     setError("");
   };
 
+  // handler login
   const handleLogin = async (e) => {
   e.preventDefault();
   setLoading(true);
@@ -251,7 +259,7 @@ export default function PKLManagementSystem() {
               type="submit"
               disabled={loading}
               className="w-full text-white font-semibold py-3 px-4 rounded-lg mt-6 disabled:opacity-60"
-              style={{ backgroundColor: "#EC933A", border: "none", outline: "none" }} // 🌟 warna dasar
+              style={{ backgroundColor: "#EC933A", border: "none", outline: "none" }} 
             >
               {loading ? "Memproses..." : `Masuk sebagai ${activeRole}`}
             </MouseRippleButton>

@@ -56,7 +56,7 @@ button {
   transition: border-color 0.25s;
 }
 
-/* Hilangkan hover hitam untuk tab buttons */
+/* button role login */
 .tab-button:hover {
   border-color: transparent !important;
 }
@@ -87,8 +87,6 @@ button:focus-visible {
     background-color: #E1D6C4;
   }
 }
-
-/* Tab Button Styles */
 .tab-button {
   padding: 8px 24px;
   font-size: 14px;
@@ -121,6 +119,8 @@ button:focus-visible {
   color: #EC933A !important;
   border-radius: 9999px !important;
 }
+
+/* ripple button login */
 .ripple-hover {
   position: relative;
   overflow: hidden;
@@ -139,7 +139,8 @@ button:focus-visible {
   opacity: 0;
   transition: width 0.4s ease, height 0.4s ease, opacity 0.6s ease;
 }
-/* Supaya tombol mata gak ada border/background */
+
+/* style password eyes */
 .password-toggle-btn {
   border: none !important;
   background: transparent !important;
@@ -151,6 +152,8 @@ button:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* ripple */
 @keyframes ripple {
   from {
     transform: scale(0);
@@ -173,7 +176,68 @@ button:focus-visible {
   animation: slide-in 0.3s ease-out;
 }
 
+/* button radius */
+.button-radius {
+  border-radius: 9999px;
+  width: 100px;
+  height: 40px;
+  border: none;
+  outline: none;
+  border-radius: 9999px;
+  background-color: var(--btn-bg, #EC933A); /* default warna */
+  color: var(--btn-text, white);
+  font-weight: 600;
+  padding: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
 
+/* hover */
+/* .button-radius:hover {
+  background-color: var(--btn-hover, #F97316);
+} */
 
-  
+/* active / ditekan */
+.button-radius:active {
+  background-color: var(--btn-active, #EA580C);
+}
 
+/* focus */
+.button-radius:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* notifikasi add/edit/delete */
+@keyframes slideInRight {
+  0% {
+    transform: translateX(150%); 
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(150%); 
+    opacity: 0;
+  }
+}
+
+/* saat muncul */
+.my-slide-toast {
+  animation: slideInRight 0.8s ease-out forwards; 
+}
+
+/* saat keluar */
+.my-slide-toast[data-visible='false'] {
+  animation: slideOutRight 0.8s ease-in forwards; 
+}
+          

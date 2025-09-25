@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-// import icon
+// import assets
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
 import sidebarGrad from "../../assets/sidebarGrad.svg";
 import sidebarBook from "../../assets/sidebarBook.svg";
@@ -36,9 +36,10 @@ export default function Sidebar({ active, setActive }) {
           >
             <img src={item.icon} alt={item.title} />
           </div>
+          {/* tooltip deskripsi */}
           <div className="absolute left-14 top-1/2 -translate-y-1/2 
-                          bg-[#E1D6C4] text-[#641E21] text-xs rounded-md px-3 py-1 
-                          opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
+                          bg-[#E1D6C4] text-[#641E21] text-xs font-bold rounded-md px-3 py-1 
+                          opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg ">
             {item.title}
           </div>
         </div>
