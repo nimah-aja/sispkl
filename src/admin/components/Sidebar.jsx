@@ -13,7 +13,7 @@ export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
 
   const items = [
-    { title: "Dashboard", icon: sidebarDashboard, route: "/dashboard/admin", key: "sidebarDashboard" },
+    { title: "Beranda", icon: sidebarDashboard, route: "/dashboard/admin", key: "sidebarDashboard" },
     { title: "Jurusan", icon: sidebarGrad, route: "/dashboard/admin/jurusan", key: "sidebarGrad" },
     { title: "Kelas", icon: sidebarBook, route: "/dashboard/admin/kelas", key: "sidebarBook" },
     { title: "Peserta Didik", icon: sidebarUsers, route: "/dashboard/admin/siswa", key: "sidebarUsers" },
@@ -39,7 +39,7 @@ export default function Sidebar({ active, setActive }) {
           {/* tooltip deskripsi */}
           <div className="absolute left-14 top-1/2 -translate-y-1/2 
                           bg-[#E1D6C4] text-[#641E21] text-xs font-bold rounded-md px-3 py-1 
-                          opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg ">
+                          opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-9999">
             {item.title}
           </div>
         </div>

@@ -8,6 +8,7 @@ import { removeTokens } from "../../utils/authHelper";
 import logo from "../../assets/logo.png";
 import profile from "../../assets/profile.svg";
 
+
 export default function Header({ query, setQuery }) {
   const navigate = useNavigate();
 
@@ -67,7 +68,7 @@ export default function Header({ query, setQuery }) {
               "--btn-text": "white",     
             }}
           >
-            Logout
+            Keluar
           </button>
         </div>
       </div>

@@ -240,4 +240,26 @@ button:focus-visible {
 .my-slide-toast[data-visible='false'] {
   animation: slideOutRight 0.8s ease-in forwards; 
 }
+
+.circle {                /* default size */
+  width:28px;
+  height: 35px;
+  border-radius: 100%;
+  display: inline-block;
+  background-color: #641E20;    /* default background (gray-200) */
+  vertical-align: middle;
+  align-items: center;
+  overflow: hidden;   
+  display: inline-flex;          /* ini kunci */
+  align-items: center;           /* center vertikal */
+  justify-content: center;  
+  margin: 2px;      /* jika isi melebihi */
+}
+
+.circle:hover{
+  border: none;
+  color: white;
+}
+
+
           

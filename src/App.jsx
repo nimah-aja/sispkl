@@ -4,6 +4,10 @@ import SplashScreen from "./SplashScreen";
 import PKLManagementSystem from "./login/Login"; 
 import DashboardAdmin from "./admin/dashboard_admin"; 
 import DashboardAdminJurusan from "./admin/dashboard_admin_jurusan"; 
+import DashboardAdminKelas from "./admin/dashboard_admin_kelas"; 
+import DashboardAdminSiswa from "./admin/dashboard_admin_siswa"; 
+import DashboardAdminGuru from "./admin/dashboard_admin_guru"; 
+import DashboardAdminIndustri from "./admin/dashboard_admin_industri"; 
 import { Toaster } from "react-hot-toast";
 
 
@@ -34,6 +38,18 @@ function App() {
 
         {/* Dashboard admin jurusan */}
         <Route path="/dashboard/admin/jurusan" element={<DashboardAdminJurusan />} />
+
+        {/* Dashboard admin kelas */}
+        <Route path="/dashboard/admin/kelas" element={<DashboardAdminKelas/>} />
+
+         {/* Dashboard admin siswa */}
+        <Route path="/dashboard/admin/siswa" element={<DashboardAdminSiswa/>} />
+
+        {/* Dashboard admin guru */}
+        <Route path="/dashboard/admin/guru" element={<DashboardAdminGuru/>} />
+
+         {/* Dashboard admin industri */}
+        <Route path="/dashboard/admin/industri" element={<DashboardAdminIndustri/>} />
       </Routes>
       <Toaster
         position="bottom-right"

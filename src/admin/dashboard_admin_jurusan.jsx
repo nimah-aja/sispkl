@@ -29,8 +29,6 @@ export default function JurusanPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  
-
 
   // ambil data awal
   const fetchData = async () => {
@@ -55,111 +53,120 @@ export default function JurusanPage() {
     return matchSearch && matchFilter;
   });
 
-  // kolom untuk form
+  // validasi karakter
+  const validateJurusan = (data) => {
+    const errors = {};
+    if (!data.kode || data.kode.length < 2)
+      errors.kode = `Kolom Kode Jurusan minimal 2 karakter. Tambahkan ${2 - (data.kode?.length || 0)} karakter lagi.`;
+    if (!data.nama || data.nama.length < 10)
+      errors.nama = `Kolom Nama Jurusan minimal 10 karakter. Tambahkan ${10 - (data.nama?.length || 0)} karakter lagi.`;
+    return errors;
+  };
+
+
+  // kolom tabel
   const columns = [
     { label: "Kode Jurusan", key: "kode" },
-    { label: "Nama Jurusan", key: "nama" },
+    { label: "Nama Jurusan", key: "nama" }
   ];
 
-  const dataWithNo = filteredData.map((item, i) => ({
-    ...item,
-    no: i + 1,
-  }));
+  const dataWithNo = filteredData.map((item, i) => ({ ...item, no: i + 1 }));
 
+  // kolom input
   const inputFields = [
-    { label: "Kode Jurusan", name: "kode", width: "full", minLength: 2 },
+    { label: "Kode Jurusan", name: "kode", width: "full", minLength: 2, unique: true },
     { label: "Nama Jurusan", name: "nama", width: "full", minLength: 10 },
   ];
 
- // form add
-if (mode === "add") {
-  return (
-    <Add
-      title="Tambah Jurusan"
-      fields={inputFields}
-      image={guruImg}
-      existingData={jurusan}
-      onSubmit={async (formData, setFieldErrors) => {
-        const newJurusan = Object.fromEntries(formData);
+  // form add
+  if (mode === "add") {
+    return (
+      <Add
+        title="Tambah Data Jurusan"
+        fields={inputFields}
+        image={guruImg}
+        existingData={jurusan}
+        onSubmit={async (formData, setFieldErrors) => {
+          const newJurusan = Object.fromEntries(formData);
 
-        // validasi kode minimal 2 karakter
-        const kode = newJurusan.kode || "";
-        if (kode.length < 2) {
-          const kurang = 2 - kode.length;
-          setFieldErrors({
-            kode: `Kolom Kode Jurusan minimal 2 karakter. Tambahkan ${kurang} karakter lagi.`
-          });
-          return;
-        }
+          // validasi karakter
+          const errors = validateJurusan(newJurusan);
 
-        // validasi nama minimal 10 karakter
-        const nama = newJurusan.nama || "";
-        if (nama.length < 10) {
-          const kurang = 10 - nama.length;
-          setFieldErrors({
-            nama: `Kolom Nama Jurusan minimal 10 karakter. Tambahkan ${kurang} karakter lagi.`
-          });
-          return;
-        }
+          if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+          }
 
-        await createJurusan(newJurusan);
-        await fetchData();
-        toast.success("Data jurusan berhasil ditambahkan");
-        setMode("list");
-      }}
-      onCancel={() => setMode("list")}
-      containerClassName="max-w-3xl bg-white"
-      containerStyle={{ maxHeight: "600px" }}
-      backgroundStyle={{ backgroundColor: '#E1D6C4' }}
-    />
-  );
-}
+          try {
+            await createJurusan(newJurusan);
+            await fetchData();
+            toast.success("Data jurusan berhasil ditambahkan");
+            setMode("list");
+          } catch (err) {
+            const apiError = err.response?.data?.error;
+            const rawMessage = apiError?.message || "";
 
-// form edit
-if (mode === "edit" && selectedRow) {
-  return (
-    <Add
-      title="Edit Jurusan"
-      fields={inputFields}
-      image={editGrafik}
-      existingData={jurusan.filter(j => j.id !== selectedRow.id)}
-      initialData={selectedRow}
-      onSubmit={async (formData, setFieldErrors) => {
-        const updatedJurusan = Object.fromEntries(formData);
+            // Error kode jurusan sudah ada
+            if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
+              toast.error("Kode jurusan ini sudah ada.");
+              return; 
+            }
 
-        // validasi kode minimal 2 karakter
-        const kode = updatedJurusan.kode || "";
-        if (kode.length < 2) {
-          const kurang = 2 - kode.length;
-          setFieldErrors({
-            kode: `Kolom Kode Jurusan minimal 2 karakter. Tambahkan ${kurang} karakter lagi.`
-          });
-          return;
-        }
+            // error lain bisa masuk toast umum
+            toast.error(apiError?.message || "Gagal menambahkan data");
+          }
 
-        // validasi nama minimal 10 karakter
-        const nama = updatedJurusan.nama || "";
-        if (nama.length < 10) {
-          const kurang = 10 - nama.length;
-          setFieldErrors({
-            nama: `Kolom Nama Jurusan minimal 10 karakter. Tambahkan ${kurang} karakter lagi.`
-          });
-          return;
-        }
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+      />
+    );
+  }
 
-        await updateJurusan(selectedRow.id, updatedJurusan);
-        await fetchData();
-        toast.success("Data jurusan berhasil diperbarui");
-        setMode("list");
-      }}
-      onCancel={() => setMode("list")}
-      containerClassName="max-w-3xl bg-white"
-      containerStyle={{ maxHeight: "600px" }}
-      backgroundStyle={{ backgroundColor: '#641E21' }}
-    />
-  );
-}
+  //form edit
+  if (mode === "edit" && selectedRow) {
+    return (
+      <Add
+        title="Ubah Data Jurusan"
+        fields={inputFields}
+        image={editGrafik}
+        existingData={jurusan.filter((j) => j.id !== selectedRow.id)}
+        initialData={selectedRow}
+        onSubmit={async (formData, setFieldErrors) => {
+          const updatedJurusan = Object.fromEntries(formData);
 
+          // validasi karakter
+          const errors = validateJurusan(updatedJurusan);
+
+          if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+          }
+
+          try {
+            await updateJurusan(selectedRow.id, updatedJurusan);
+            await fetchData();
+            toast.success("Data jurusan berhasil diperbarui");
+            setMode("list");
+          } catch (err) {
+            const apiError = err.response?.data?.error;
+            const rawMessage = apiError?.message || "";
+
+            toast.error(err.response?.data?.error?.message || "Gagal memperbarui data");
+
+            // error kode sudah ada
+            if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
+              toast.error("Kode jurusan ini sudah ada.");
+              return; 
+            }
+          }
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+        backgroundStyle={{ backgroundColor: "#641E21" }}
+      />
+    );
+  }
 
   return (
     <div className="bg-white min-h-screen w-full">
@@ -177,7 +184,7 @@ if (mode === "edit" && selectedRow) {
           <SearchBar
             query={search}
             setQuery={setSearch}
-            placeholder="Cari nama / kode jurusan"
+            placeholder="Pencarian"
             filters={[
               {
                 label: "Jurusan",
@@ -199,11 +206,9 @@ if (mode === "edit" && selectedRow) {
                 data={dataWithNo}
                 showEdit
                 showDelete
-                showMore
-                onMoreClick={(row) => alert("Klik more", row)}
                 onEdit={(row) => {
                   setSelectedRow(row);
-                  setMode("edit"); 
+                  setMode("edit");
                 }}
                 onDelete={(row) => {
                   setSelectedRow(row);
@@ -219,8 +224,8 @@ if (mode === "edit" && selectedRow) {
           onClose={() => setIsDeleteOpen(false)}
           onDelete={async () => {
             try {
-              await deleteJurusan(selectedRow.id); 
-              await fetchData(); 
+              await deleteJurusan(selectedRow.id);
+              await fetchData();
               toast.success("Data jurusan berhasil dihapus");
               setIsDeleteOpen(false);
             } catch (err) {
@@ -230,7 +235,6 @@ if (mode === "edit" && selectedRow) {
           }}
           imageSrc={deleteImg}
         />
-
       </div>
     </div>
   );

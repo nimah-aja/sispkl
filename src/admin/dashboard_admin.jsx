@@ -97,11 +97,11 @@ export default function PKLDashboard() {
                       else if (item.title === "Jumlah Kelas")
                         navigate("/dashboard/admin/kelas");
                       else if (item.title === "Peserta Didik")
-                        navigate("/dashboard/siswa");
+                        navigate("/dashboard/admin/siswa");
                       else if (item.title === "Jumlah Guru")
-                        navigate("/dashboard/guru");
+                        navigate("/dashboard/admin/guru");
                       else if (item.title === "Jumlah Industri")
-                        navigate("/dashboard/industri");
+                        navigate("/dashboard/admin/industri");
                     }}
                   />
                 ))

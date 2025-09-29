@@ -131,7 +131,7 @@ export default function PKLManagementSystem() {
     console.error(err);
     if (err.code === "ECONNABORTED") showToast("Server timeout", "error");
     else if (err.response?.data?.message) setError(err.response.data.message);
-    else setError("Login gagal, cek data Anda.");
+    else setError("Login gagal, cek data Anda.", error, 30000);
   } finally {
     setLoading(false);
   }

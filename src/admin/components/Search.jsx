@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 
 // import assets
@@ -14,9 +14,21 @@ export default function SearchBar({
   className = "",            
 }) {
   const [openIndex, setOpenIndex] = useState(null);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setOpenIndex(null); // tutup dropdown
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
 
   return (
-    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+    <div ref={wrapperRef}  className={`flex flex-wrap items-center gap-3 ${className}`}>
       {/* Input Search */}
       <div className="relative flex-1">
         <input
@@ -41,24 +53,26 @@ export default function SearchBar({
         <div key={i} className="relative">
           {/* Trigger */}
           <div
-            tabIndex={0}  
+            tabIndex={0}
             onClick={() => setOpenIndex(openIndex === i ? null : i)}
             className="
-                rounded-full 
-                px-5 py-2 pr-8
-                bg-white text-black text-sm 
-                border-2 border-[#E1D6C4] 
-                focus:outline-none focus:ring-2 focus:ring-[#E1D6C4]
-                w-30 flex justify-between items-center
+              inline-flex items-center justify-between
+              rounded-full 
+              px-4 py-2
+              bg-white text-black text-sm 
+              border-2 border-[#E1D6C4] 
+              focus:outline-none focus:ring-2 focus:ring-[#E1D6C4]
+              w-auto min-w-[100px] max-w-[200px] truncate
             "
           >
-            {f.value || f.label}
+            <span className="truncate">{f.value || f.label}</span>
             <img
               src={arrow}
               alt="arrow"
-              className={`w-4 h-4 ml-7 transition-transform ${openIndex === i ? "rotate-180" : ""}`}
+              className={`w-4 h-4 ml-2 transition-transform ${openIndex === i ? "rotate-180" : ""}`}
             />
           </div>
+
 
           {/* Dropdown */}
           {openIndex === i && (
