@@ -10,10 +10,10 @@ import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
 
 // import request
-import { getKelas } from "../utils/services/get_kelas";
-import { createKelas } from "../utils/services/add_kelas";
-import { deleteKelas } from "../utils/services/delete_kelas";
-import { updateKelas } from "../utils/services/edit_kelas"; 
+import { getKelas } from "../utils/services/admin/get_kelas";
+import { createKelas } from "../utils/services/admin/add_kelas";
+import { deleteKelas } from "../utils/services/admin/delete_kelas";
+import { updateKelas } from "../utils/services/admin/edit_kelas"; 
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -29,6 +29,8 @@ export default function KelasPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   // ambil data awal
   const fetchData = async () => {
@@ -175,7 +177,7 @@ if (mode === "edit" && selectedRow) {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header />
+      <Header user={user}/>
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />

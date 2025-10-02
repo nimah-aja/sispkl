@@ -10,10 +10,10 @@ import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
 
 // import request
-import { getIndustri } from "../utils/services/get_industri";
-import { createIndustri } from "../utils/services/add_industri";
-import { deleteIndustri } from "../utils/services/delete_industri";
-import { updateIndustri } from "../utils/services/edit_industri"; 
+import { getIndustri } from "../utils/services/admin/get_industri";
+import { createIndustri } from "../utils/services/admin/add_industri";
+import { deleteIndustri } from "../utils/services/admin/delete_industri";
+import { updateIndustri } from "../utils/services/admin/edit_industri"; 
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -29,6 +29,8 @@ export default function IndustriPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   // ambil data awal
   const fetchData = async () => {
@@ -49,8 +51,13 @@ export default function IndustriPage() {
   const s = search.toLowerCase();
   const matchSearch =
     b.nama.toLowerCase().includes(s) ||
-    b.jurusan_id.toLowerCase().includes(s) ||
-    b.alamat.toLowerCase().includes(s); // tambahan alamat
+    b.jurusan_id.toString().toLowerCase().includes(s) ||
+    b.alamat.toLowerCase().includes(s) ||
+    b.bidang.toLowerCase().includes(s) ||
+    b.email.toLowerCase().includes(s) ||
+    b.no_telp.toLowerCase().includes(s) ||
+    b.pic.toLowerCase().includes(s) ||
+    b.pic_telp.toLowerCase().includes(s);  
   const matchFilter = filterIndustri ? b.jurusan_id === filterIndustri : true;
   return matchSearch && matchFilter;
 });
@@ -183,7 +190,7 @@ export default function IndustriPage() {
         onSubmit={async (formData, setFieldErrors) => {
           const updatedIndustri = Object.fromEntries(formData);
 
-          // pastikan jurusan_id jadi integer
+          // memastikan jurusan_id jadi integer
           if (updatedIndustri.jurusan_id) {
             updatedIndustri.jurusan_id = parseInt(updatedIndustri.jurusan_id, 10);
           }
@@ -248,7 +255,7 @@ export default function IndustriPage() {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header />
+      <Header user={user}/>
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />

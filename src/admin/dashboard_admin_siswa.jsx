@@ -10,10 +10,10 @@ import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
 
 // import request
-import { getSiswa } from "../utils/services/get_siswa";
-import { createSiswa } from "../utils/services/add_siswa";
-import { deleteSiswa } from "../utils/services/delete_siswa";
-import { updateSiswa } from "../utils/services/edit_siswa"; 
+import { getSiswa } from "../utils/services/admin/get_siswa";
+import { createSiswa } from "../utils/services/admin/add_siswa";
+import { deleteSiswa } from "../utils/services/admin/delete_siswa";
+import { updateSiswa } from "../utils/services/admin/edit_siswa"; 
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -29,6 +29,7 @@ export default function SiswaPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   // ambil data awal
   const fetchData = async () => {
@@ -48,7 +49,12 @@ export default function SiswaPage() {
   const filteredData = siswa.filter((k) => {
     const s = search.toLowerCase();
     const matchSearch =
-      k.nama_lengkap.toLowerCase().includes(s) || k.kelas_id.toString().includes(s);
+      k.nama_lengkap.toLowerCase().includes(s) || 
+      k.kelas_id.toString().includes(s) ||
+      k.nisn.toLowerCase().includes(s) || 
+      k.alamat.toLowerCase().includes(s) ||
+      k.no_telp.toLowerCase().includes(s) || 
+      k.tanggal_lahir.toString().includes(s);
     const matchFilter = filterSiswa ? k.kelas_id === filterSiswa : true;
     return matchSearch && matchFilter;
   });
@@ -63,10 +69,29 @@ export default function SiswaPage() {
   { label: "Tanggal Lahir", key: "tanggal_lahir" },
 ];
 
+// DD.MM.YYYY
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr; // kalau bukan tanggal valid, balikin apa adanya
+  return d.toLocaleDateString("id-ID"); // otomatis jadi dd/mm/yyyy
+};
+
+// YYYY.MM.DD
+const formatDateToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d)) return ""; // kalau invalid
+  return d.toISOString().split("T")[0]; // hasil: yyyy-MM-dd
+};
+
+
   const dataWithNo = filteredData.map((item, i) => ({
-    ...item,
-    no: i + 1,
-  }));
+  ...item,
+  no: i + 1,
+  tanggal_lahir: formatDateToDDMMYYYY(item.tanggal_lahir), // format di sini
+}));
+
 
   // kolom input
   const inputFields = [
@@ -175,7 +200,12 @@ if (mode === "edit" && selectedRow) {
       fields={inputFields}
       image={editGrafik}
       existingData={siswa.filter((k) => k.id !== selectedRow.id)}
-      initialData={selectedRow}
+      initialData={{
+        ...selectedRow,
+        tanggal_lahir: selectedRow.tanggal_lahir
+          ? formatDateToYYYYMMDD(selectedRow.tanggal_lahir)
+          : "",
+      }}
       onSubmit={async (formData, setFieldErrors) => {
         const updatedSiswa = Object.fromEntries(formData);
 
@@ -249,7 +279,7 @@ if (mode === "edit" && selectedRow) {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header />
+      <Header  user={user}/>
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />
@@ -285,11 +315,13 @@ if (mode === "edit" && selectedRow) {
                 data={dataWithNo}
                 showMore
                 onMoreClick={(row) => {
-                  setSelectedRow(row);
+                  const original = siswa.find((s) => s.id === row.id);
+                  setSelectedRow(original);
                   setMode("edit");
                 }}
                 onEdit={(row) => {
-                  setSelectedRow(row);
+                  const original = siswa.find((s) => s.id === row.id); 
+                  setSelectedRow(original);
                   setMode("edit");
                 }}
                 onDelete={(row) => {

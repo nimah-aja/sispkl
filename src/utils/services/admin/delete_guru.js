@@ -1,4 +1,4 @@
-import axios from "../axiosInstance";
+import axios from "../../axiosInstance";
 
 // delete guru berdasarkan ID
 export const deleteGuru = async (id) => {

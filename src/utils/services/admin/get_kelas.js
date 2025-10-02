@@ -1,7 +1,7 @@
-import axios from "../axiosInstance";
+import axios from "../../axiosInstance";
 
-export const getJurusan = async () => {
-  const res = await axios.get("/api/jurusan", {
+export const getKelas = async () => {
+  const res = await axios.get("/api/kelas", {
     params: { page: 1, limit: 100 } 
   });
 

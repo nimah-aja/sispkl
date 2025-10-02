@@ -1,7 +1,11 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import addSidebar from "../../assets/addSidebar.svg";
+import { ArrowLeft, Eye, EyeOff, Calendar, X } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { id } from "date-fns/locale";
+import { format } from "date-fns";
 
+import addSidebar from "../../assets/addSidebar.svg";
 
 export default function Add({
   title,
@@ -15,28 +19,68 @@ export default function Add({
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
 }) {
+
   const [fieldErrors, setFieldErrors] = useState({});
   const [focusedIdx, setFocusedIdx] = useState(null);
   const inputRefs = useRef([]);
   const [showPassword, setShowPassword] = useState(false);
-
-  // selectedValues untuk multiselect
-  const [selectedValues, setSelectedValues] = useState(initialData?.roles || []);
-
-  // switch
-  const initialSwitches = useMemo(() => {
-    const obj = {};
-    fields.forEach((f) => {
-      if (f.type === "switch") {
-        obj[f.name] = initialData[f.name] === "true" || false;
-      }
-    });
-    return obj;
-  }, [fields, initialData]);
-  const [switchValues, setSwitchValues] = useState(initialSwitches);
-
-  // refs untuk multiselect
+  const [selectedValues, setSelectedValues] = useState(initialData?.roles || [])
   const multiRefs = useRef({});
+
+  // Date
+  const DateInput = React.forwardRef(
+  ({ value, onClick, onChange, placeholder, clearValue }, ref) => {
+    const handleInputChange = (e) => {
+      let input = e.target.value.replace(/\D/g, ""); 
+
+      if (input.length > 8) input = input.slice(0, 8);
+
+      let formatted = input;
+      if (input.length > 4) {
+        formatted =
+          input.slice(0, 2) + "/" + input.slice(2, 4) + "/" + input.slice(4);
+      } else if (input.length > 2) {
+        formatted = input.slice(0, 2) + "/" + input.slice(2);
+      }
+      
+      e.target.value = formatted;
+      onChange(e); 
+    };
+
+    return (
+      <div className="relative w-full">
+        <input
+          ref={ref}
+          value={value}
+          onChange={handleInputChange}
+          onInvalid={(e) =>
+            e.target.setCustomValidity("Gunakan format dd/MM/yyyy (contoh: 25/12/2025)")
+          }
+          onInput={(e) => e.target.setCustomValidity("")}
+          placeholder={placeholder || "dd/MM/yyyy"}
+          pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/[0-9]{4}$"
+          title="Gunakan format dd/MM/yyyy (contoh: 25/12/2025)"
+          className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500 invalid:border-red-500"
+        />
+
+        {value ? (
+          <X
+            onClick={(e) => {
+              e.preventDefault();
+              clearValue();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 cursor-pointer"
+          />
+        ) : (
+          <Calendar
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500 cursor-pointer"
+            onClick={onClick} 
+          />
+        )}
+      </div>
+    );
+  }
+);
 
   // update selectedValues saat initialData berubah (misal edit row)
   useEffect(() => {
@@ -60,19 +104,14 @@ export default function Add({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [focusedIdx]);
 
-  const handleToggle = (name) => {
-    setSwitchValues((prev) => ({
-      ...prev,
-      [name]: !prev[name],
-    }));
-  };
-
+  // toggle
   const toggleOption = (fieldName, value) => {
     setSelectedValues((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
   };
 
+  // submit
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -124,6 +163,7 @@ export default function Add({
     setFieldErrors({});
   };
 
+  // enter
   const handleKeyDown = (e, idx) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -135,6 +175,16 @@ export default function Add({
       }
     }
   };
+
+   // state untuk date fields
+    const [dateValues, setDateValues] = useState(
+      fields.reduce((acc, f) => {
+        if (f.type === "date") {
+          acc[f.name] = initialData[f.name] ? new Date(initialData[f.name]) : null;
+        }
+        return acc;
+      }, {})
+    );
 
   return (
     <div
@@ -184,26 +234,8 @@ export default function Add({
                     {field.label}
                   </label>
 
-                  {/* Switch */}
-                  {field.type === "switch" ? (
-                    <div
-                      onClick={() => handleToggle(field.name)}
-                      className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition ${
-                        switchValues[field.name] ? "bg-[#641E20]" : "bg-[#E1D6C4]"
-                      }`}
-                    >
-                      <div
-                        className={`bg-white w-6 h-6 rounded-full shadow-md transform transition ${
-                          switchValues[field.name] ? "translate-x-6" : ""
-                        }`}
-                      />
-                      <input
-                        type="hidden"
-                        name={field.name}
-                        value={switchValues[field.name] ? "true" : "false"}
-                      />
-                    </div>
-                  ) : field.type === "multiselect" ? (
+                  {/* multiselect */}
+                  {field.type === "multiselect" ? (
                     <div className="relative" ref={(el) => (multiRefs.current[idx] = el)}>
                       <div
                         tabIndex={0}
@@ -302,6 +334,73 @@ export default function Add({
                       >
                         {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                       </button>
+                    </div>
+                  ): field.type === "date" ? (
+                    <div>
+                      <DatePicker
+                        selected={dateValues[field.name]}
+                        className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
+                        calendarClassName=" w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
+                        dateFormat="dd/MM/yyyy"
+                        withPortal
+                        locale={id} 
+                        todayButton="Hari Ini"
+                        popperPlacement="bottom-start"
+                        placeholderText={field.placeholder || `Pilih ${field.label}`}
+                        onChange={(date) =>
+                          setDateValues((prev) => ({ ...prev, [field.name]: date }))
+                        }
+                        dayClassName={() =>
+                          "hover:!bg-[#EC933A] hover:!text-white rounded-full"
+                        }
+                        popperModifiers={[
+                          {
+                            name: "preventOverflow",
+                            options: {
+                              altAxis: true,
+                              tether: false, 
+                            },
+                          },
+                          {
+                            name: "offset",
+                            options: {
+                              offset: [0, 10], 
+                            },
+                          },
+                        ]}
+                        customInput={
+                          <DateInput
+                            clearValue={() =>
+                              setDateValues((prev) => ({ ...prev, [field.name]: null }))
+                            }
+                          />
+                        }
+                        renderCustomHeader={({ monthDate, decreaseMonth, increaseMonth }) => (
+                          <div className="flex justify-between items-center px-4 py-2 bg-transparent border-b">
+                            <button onClick={decreaseMonth} type="button" className="border-none outline-none 
+                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700">
+                              ◀
+                            </button>
+                            <span className="font-bold text-black">
+                              {format(monthDate, "MMMM yyyy", { locale: id })}
+                            </span>
+                            <button onClick={increaseMonth} type="button" className="border-none outline-none 
+                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700">
+                              ▶
+                            </button>
+                          </div>
+                        )}
+                      />
+                      {/* hidden input supaya ikut ke FormData */}
+                      <input
+                        type="hidden"
+                        name={field.name}
+                        value={
+                          dateValues[field.name]
+                            ? dateValues[field.name].toISOString().split("T")[0]
+                            : ""
+                        }
+                      />
                     </div>
                   ) : (
                     <input

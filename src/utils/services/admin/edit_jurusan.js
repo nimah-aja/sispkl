@@ -1,4 +1,4 @@
-import axios from "../axiosInstance";
+import axios from "../../axiosInstance";
 
 // update jurusan berdasarkan ID
 export const updateJurusan = async (id, data) => {

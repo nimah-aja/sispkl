@@ -10,10 +10,10 @@ import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
 
 // import request
-import { getJurusan } from "../utils/services/get_jurusan";
-import { createJurusan } from "../utils/services/add_jurusan";
-import { deleteJurusan } from "../utils/services/delete_jurusan";
-import { updateJurusan } from "../utils/services/edit_jurusan"; 
+import { getJurusan } from "../utils/services/admin/get_jurusan";
+import { createJurusan } from "../utils/services/admin/add_jurusan";
+import { deleteJurusan } from "../utils/services/admin/delete_jurusan";
+import { updateJurusan } from "../utils/services/admin/edit_jurusan"; 
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -29,6 +29,8 @@ export default function JurusanPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   // ambil data awal
   const fetchData = async () => {
@@ -152,13 +154,13 @@ export default function JurusanPage() {
             const apiError = err.response?.data?.error;
             const rawMessage = apiError?.message || "";
 
-            toast.error(err.response?.data?.error?.message || "Gagal memperbarui data");
-
             // error kode sudah ada
             if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
               toast.error("Kode jurusan ini sudah ada.");
               return; 
             }
+
+            toast.error(err.response?.data?.error?.message || "Gagal memperbarui data");
           }
         }}
         onCancel={() => setMode("list")}
@@ -170,7 +172,7 @@ export default function JurusanPage() {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header />
+      <Header user={user}/>
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />

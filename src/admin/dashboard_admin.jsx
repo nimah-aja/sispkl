@@ -23,6 +23,9 @@ export default function PKLDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+
+
 
   const endpoints = [
     { title: "Jumlah Jurusan", icon: gradIcon, url: "/api/jurusan" },
@@ -68,9 +71,10 @@ export default function PKLDashboard() {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header query={query} setQuery={setQuery} />
+      <Header query={query} setQuery={setQuery} user={user} />
+
       <div className="flex flex-col md:flex-row">
-        {/* Sidebar tampil di md ke atas */}
+        {/* Sidebar */}
         <div className="hidden md:block">
           <Sidebar active={active} setActive={setActive} />
         </div>

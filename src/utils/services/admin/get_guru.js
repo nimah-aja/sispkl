@@ -1,4 +1,4 @@
-import axios from "../axiosInstance";
+import axios from "../../axiosInstance";
 
 export const getGuru = async () => {
   const res = await axios.get("/api/guru", {

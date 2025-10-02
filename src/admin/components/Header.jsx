@@ -2,6 +2,7 @@ import React from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+// helper
 import { removeTokens } from "../../utils/authHelper";
 
 // import asset
@@ -9,12 +10,18 @@ import logo from "../../assets/logo.png";
 import profile from "../../assets/profile.svg";
 
 
-export default function Header({ query, setQuery }) {
+export default function Header({ query, setQuery, user: propUser }) {
   const navigate = useNavigate();
 
-  // handler logout
+  // pakai props user dulu, kalau tidak ada baru dari localStorage
+  const user = propUser || JSON.parse(localStorage.getItem("user")) || {
+    name: "Guest",
+    role: "Unknown",
+  };
+
   const handleLogout = () => {
     removeTokens();
+    localStorage.removeItem("user");
     navigate("/");
   };
 
@@ -32,8 +39,8 @@ export default function Header({ query, setQuery }) {
         </div>
 
         {/* kanan */}
+        {/* seacrh */}
         <div className="flex items-center space-x-6">
-          {/* serach input opsional */}
           {query !== undefined && setQuery !== undefined && (
             <div className="relative">
               <input
@@ -47,25 +54,27 @@ export default function Header({ query, setQuery }) {
             </div>
           )}
 
-          {/* profil */}
+          {/* profile */}
           <div className="flex items-center space-x-2">
             <div className="w-9 h-9 rounded-full flex items-center justify-center">
               <img src={profile} alt="Profile" />
             </div>
             <div className="text-sm">
-              <div className="font-bold font-medium text-[#641E21]">Loren Schmitt</div>
-              <div className="text-gray-500">Admin</div>
+              <div className="font-bold font-medium text-[#641E21]">
+                {user.name}
+              </div>
+              <div className="text-gray-500">{user.role}</div>
             </div>
           </div>
 
-          {/* button logout */}
+          {/* button */}
           <button
             onClick={handleLogout}
             className="button-radius"
             style={{
-              "--btn-bg": "#EC933A",       
-              "--btn-active": "#f4d0adff",   
-              "--btn-text": "white",     
+              "--btn-bg": "#EC933A",
+              "--btn-active": "#f4d0adff",
+              "--btn-text": "white",
             }}
           >
             Keluar

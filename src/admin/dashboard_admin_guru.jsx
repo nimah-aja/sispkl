@@ -10,10 +10,10 @@ import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
 
 // services
-import { getGuru } from "../utils/services/get_guru";
-import { createGuru } from "../utils/services/add_guru";
-import { deleteGuru } from "../utils/services/delete_guru";
-import { updateGuru } from "../utils/services/edit_guru";
+import { getGuru } from "../utils/services/admin/get_guru";
+import { createGuru } from "../utils/services/admin/add_guru";
+import { deleteGuru } from "../utils/services/admin/delete_guru";
+import { updateGuru } from "../utils/services/admin/edit_guru";
 
 // assets
 import guruImg from "../assets/addSidebar.svg";
@@ -29,6 +29,8 @@ export default function GuruPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   const fetchData = async () => {
     setLoading(true);
@@ -63,14 +65,17 @@ export default function GuruPage() {
     const s = search.toLowerCase();
     const matchSearch =
       k.nama.toLowerCase().includes(s) ||
-      k.kode_guru.toString().includes(s) ||
-      k.roles.some((r) => r.toLowerCase().includes(s));
+      k.kode_guru.toLowerCase().includes(s) ||
+      k.roles.some((r) => r.toLowerCase().includes(s)) ||
+      k.no_telp.toLowerCase().includes(s) ||
+      k.nip.toString().includes(s);
 
     const matchFilter = filterGuru ? k.roles.includes(filterGuru) : true;
 
     return matchSearch && matchFilter;
   });
 
+  // table
   const columns = [
     { label: "Kode Guru", key: "kode_guru" },
     { label: "Nama Guru", key: "nama" },
@@ -79,6 +84,7 @@ export default function GuruPage() {
     { label: "Role", key: "roles", type: "select" },
   ];
 
+  // input
   const inputFields = [
     { label: "Kode Guru", name: "kode_guru", width: "half", minLength: 3 },
     { label: "Nama Guru", name: "nama", width: "half", minLength: 2 },
@@ -99,32 +105,51 @@ export default function GuruPage() {
     },
   ];
 
+  const inputFieldsUpdate = [
+    { label: "Kode Guru", name: "kode_guru", width: "half", minLength: 3 },
+    { label: "Nama Guru", name: "nama", width: "half", minLength: 2 },
+    { label: "NIP", name: "nip", width: "half", minLength: 18 },
+    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10 },
+    {
+      label: "Role",
+      name: "roles",
+      type: "multiselect",
+      width: "full",
+      options: [
+        { value: "kaprog", label: "Kapro" },
+        { value: "koordinator", label: "Koordinator" },
+        { value: "pembimbing", label: "Pembimbing" },
+        { value: "wali kelas", label: "Wali Kelas" },
+      ],
+    },
+  ];
+
   // validasi semua field termasuk NIP
-  const validateGuru = (data) => {
-    const errors = {};
+  const validateGuru = (data, isEdit = false) => {
+  const errors = {};
 
-    if (!data.kode_guru || data.kode_guru.length < 3)
-      errors.kode_guru = `Kolom Kode Guru minimal 3 karakter. Tambahkan ${3 - (data.kode_guru?.length || 0)} karakter lagi.`;
+  if (!data.kode_guru || data.kode_guru.length < 3)
+    errors.kode_guru = "Kode Guru minimal 3 karakter";
 
-    if (!data.nama || data.nama.length < 2)
-      errors.nama = `Kolom Nama Guru minimal 2 karakter. Tambahkan ${2 - (data.nama?.length || 0)} karakter lagi.`;
+  if (!data.nama || data.nama.length < 2)
+    errors.nama = "Nama minimal 2 karakter";
 
-    if (!data.no_telp || data.no_telp.length < 10)
-      errors.no_telp = `Kolom Nomer telepon minimal 10 karakter. Tambahkan ${10 - (data.no_telp?.length || 0)} karakter lagi.`;
+  if (!data.no_telp || data.no_telp.length < 10)
+    errors.no_telp = "No Telp minimal 10 karakter";
 
+  if (!isEdit) {
     if (!data.password || data.password.length < 6)
-      errors.password = `Kolom Password minimal 6 karakter. Tambahkan ${6 - (data.password?.length || 0)} karakter lagi.`;
+      errors.password = "Password minimal 6 karakter";
+  }
 
-    // validasi NIP 18 digit
-    const nipLen = (data.nip || "").length;
-    if (nipLen < 18) {
-      errors.nip = `NIP harus 18 digit. Anda baru memasukkan ${nipLen}, kurang ${18 - nipLen}.`;
-    } else if (nipLen > 18) {
-      errors.nip = `NIP harus 18 digit. Anda memasukkan ${nipLen}, kelebihan ${nipLen - 18}.`;
-    }
+  const nipLen = (data.nip || "").length;
+  if (nipLen !== 18) {
+    errors.nip = `NIP harus 18 digit (sekarang ${nipLen})`;
+  }
 
-    return errors;
-  };
+  return errors;
+};
+
 
   // FORM ADD
   if (mode === "add") {
@@ -137,7 +162,7 @@ export default function GuruPage() {
         onSubmit={async (formData, setFieldErrors) => {
           const raw = Object.fromEntries(formData);
           const selectedRoles = formData.getAll("roles");
-          const errors = validateGuru(raw);
+          const errors = validateGuru(raw, false);
 
           const newGuru = {
             kode_guru: raw.kode_guru,
@@ -194,22 +219,7 @@ export default function GuruPage() {
     return (
       <Add
         title="Ubah Data Guru"
-        fields={[{ label: "Kode Guru", name: "kode_guru", width: "half", minLength: 3 },
-    { label: "Nama Guru", name: "nama", width: "half", minLength: 2 },
-    { label: "NIP", name: "nip", width: "half", minLength: 18 },
-    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10 },
-    {
-      label: "Role",
-      name: "roles",
-      type: "multiselect",
-      width: "full",
-      options: [
-        { value: "kaprog", label: "Kapro" },
-        { value: "koordinator", label: "Koordinator" },
-        { value: "pembimbing", label: "Pembimbing" },
-        { value: "wali kelas", label: "Wali Kelas" },
-      ],
-    },]}
+        fields={inputFieldsUpdate}
         image={editGrafik}
         existingData={guru.filter((k) => k.id !== selectedRow.id)}
         initialData={{
@@ -221,13 +231,13 @@ export default function GuruPage() {
             selectedRow.is_wali_kelas && "wali kelas",
           ].filter(Boolean),
         }}
-        onSubmit={async (formData) => {
+        onSubmit={async (formData, setFieldErrors) => {
           const raw = Object.fromEntries(formData);
           const selectedRoles = formData.getAll("roles");
 
-          const errors = validateGuru(raw);
+          const errors = validateGuru(raw, true);
           if (Object.keys(errors).length > 0) {
-            // di sini harus ada mekanisme setFieldErrors kalau Add component mendukung
+            setFieldErrors(errors);
             return;
           }
 
@@ -254,6 +264,7 @@ export default function GuruPage() {
             toast.error(err.response?.data?.error?.message || "Gagal mengupdate data");
           }
         }}
+
         onCancel={() => setMode("list")}
         containerStyle={{ maxHeight: "600px" }}
         backgroundStyle={{ backgroundColor: "#641E21" }}
@@ -264,7 +275,7 @@ export default function GuruPage() {
   // LIST TABLE
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header />
+      <Header user={user}/>
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />
@@ -300,11 +311,13 @@ export default function GuruPage() {
                 data={filteredData}
                 showMore
                 onMoreClick={(row) => {
-                  setSelectedRow(row);
+                  const original = guru.find((g) => g.id === row.id);
+                  setSelectedRow(original);
                   setMode("edit");
                 }}
                 onEdit={(row) => {
-                  setSelectedRow(row);
+                  const original = guru.find((g) => g.id === row.id);
+                  setSelectedRow(original);
                   setMode("edit");
                 }}
                 onDelete={(row) => {
@@ -312,6 +325,7 @@ export default function GuruPage() {
                   setIsDeleteOpen(true);
                 }}
               />
+
             )}
           </div>
         </main>

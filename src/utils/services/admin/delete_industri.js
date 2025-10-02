@@ -1,4 +1,4 @@
-import axios from "../axiosInstance";
+import axios from "../../axiosInstance";
 
 // delete jurusan berdasarkan ID
 export const deleteIndustri = async (id) => {

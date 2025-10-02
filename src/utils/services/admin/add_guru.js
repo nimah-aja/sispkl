@@ -1,4 +1,4 @@
-import axios from "../axiosInstance";
+import axios from "../../axiosInstance";
 
 export const createGuru = async (guruData) => {
   const res = await axios.post("/api/guru", guruData);
