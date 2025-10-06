@@ -1,0 +1,29 @@
+# Panduan penggunaan header
+
+### Fungsi komponen :
+Komponen Header ini digunakan untuk menampilkan:
+1. Logo & Judul aplikasi
+2. Search bar (opsional)
+3. Profil user (avatar + role)
+4. Tombol Logout (otomatis hapus token & redirect ke halaman login)
+
+### Parameter :
+- query => State nilai input pencarian (opsional)
+- setQuery => State setter untuk mengubah nilai query. Kalau tidak diberikan → search bar tidak muncul
+
+### Panduan penggunaan :
+- Jika tanpa tanpa searchBar
+<Header />
+- Dengan searchBar
+export default function Dashboard() {
+  const [query, setQuery] = useState("");  
+
+  return (
+    <div>
+      <Header query={query} setQuery={setQuery} />
+      <div className="p-6">
+        <p>Hasil pencarian: {query}</p>
+      </div>
+    </div>
+  );
+}
