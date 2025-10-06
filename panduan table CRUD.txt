@@ -1,0 +1,37 @@
+# Panduan penggunaan Table CRUD
+
+### Fungsi komponents :
+Fitur Utama
+1. Tampilkan data dinamis : Struktur kolom diatur lewat columns, isi tabel diatur lewat data.
+2. Aksi baris (opsional)
+  - Edit → tombol edit tiap baris.
+  - Delete → tombol hapus tiap baris.
+  - More (⋮) → menu dropdown dengan opsi edit & hapus.
+3. Bisa dipakai di halaman manapun (jurusan, siswa, guru, dll).
+  - Ada pesan khusus jika data kosong (emptyText).
+  - Dropdown otomatis tertutup kalau klik di luar.
+
+### Parameter :
+  columns,
+  data,
+  showMore = false,
+  showEdit = false,
+  showDelete = false,
+  onMoreClick = () => {},
+  onEdit = () => {},
+  onDelete = () => {},
+  className = "",
+  emptyText = "Data tidak ditemukan",
+
+### Cara penggunaan komponent :
+    <Table
+        columns={columns}
+        data={data}
+        showMore={true}   // munculin titik 3
+        showEdit={true}   // munculin tombol edit di kolom
+        showDelete={true} // munculin tombol hapus di kolom
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        className="shadow-md"
+        emptyText="Belum ada data jurusan"
+      />

@@ -1,0 +1,33 @@
+# Panduan penggunaan serach, filters, add button
+
+### Fungsi komponen :
+SearchBar ini adalah komponen pencarian yang bisa dipakai di berbagai halaman.
+Fitur utamanya:
+1. Input search (dengan icon).
+2. Beberapa filter dropdown (multi pilihan, tiap filter berupa radio button).
+3. Tombol Add (+) untuk menambahkan data.
+
+### Parameter :
+  query,
+  setQuery,
+  placeholder = "Pencarian",
+  filters = [],              
+  onAddClick,               
+  className = "",   
+
+### Panduan penggunaan (untuk tau isi variabel kalian bisa lihat di dashboard_admin_jurusan.jsx)
+        <SearchBar
+            query={search} //variabel search
+            setQuery={setSearch}
+            placeholder="Cari nama / kode jurusan"
+            filters={[
+              {
+                label: "Jurusan",
+                value: filterJurusan,
+                options: kodeOptions,
+                onChange: setFilterJurusan,
+              },
+            ]}
+            onAddClick={() => setMode("add")}
+            className="mb-4 w-full"
+          />
