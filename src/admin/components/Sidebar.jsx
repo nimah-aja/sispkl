@@ -13,12 +13,12 @@ export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
 
   const items = [
-    { title: "Beranda", icon: sidebarDashboard, route: "/dashboard/admin", key: "sidebarDashboard" },
-    { title: "Jurusan", icon: sidebarGrad, route: "/dashboard/admin/jurusan", key: "sidebarGrad" },
-    { title: "Kelas", icon: sidebarBook, route: "/dashboard/admin/kelas", key: "sidebarBook" },
-    { title: "Peserta Didik", icon: sidebarUsers, route: "/dashboard/admin/siswa", key: "sidebarUsers" },
-    { title: "Guru", icon: sidebarChalk, route: "/dashboard/admin/guru", key: "sidebarChalk" },
-    { title: "Industri", icon: sidebarCorporate, route: "/dashboard/admin/industri", key: "sidebarCorporate" },
+    { title: "Beranda", icon: sidebarDashboard, route: "/admin", key: "sidebarDashboard" },
+    { title: "Jurusan", icon: sidebarGrad, route: "/admin/jurusan", key: "sidebarGrad" },
+    { title: "Kelas", icon: sidebarBook, route: "/admin/kelas", key: "sidebarBook" },
+    { title: "Peserta Didik", icon: sidebarUsers, route: "/admin/siswa", key: "sidebarUsers" },
+    { title: "Guru", icon: sidebarChalk, route: "/admin/guru", key: "sidebarChalk" },
+    { title: "Industri", icon: sidebarCorporate, route: "/admin/industri", key: "sidebarCorporate" },
   ];
 
   return (

@@ -34,22 +34,22 @@ function App() {
         <Route path="/" element={<PKLManagementSystem />} />
 
         {/* Dashboard admin */}
-        <Route path="/dashboard/admin" element={<DashboardAdmin />} />
+        <Route path="/admin" element={<DashboardAdmin />} />
 
         {/* Dashboard admin jurusan */}
-        <Route path="/dashboard/admin/jurusan" element={<DashboardAdminJurusan />} />
+        <Route path="/admin/jurusan" element={<DashboardAdminJurusan />} />
 
         {/* Dashboard admin kelas */}
-        <Route path="/dashboard/admin/kelas" element={<DashboardAdminKelas/>} />
+        <Route path="/admin/kelas" element={<DashboardAdminKelas/>} />
 
          {/* Dashboard admin siswa */}
-        <Route path="/dashboard/admin/siswa" element={<DashboardAdminSiswa/>} />
+        <Route path="/admin/siswa" element={<DashboardAdminSiswa/>} />
 
         {/* Dashboard admin guru */}
-        <Route path="/dashboard/admin/guru" element={<DashboardAdminGuru/>} />
+        <Route path="/admin/guru" element={<DashboardAdminGuru/>} />
 
          {/* Dashboard admin industri */}
-        <Route path="/dashboard/admin/industri" element={<DashboardAdminIndustri/>} />
+        <Route path="/admin/industri" element={<DashboardAdminIndustri/>} />
       </Routes>
       <Toaster
         position="bottom-right"

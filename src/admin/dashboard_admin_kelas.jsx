@@ -13,12 +13,13 @@ import DeleteConfirmationModal from "./components/Delete";
 import { getKelas } from "../utils/services/admin/get_kelas";
 import { createKelas } from "../utils/services/admin/add_kelas";
 import { deleteKelas } from "../utils/services/admin/delete_kelas";
-import { updateKelas } from "../utils/services/admin/edit_kelas"; 
+import { updateKelas } from "../utils/services/admin/edit_kelas";
+import { getJurusan } from "../utils/services/admin/get_jurusan";
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
 import editGrafik from "../assets/editGrafik.svg";
-import deleteImg from "../assets/deleteGrafik.svg"; 
+import deleteImg from "../assets/deleteGrafik.svg";
 
 export default function KelasPage() {
   const [search, setSearch] = useState("");
@@ -29,10 +30,36 @@ export default function KelasPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const [jurusanList, setJurusanList] = useState([]);
 
-  // ambil data awal
+  const user =
+    JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+
+  useEffect(() => {
+    const fetchKelas = async () => {
+      try {
+        const data = await getKelas();
+        setKelas(data);
+      } catch (err) {
+        console.error("Gagal ambil data kelas:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchJurusan = async () => {
+      try {
+        const data = await getJurusan();
+        setJurusanList(data);
+      } catch (err) {
+        console.error("Gagal ambil data jurusan:", err);
+      }
+    };
+
+    fetchKelas();
+    fetchJurusan();
+  }, []);
+
   const fetchData = async () => {
     setLoading(true);
     const data = await getKelas();
@@ -44,20 +71,44 @@ export default function KelasPage() {
     fetchData();
   }, []);
 
-  // filter
-  const kodeOptions = [...new Set(kelas.map((k) => k.jurusan_id))];
+  // ===== FILTERING =====
+  const jurusanOptions = [
+    ...new Set(
+      kelas
+        .map((k) => {
+          const jurusan = jurusanList.find((j) => j.id === k.jurusan_id);
+          return jurusan ? jurusan.nama : null;
+        })
+        .filter(Boolean)
+    ),
+  ];
 
   const filteredData = kelas.filter((k) => {
     const s = search.toLowerCase();
+
+    const jurusan = jurusanList.find((j) => j.id === k.jurusan_id);
+    const jurusanNama = jurusan ? jurusan.nama.toLowerCase() : "";
+
     const matchSearch =
-      k.nama.toLowerCase().includes(s) || k.jurusan_id.toString().includes(s);
-    const matchFilter = filterKelas ? k.jurusan_id === filterKelas : true;
+      k.nama.toLowerCase().includes(s) || jurusanNama.includes(s);
+
+    const matchFilter = filterKelas
+      ? jurusanNama === filterKelas.toLowerCase()
+      : true;
+
     return matchSearch && matchFilter;
   });
 
-  // kolom untuk table
+  // ===== TABLE COLUMNS =====
   const columns = [
-    { label: "Jurusan ID", key: "jurusan_id" },
+    {
+      label: "Jurusan",
+      key: "jurusan_id",
+      render: (_, row) => {
+        const jurusan = jurusanList.find((j) => j.id === row.jurusan_id);
+        return jurusan ? jurusan.nama : "-";
+      },
+    },
     { label: "Nama Kelas", key: "nama" },
   ];
 
@@ -66,36 +117,41 @@ export default function KelasPage() {
     no: i + 1,
   }));
 
+  // ===== INPUT FIELDS =====
   const inputFieldsAdd = [
-    { label: "Jurusan ID", name: "jurusan_id", width: "full" },
+    {
+      label: "Jurusan",
+      name: "jurusan_id",
+      width: "full",
+      type: "select",
+      options: jurusanList.map((j) => ({ value: j.id, label: j.nama })),
+    },
     { label: "Nama Kelas", name: "nama", width: "full", minLength: 2 },
   ];
 
-// form add
-if (mode === "add") {
-  return (
-    <Add
-      title="Tambah Data Kelas"
-      fields={inputFieldsAdd}
-      image={guruImg}
-      existingData={kelas}
-      onSubmit={async (formData, setFieldErrors) => {
-        const newKelas = Object.fromEntries(formData);
+  // ===== ADD FORM =====
+  if (mode === "add") {
+    return (
+      <Add
+        title="Tambah Data Kelas"
+        fields={inputFieldsAdd}
+        image={guruImg}
+        existingData={kelas}
+        onSubmit={async (formData, setFieldErrors) => {
+          const newKelas = Object.fromEntries(formData);
 
-        // validasi nama
-        if (!newKelas.nama || newKelas.nama.length < 2) {
-          setFieldErrors({
-            nama: "Nama kelas minimal 2 karakter.",
-          });
-          return;
-        }
+          if (!newKelas.nama || newKelas.nama.length < 2) {
+            setFieldErrors({
+              nama: "Nama kelas minimal 2 karakter.",
+            });
+            return;
+          }
 
-        // convert jurusan_id ke number
-        if (newKelas.jurusan_id) {
-          newKelas.jurusan_id = parseInt(newKelas.jurusan_id, 10);
-        }
+          if (newKelas.jurusan_id) {
+            newKelas.jurusan_id = parseInt(newKelas.jurusan_id, 10);
+          }
 
-        try {
+          try {
             await createKelas(newKelas);
             await fetchData();
             toast.success("Data kelas berhasil ditambahkan");
@@ -104,80 +160,88 @@ if (mode === "add") {
             const apiError = err.response?.data?.error;
             const rawMessage = apiError?.message || "";
 
-            // error kode sudah ada
             if (rawMessage.toLowerCase().includes("jurusan not found")) {
-              toast.error("jurusan id tidak ada di sistem");
-              return; 
-            }
-            
-            if (/jurusan id.*must be a positive number/i.test(rawMessage.trim())) {
-                toast.error("Jurusan ID harus angka positif");
-                return;
+              toast.error("Jurusan ID tidak ada di sistem");
+              return;
             }
 
-            if (rawMessage.toLowerCase().includes("kelas with this nama already exists in the jurusan")) {
-              toast.error("kelas dengan nama tersebut sudah ada");
-              return; 
+            if (
+              /jurusan id.*must be a positive number/i.test(rawMessage.trim())
+            ) {
+              toast.error("Jurusan ID harus angka positif");
+              return;
             }
-            
+
+            if (
+              rawMessage
+                .toLowerCase()
+                .includes("kelas with this nama already exists in the jurusan")
+            ) {
+              toast.error("Kelas dengan nama tersebut sudah ada");
+              return;
+            }
           }
-      }}
-      onCancel={() => setMode("list")}
-      containerStyle={{ maxHeight: "600px" }}
-    />
-  );
-}
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+      />
+    );
+  }
 
-// form edit
-if (mode === "edit" && selectedRow) {
-  return (
-    <Add
-      title="Ubah Data Kelas"
-      fields={[{label: "Nama Kelas", name: "nama", width: "full", minLength: 2}]}
-      image={editGrafik}
-      existingData={kelas.filter((k) => k.id !== selectedRow.id)}
-      initialData={selectedRow}
-      onSubmit={async (formData, setFieldErrors) => {
-        const formObj = Object.fromEntries(formData);
-        const updatedKelas = { nama: formObj.nama };
+  // ===== EDIT FORM =====
+  if (mode === "edit" && selectedRow) {
+    return (
+      <Add
+        title="Ubah Data Kelas"
+        fields={[
+          {
+            label: "Nama Kelas",
+            name: "nama",
+            width: "full",
+            minLength: 2,
+          },
+        ]}
+        image={editGrafik}
+        existingData={kelas.filter((k) => k.id !== selectedRow.id)}
+        initialData={selectedRow}
+        onSubmit={async (formData, setFieldErrors) => {
+          const formObj = Object.fromEntries(formData);
+          const updatedKelas = { nama: formObj.nama };
 
+          if (!updatedKelas.nama || updatedKelas.nama.length < 2) {
+            setFieldErrors({
+              nama: "Nama kelas minimal 2 karakter.",
+            });
+            return;
+          }
 
-        if (!updatedKelas.nama || updatedKelas.nama.length < 2) {
-          setFieldErrors({
-            nama: "Nama kelas minimal 2 karakter.",
-          });
-          return;
-        }
-
-
-        try {
-          await updateKelas(selectedRow.id, updatedKelas);
-          await fetchData();
-          toast.success("Data kelas berhasil diperbarui");
-          setMode("list");
-        } catch (err) {
+          try {
+            await updateKelas(selectedRow.id, updatedKelas);
+            await fetchData();
+            toast.success("Data kelas berhasil diperbarui");
+            setMode("list");
+          } catch (err) {
             const apiError = err.response?.data?.error;
 
-            // jika ada error spesifik per field
             if (apiError?.fields) {
-                setFieldErrors(apiError.fields);
-                return;
+              setFieldErrors(apiError.fields);
+              return;
             }
 
-            // jika error umum
             toast.error(apiError?.message || "Gagal memperbarui data");
-            }
-      }}
-      onCancel={() => setMode("list")}
-      containerStyle={{ maxHeight: "600px" }}
-      backgroundStyle={{ backgroundColor: "#641E21" }}
-    />
-  );
-}
+          }
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+        backgroundStyle={{ backgroundColor: "#641E21" }}
+      />
+    );
+  }
 
+  // ===== MAIN PAGE =====
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header user={user}/>
+      <Header user={user} />
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />
@@ -194,9 +258,9 @@ if (mode === "edit" && selectedRow) {
             placeholder="Pencarian"
             filters={[
               {
-                label: "Jurusan ID",
+                label: "Jurusan",
                 value: filterKelas,
-                options: kodeOptions,
+                options: jurusanOptions,
                 onChange: setFilterKelas,
               },
             ]}

@@ -14,6 +14,8 @@ import { getSiswa } from "../utils/services/admin/get_siswa";
 import { createSiswa } from "../utils/services/admin/add_siswa";
 import { deleteSiswa } from "../utils/services/admin/delete_siswa";
 import { updateSiswa } from "../utils/services/admin/edit_siswa"; 
+import { getKelas } from "../utils/services/admin/get_kelas";
+
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -30,6 +32,20 @@ export default function SiswaPage() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const [kelasList, setKelasList] = useState([]);
+
+  useEffect(() => {
+    const fetchKelas = async () => {
+      try {
+        const data = await getKelas();
+        setKelasList(data);
+      } catch (err) {
+        console.error("Gagal ambil data kelas:", err);
+      }
+    };
+    fetchKelas();
+  }, []);
+
 
   // ambil data awal
   const fetchData = async () => {
@@ -44,24 +60,44 @@ export default function SiswaPage() {
   }, []);
 
   // filter
-  const kodeOptions = [...new Set(siswa.map((k) => k.kelas_id))];
+  // filter
+const kelasOptions = [
+  ...new Set(
+    siswa
+      .map((k) => {
+        const kelas = kelasList.find((c) => c.id === k.kelas_id);
+        return kelas ? kelas.nama : null;
+      })
+      .filter(Boolean)
+  ),
+];
 
-  const filteredData = siswa.filter((k) => {
-    const s = search.toLowerCase();
-    const matchSearch =
-      k.nama_lengkap.toLowerCase().includes(s) || 
-      k.kelas_id.toString().includes(s) ||
-      k.nisn.toLowerCase().includes(s) || 
-      k.alamat.toLowerCase().includes(s) ||
-      k.no_telp.toLowerCase().includes(s) || 
-      k.tanggal_lahir.toString().includes(s);
-    const matchFilter = filterSiswa ? k.kelas_id === filterSiswa : true;
-    return matchSearch && matchFilter;
-  });
+// Filter data berdasarkan nama kelas, bukan id
+const filteredData = siswa.filter((k) => {
+  const s = search.toLowerCase();
+
+  const kelas = kelasList.find((c) => c.id === k.kelas_id);
+  const kelasNama = kelas ? kelas.nama.toLowerCase() : "";
+
+  const matchSearch =
+    k.nama_lengkap.toLowerCase().includes(s) ||
+    k.nisn.toLowerCase().includes(s) ||
+    k.alamat.toLowerCase().includes(s) ||
+    k.no_telp.toLowerCase().includes(s) ||
+    k.tanggal_lahir.toString().includes(s) ||
+    kelasNama.includes(s);
+
+  const matchFilter = filterSiswa
+    ? kelasNama === filterSiswa.toLowerCase()
+    : true;
+
+  return matchSearch && matchFilter;
+});
+
 
   // kolom untuk table
   const columns = [
-  { label: "Kelas ID", key: "kelas_id" },
+  { label: "Kelas", key: "kelas_id" },
   { label: "Nama Lengkap", key: "nama_lengkap" },
   { label: "NISN", key: "nisn"},
   { label: "Alamat", key: "alamat" },
@@ -86,22 +122,37 @@ const formatDateToYYYYMMDD = (dateStr) => {
 };
 
 
-  const dataWithNo = filteredData.map((item, i) => ({
-  ...item,
-  no: i + 1,
-  tanggal_lahir: formatDateToDDMMYYYY(item.tanggal_lahir), // format di sini
-}));
+  const dataWithNo = filteredData.map((item, i) => {
+    // cari nama kelas berdasarkan kelas_id
+    const kelas = kelasList.find((k) => k.id === item.kelas_id);
+
+    return {
+      ...item,
+      no: i + 1,
+      kelas_id: kelas ? kelas.nama : "-", // kalau ga ada, tampilkan "-"
+      tanggal_lahir: formatDateToDDMMYYYY(item.tanggal_lahir), 
+    };
+  });
+
+
 
 
   // kolom input
   const inputFields = [
-  { label: "Nama Lengkap", name: "nama_lengkap", width: "half", minLength: 2, unique:true },
-  { label: "NISN", name: "nisn", width: "half", unique:true },
-  { label: "Kelas ID", name: "kelas_id", width: "half" },
-  { label: "Alamat", name: "alamat", width: "half" },
-  { label: "No. Telepon", name: "no_telp", width: "full", minLength:10 },
-  { label: "Tanggal Lahir", name: "tanggal_lahir", width: "full", type: "date" },
-];
+    { label: "Nama Lengkap", name: "nama_lengkap", width: "half", minLength: 2, unique: true },
+    { label: "NISN", name: "nisn", width: "half", unique: true },
+    { 
+      label: "Kelas", 
+      name: "kelas_id", 
+      width: "half", 
+      type: "select", 
+      options: kelasList.map((k) => ({ value: k.id, label: k.nama })) 
+    },
+    { label: "Alamat", name: "alamat", width: "half" },
+    { label: "No. Telepon", name: "no_telp", width: "full", minLength:10 },
+    { label: "Tanggal Lahir", name: "tanggal_lahir", width: "full", type: "date" },
+  ];
+
 
 // validasi nisn
 const validateNISN = (nisn) => {
@@ -295,13 +346,13 @@ if (mode === "edit" && selectedRow) {
             setQuery={setSearch}
             placeholder="Pencarian"
             filters={[
-              {
-                label: "Kelas ID",
-                value: filterSiswa,
-                options: kodeOptions,
-                onChange: setFilterSiswa,
-              },
-            ]}
+            {
+              label: "Kelas",
+              value: filterSiswa,
+              options: kelasOptions,
+              onChange: setFilterSiswa,
+            },
+          ]}
             onAddClick={() => setMode("add")}
             className="mb-4 w-[100%]"
           />

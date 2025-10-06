@@ -97,15 +97,15 @@ export default function PKLDashboard() {
                     item={item}
                     onClick={() => {
                       if (item.title === "Jumlah Jurusan")
-                        navigate("/dashboard/admin/jurusan");
+                        navigate("/admin/jurusan");
                       else if (item.title === "Jumlah Kelas")
-                        navigate("/dashboard/admin/kelas");
+                        navigate("/admin/kelas");
                       else if (item.title === "Peserta Didik")
-                        navigate("/dashboard/admin/siswa");
+                        navigate("/admin/siswa");
                       else if (item.title === "Jumlah Guru")
-                        navigate("/dashboard/admin/guru");
+                        navigate("/admin/guru");
                       else if (item.title === "Jumlah Industri")
-                        navigate("/dashboard/admin/industri");
+                        navigate("/admin/industri");
                     }}
                   />
                 ))

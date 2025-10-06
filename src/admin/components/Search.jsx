@@ -78,7 +78,7 @@ export default function SearchBar({
           {openIndex === i && (
             <div className="absolute left-0 mt-3 w-40 z-50">
               {/* Segitiga */}
-              <div className="absolute -top-2 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-white" />
+              <div className="absolute -top-2 left-4 w-0 h-0 border-l-4 border-[#E1D6C4] border-r-4 border-b-4 border-l-transparent border-r-transparent" />
 
               {/* Dropdown scrollable */}
               <div className="bg-white border-2 border-[#E1D6C4] rounded-lg shadow-md max-h-60 overflow-y-auto pt-2">

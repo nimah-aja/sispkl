@@ -6,6 +6,7 @@ import { id } from "date-fns/locale";
 import { format } from "date-fns";
 
 import addSidebar from "../../assets/addSidebar.svg";
+import arrow from "../../assets/arrow.svg"; 
 
 export default function Add({
   title,
@@ -25,7 +26,8 @@ export default function Add({
   const inputRefs = useRef([]);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedValues, setSelectedValues] = useState(initialData?.roles || [])
-  const multiRefs = useRef({});
+  const [searchQuery, setSearchQuery] = useState("");
+
 
   // Date
   const DateInput = React.forwardRef(
@@ -82,6 +84,21 @@ export default function Add({
   }
 );
 
+  // switch
+  const initialSwitches = useMemo(() => {
+    const obj = {};
+    fields.forEach((f) => {
+      if (f.type === "switch") {
+        obj[f.name] = initialData[f.name] === "true" || false;
+      }
+    });
+    return obj;
+  }, [fields, initialData]);
+  const [switchValues, setSwitchValues] = useState(initialSwitches);
+
+  // refs untuk multiselect
+  const multiRefs = useRef({});
+
   // update selectedValues saat initialData berubah (misal edit row)
   useEffect(() => {
     if (initialData?.roles) {
@@ -104,14 +121,19 @@ export default function Add({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [focusedIdx]);
 
-  // toggle
+  const handleToggle = (name) => {
+    setSwitchValues((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
+  };
+
   const toggleOption = (fieldName, value) => {
     setSelectedValues((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
   };
 
-  // submit
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -163,7 +185,6 @@ export default function Add({
     setFieldErrors({});
   };
 
-  // enter
   const handleKeyDown = (e, idx) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -185,6 +206,35 @@ export default function Add({
         return acc;
       }, {})
     );
+
+  // state untuk custom select
+const [open, setOpen] = useState(false);
+// cari field select
+const selectField = fields.find((f) => f.type === "select");
+
+// cari label berdasarkan initialData
+const initialSelectLabel = selectField
+  ? selectField.options.find((opt) => opt.value === initialData[selectField.name])?.label || ""
+  : "";
+
+// state label untuk select
+const [selectedLabel, setSelectedLabel] = useState(initialSelectLabel);
+
+
+const handleChange = (name, value) => {
+  // update ke FormData saat submit
+  const hiddenInput = document.querySelector(`input[name="${name}"]`);
+  if (hiddenInput) {
+    hiddenInput.value = value;
+  } else {
+    // bikin hidden input kalau belum ada
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    document.getElementById("addForm").appendChild(input);
+  }
+};
 
   return (
     <div
@@ -234,8 +284,77 @@ export default function Add({
                     {field.label}
                   </label>
 
-                  {/* multiselect */}
-                  {field.type === "multiselect" ? (
+                  {field.type === "select" ? (
+                    <div className="relative w-full max-w-[600px]">
+                      {/* Trigger */}
+                      <div
+                        onClick={() => setOpen(!open)}
+                        className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+                      >
+                        {selectedLabel || `Pilih ${field.label}`}
+                        <img
+                          src={arrow}
+                          alt="arrow"
+                          className={`w-4 h-4 ml-2 transition-transform duration-200 ${
+                            open ? "rotate-180" : "rotate-0"
+                          }`}
+                        />
+                      </div>
+
+
+                      {open && (
+                        <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                          {/* 🔍 Input Search */}
+                          <input
+                            type="text"
+                            placeholder={`Cari ${field.label}...`}
+                            className="w-full px-3 py-2 border-b text-sm focus:outline-none"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+
+                          <ul className="max-h-48 overflow-y-auto">
+                            {field.options
+                              .filter((opt) =>
+                                opt.label.toLowerCase().includes(searchQuery.toLowerCase())
+                              )
+                              .map((opt) => (
+                                <li
+                                  key={opt.value}
+                                  onClick={() => {
+                                    handleChange(field.name, opt.value);
+                                    setSelectedLabel(opt.label);
+                                    setOpen(false);
+                                    setSearchQuery(""); // reset setelah pilih
+                                  }}
+                                  className="px-4 py-2 cursor-pointer hover:bg-orange-50"
+                                >
+                                  {opt.label}
+                                </li>
+                              ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    ) : field.type === "switch" ? (
+                    <div
+                      onClick={() => handleToggle(field.name)}
+                      className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition ${
+                        switchValues[field.name] ? "bg-[#641E20]" : "bg-[#E1D6C4]"
+                      }`}
+                    >
+                      <div
+                        className={`bg-white w-6 h-6 rounded-full shadow-md transform transition ${
+                          switchValues[field.name] ? "translate-x-6" : ""
+                        }`}
+                      />
+                      <input
+                        type="hidden"
+                        name={field.name}
+                        value={switchValues[field.name] ? "true" : "false"}
+                      />
+                    </div>
+                  ) : field.type === "multiselect" ? (
                     <div className="relative" ref={(el) => (multiRefs.current[idx] = el)}>
                       <div
                         tabIndex={0}
@@ -339,35 +458,33 @@ export default function Add({
                     <div>
                       <DatePicker
                         selected={dateValues[field.name]}
-                        className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
-                        calendarClassName=" w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
-                        dateFormat="dd/MM/yyyy"
-                        withPortal
-                        locale={id} 
-                        todayButton="Hari Ini"
-                        popperPlacement="bottom-start"
-                        placeholderText={field.placeholder || `Pilih ${field.label}`}
                         onChange={(date) =>
                           setDateValues((prev) => ({ ...prev, [field.name]: date }))
                         }
+                        className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
+                        calendarClassName=" w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
                         dayClassName={() =>
                           "hover:!bg-[#EC933A] hover:!text-white rounded-full"
                         }
+                        dateFormat="dd/MM/yyyy"
                         popperModifiers={[
                           {
                             name: "preventOverflow",
                             options: {
                               altAxis: true,
-                              tether: false, 
+                              tether: false, // biar popper bisa lepas dari container
                             },
                           },
                           {
                             name: "offset",
                             options: {
-                              offset: [0, 10], 
+                              offset: [0, 10], // jarak dari input
                             },
                           },
                         ]}
+                        withPortal
+                        locale={id} 
+                        placeholderText={field.placeholder || `Pilih ${field.label}`}
                         customInput={
                           <DateInput
                             clearValue={() =>
@@ -375,6 +492,8 @@ export default function Add({
                             }
                           />
                         }
+                        todayButton="Hari Ini"
+                        popperPlacement="bottom-start"
                         renderCustomHeader={({ monthDate, decreaseMonth, increaseMonth }) => (
                           <div className="flex justify-between items-center px-4 py-2 bg-transparent border-b">
                             <button onClick={decreaseMonth} type="button" className="border-none outline-none 

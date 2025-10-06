@@ -14,6 +14,7 @@ import { getIndustri } from "../utils/services/admin/get_industri";
 import { createIndustri } from "../utils/services/admin/add_industri";
 import { deleteIndustri } from "../utils/services/admin/delete_industri";
 import { updateIndustri } from "../utils/services/admin/edit_industri"; 
+import { getJurusan } from "../utils/services/admin/get_jurusan";
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -29,8 +30,29 @@ export default function IndustriPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const [jurusanList, setJurusanList] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const data = await getIndustri();
+      setIndustri(data);
+      setLoading(false);
+    };
+
+    const fetchJurusan = async () => {
+      try {
+        const jurusanData = await getJurusan();
+        setJurusanList(jurusanData); // ini array langsung
+      } catch (err) {
+        console.error("Gagal ambil data jurusan:", err);
+      }
+    };
+
+    fetchData();
+    fetchJurusan();
+  }, []);
+
 
   // ambil data awal
   const fetchData = async () => {
@@ -45,22 +67,41 @@ export default function IndustriPage() {
   }, []);
 
   // filter
-  const kodeOptions = [...new Set(industri.map((b) => b.jurusan_id))];
+  // Ambil daftar jurusan unik yang dipakai oleh industri
+const jurusanOptions = [
+  ...new Set(
+    industri
+      .map((b) => {
+        const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
+        return jurusan ? jurusan.nama : null;
+      })
+      .filter(Boolean)
+  ),
+];
 
-  const filteredData = industri.filter((b) => {
+// Filter data berdasarkan jurusan (nama), bukan id
+const filteredData = industri.filter((b) => {
   const s = search.toLowerCase();
+
+  const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
+  const jurusanNama = jurusan ? jurusan.nama.toLowerCase() : "";
+
   const matchSearch =
     b.nama.toLowerCase().includes(s) ||
-    b.jurusan_id.toString().toLowerCase().includes(s) ||
     b.alamat.toLowerCase().includes(s) ||
     b.bidang.toLowerCase().includes(s) ||
     b.email.toLowerCase().includes(s) ||
     b.no_telp.toLowerCase().includes(s) ||
-    b.pic.toLowerCase().includes(s) ||
-    b.pic_telp.toLowerCase().includes(s);  
-  const matchFilter = filterIndustri ? b.jurusan_id === filterIndustri : true;
+    b.pic.toLowerCase().includes(s) || 
+    jurusanNama.includes(s);
+
+  const matchFilter = filterIndustri
+    ? jurusanNama === filterIndustri.toLowerCase()
+    : true;
+
   return matchSearch && matchFilter;
 });
+
 
   // validasi karakter
   const validateIndustri = (data) => {
@@ -80,29 +121,46 @@ export default function IndustriPage() {
 
   // kolom tabel
   const columns = [
-  { label: "Nama Industri", key: "nama" },
-  { label: "Alamat", key: "alamat" },
-  { label: "Bidang", key: "bidang" },
-  { label: "Email", key: "email" },
-  { label: "No. Telp", key: "no_telp" },
-  { label: "Pembimbing", key: "pic" },
-  { label: "No. Telp Pembimbing", key: "pic_telp" },
-  { label: "Jurusan ID", key: "jurusan_id" },
-];
+    { label: "Nama Industri", key: "nama" },
+    { label: "Alamat", key: "alamat" },
+    { label: "Bidang", key: "bidang" },
+    { label: "Email", key: "email" },
+    { label: "No. Telp", key: "no_telp" },
+    { label: "Pembimbing", key: "pic" },
+    { label: "No. Telp Pembimbing", key: "pic_telp" },
+    {
+      label: "Jurusan",
+      key: "jurusan_id",
+      render: (_, row) => {
+        const jurusan = jurusanList.find((j) => j.id === row.jurusan_id);
+        return jurusan ? jurusan.nama : "-";
+      },
+    }
+  ];
 
   const dataWithNo = filteredData.map((item, i) => ({ ...item, no: i + 1 }));
 
   // kolom input
   const inputFields = [
-  { label: "Nama Industri", name: "nama", width: "full", minLength: 3 },
-  { label: "Alamat", name: "alamat", width: "full", minLength:10 },
-  { label: "Bidang", name: "bidang", width: "half" },
-  { label: "Email", name: "email", width: "half" },
-  { label: "No. Telp", name: "no_telp", width: "half", minLength:10 },
-  { label: "Pembimbing", name: "pic", width: "half", minLength:2 },
-  { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength:10 },
-  { label: "Jurusan ID", name: "jurusan_id", width: "half" },
-];
+    { label: "Nama Industri", name: "nama", width: "full", minLength: 3 },
+    { label: "Alamat", name: "alamat", width: "full", minLength: 10 },
+    { label: "Bidang", name: "bidang", width: "half" },
+    { label: "Email", name: "email", width: "half" },
+    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10 },
+    { label: "Pembimbing", name: "pic", width: "half", minLength: 2 },
+    { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10 },
+    {
+      label: "Jurusan", 
+      name: "jurusan_id", 
+      width: "half", 
+      type: "select",
+      options: jurusanList.map((j) => ({
+        value: j.id,
+        label: j.nama,
+      })),
+    },
+  ];
+
 
   // form add
   if (mode === "add") {
@@ -190,7 +248,7 @@ export default function IndustriPage() {
         onSubmit={async (formData, setFieldErrors) => {
           const updatedIndustri = Object.fromEntries(formData);
 
-          // memastikan jurusan_id jadi integer
+          // pastikan jurusan_id jadi integer
           if (updatedIndustri.jurusan_id) {
             updatedIndustri.jurusan_id = parseInt(updatedIndustri.jurusan_id, 10);
           }
@@ -255,7 +313,7 @@ export default function IndustriPage() {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header user={user}/>
+      <Header />
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />
@@ -272,15 +330,16 @@ export default function IndustriPage() {
             placeholder="Pencarian"
             filters={[
               {
-                label: "Jurusan id",
+                label: "Jurusan",
                 value: filterIndustri,
-                options: kodeOptions,
+                options: jurusanOptions,
                 onChange: setFilterIndustri,
               },
             ]}
             onAddClick={() => setMode("add")}
             className="mb-4 w-full"
           />
+
 
           <div className="mt-4">
             {loading ? (

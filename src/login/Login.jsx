@@ -42,9 +42,9 @@ export default function PKLManagementSystem() {
         if (newToken) {
           const role = localStorage.getItem("role");
           switch (role) {
-            case "Admin": navigate("/dashboard/admin"); break;
-            case "Guru": navigate("/dashboard/guru"); break;
-            case "Siswa": navigate("/dashboard/siswa"); break;
+            case "Admin": navigate("/admin"); break;
+            case "Guru": navigate("/guru"); break;
+            case "Siswa": navigate("/siswa"); break;
             default: break;
           }
         }
@@ -52,9 +52,9 @@ export default function PKLManagementSystem() {
         // token masih valid, redirect
         const role = localStorage.getItem("role");
         switch (role) {
-          case "Admin": navigate("/dashboard/admin"); break;
-          case "Guru": navigate("/dashboard/guru"); break;
-          case "Siswa": navigate("/dashboard/siswa"); break;
+          case "Admin": navigate("/admin"); break;
+          case "Guru": navigate("/guru"); break;
+          case "Siswa": navigate("/siswa"); break;
           default: break;
         }
       }
@@ -122,9 +122,9 @@ export default function PKLManagementSystem() {
     localStorage.setItem("role", role || activeRole);
 
     switch (role || activeRole) {
-      case "Admin": navigate("/dashboard/admin"); break;
-      case "Guru": navigate("/dashboard/guru"); break;
-      case "Siswa": navigate("/dashboard/siswa"); break;
+      case "Admin": navigate("/admin"); break;
+      case "Guru": navigate("/guru"); break;
+      case "Siswa": navigate("/siswa"); break;
       default: break;
     }
   } catch (err) {
