@@ -1,243 +1,242 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { removeTokens } from "../utils/authHelper";
+import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
-// Import asset
-import { Search, Edit2, Trash2 } from "lucide-react";
-import logo from "../assets/logo.png";
-import profile from "../assets/profile.svg";
-import dashboard from "../assets/dashboard.svg";
-import grad from "../assets/grad.svg";
-import users from "../assets/users.svg";
-import chalk from "../assets/chalk.svg";
-import add from "../assets/add.svg";
-import trash from "../assets/trash.svg";
-import edit from "../assets/edit.svg";
+// import components
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import Table from "./components/Table";
+import SearchBar from "./components/Search";
+import Add from "./components/Add";
+import DeleteConfirmationModal from "./components/Delete";
 
+// import request
+import { getJurusan } from "../utils/services/admin/get_jurusan";
+import { createJurusan } from "../utils/services/admin/add_jurusan";
+import { deleteJurusan } from "../utils/services/admin/delete_jurusan";
+import { updateJurusan } from "../utils/services/admin/edit_jurusan"; 
+
+// import assets
+import guruImg from "../assets/addSidebar.svg";
+import editGrafik from "../assets/editGrafik.svg";
+import deleteImg from "../assets/deleteGrafik.svg"; 
 
 export default function JurusanPage() {
   const [search, setSearch] = useState("");
-  const [active, setActive] = useState("grad");
-  const navigate = useNavigate();
+  const [filterJurusan, setFilterJurusan] = useState("");
+  const [active, setActive] = useState("sidebarGrad");
+  const [jurusan, setJurusan] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState("list");
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
-  const jurusanData = [
-    { kode: "RPL", nama: "Rekayasa Perangkat Lunak" },
-    { kode: "TKJ", nama: "Teknik Komputer Jaringan" },
-    { kode: "MM", nama: "Multimedia" },
-    { kode: "AK", nama: "Akuntansi" },
-    { kode: "RPL", nama: "Rekayasa Perangkat Lunak" },
-    { kode: "TKJ", nama: "Teknik Komputer Jaringan" },
-    { kode: "MM", nama: "Multimedia" },
-    { kode: "AK", nama: "Akuntansi" },
-    { kode: "RPL", nama: "Rekayasa Perangkat Lunak" },
-    { kode: "TKJ", nama: "Teknik Komputer Jaringan" },
-    { kode: "MM", nama: "Multimedia" },
-    { kode: "AK", nama: "Akuntansi" },
-    { kode: "RPL", nama: "Rekayasa Perangkat Lunak" },
-    { kode: "TKJ", nama: "Teknik Komputer Jaringan" },
-    { kode: "MM", nama: "Multimedia" },
-    { kode: "AK", nama: "Akuntansi" },
+  // ambil data awal
+  const fetchData = async () => {
+    setLoading(true);
+    const data = await getJurusan();
+    setJurusan(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // filter
+  const kodeOptions = [...new Set(jurusan.map((j) => j.kode))];
+
+  const filteredData = jurusan.filter((j) => {
+    const s = search.toLowerCase();
+    const matchSearch =
+      j.nama.toLowerCase().includes(s) || j.kode.toLowerCase().includes(s);
+    const matchFilter = filterJurusan ? j.kode === filterJurusan : true;
+    return matchSearch && matchFilter;
+  });
+
+  // validasi karakter
+  const validateJurusan = (data) => {
+    const errors = {};
+    if (!data.kode || data.kode.length < 2)
+      errors.kode = `Kolom Kode Jurusan minimal 2 karakter. Tambahkan ${2 - (data.kode?.length || 0)} karakter lagi.`;
+    if (!data.nama || data.nama.length < 10)
+      errors.nama = `Kolom Nama Jurusan minimal 10 karakter. Tambahkan ${10 - (data.nama?.length || 0)} karakter lagi.`;
+    return errors;
+  };
+
+
+  // kolom tabel
+  const columns = [
+    { label: "Kode Jurusan", key: "kode" },
+    { label: "Nama Jurusan", key: "nama" }
   ];
 
-  const filteredData = jurusanData.filter((j) =>
-    j.nama.toLowerCase().includes(search.toLowerCase())
-  );
+  const dataWithNo = filteredData.map((item, i) => ({ ...item, no: i + 1 }));
 
-  const handleLogout = () => {
-    removeTokens();           // hapus token dari storage
-    navigate("/");       // langsung ke login page
-  };
+  // kolom input
+  const inputFields = [
+    { label: "Kode Jurusan", name: "kode", width: "full", minLength: 2, unique: true },
+    { label: "Nama Jurusan", name: "nama", width: "full", minLength: 10 },
+  ];
+
+  // form add
+  if (mode === "add") {
+    return (
+      <Add
+        title="Tambah Data Jurusan"
+        fields={inputFields}
+        image={guruImg}
+        existingData={jurusan}
+        onSubmit={async (formData, setFieldErrors) => {
+          const newJurusan = Object.fromEntries(formData);
+
+          // validasi karakter
+          const errors = validateJurusan(newJurusan);
+
+          if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+          }
+
+          try {
+            await createJurusan(newJurusan);
+            await fetchData();
+            toast.success("Data jurusan berhasil ditambahkan");
+            setMode("list");
+          } catch (err) {
+            const apiError = err.response?.data?.error;
+            const rawMessage = apiError?.message || "";
+
+            // Error kode jurusan sudah ada
+            if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
+              toast.error("Kode jurusan ini sudah ada.");
+              return; 
+            }
+
+            // error lain bisa masuk toast umum
+            toast.error(apiError?.message || "Gagal menambahkan data");
+          }
+
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+      />
+    );
+  }
+
+  //form edit
+  if (mode === "edit" && selectedRow) {
+    return (
+      <Add
+        title="Ubah Data Jurusan"
+        fields={inputFields}
+        image={editGrafik}
+        existingData={jurusan.filter((j) => j.id !== selectedRow.id)}
+        initialData={selectedRow}
+        onSubmit={async (formData, setFieldErrors) => {
+          const updatedJurusan = Object.fromEntries(formData);
+
+          // validasi karakter
+          const errors = validateJurusan(updatedJurusan);
+
+          if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+          }
+
+          try {
+            await updateJurusan(selectedRow.id, updatedJurusan);
+            await fetchData();
+            toast.success("Data jurusan berhasil diperbarui");
+            setMode("list");
+          } catch (err) {
+            const apiError = err.response?.data?.error;
+            const rawMessage = apiError?.message || "";
+
+            // error kode sudah ada
+            if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
+              toast.error("Kode jurusan ini sudah ada.");
+              return; 
+            }
+
+            toast.error(err.response?.data?.error?.message || "Gagal memperbarui data");
+          }
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+        backgroundStyle={{ backgroundColor: "#641E21" }}
+      />
+    );
+  }
 
   return (
     <div className="bg-white min-h-screen w-full">
-      {/* Header */}
-      <header className="bg-white">
-        <div className="flex items-center justify-between px-6 py-4">
-          {/* Logo + Title */}
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center">
-              <img src={logo} alt="Logo" />
-            </div>
-            <h1
-              className="font-bold text-[#641E20]"
-              style={{ fontSize: "30px" }}
-            >
-              SISTEM PENGELOLAAN PKL
-            </h1>
-          </div>
-
-          {/* User */}
-            <div className="flex items-center space-x-2 ml-188">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center">
-                <img src={profile} alt="Profile" />
-              </div>
-              <div className="text-sm">
-                <div className="font-bold font-medium text-[#641E21]">
-                  Loren Schmitt
-                </div>
-                <div className="text-gray-500">Admin</div>
-              </div>
-            </div>
-
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="bg-red hover:bg-red-600 text-white text-sm px-3 py-1 rounded-md transition"
-            >
-              Logout
-            </button>
+      <Header user={user}/>
+      <div className="flex flex-col md:flex-row">
+        <div className="md:block hidden">
+          <Sidebar active={active} setActive={setActive} />
         </div>
-      </header>
 
-      {/* Sidebar + Main */}
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-20 bg-white h-screen flex flex-col items-center py-8 space-y-6">
-          {/* Dashboard */}
-          <div className="relative group">
-            <div
-              onClick={() => {
-                setActive("dashboard");
-                navigate("/dashboard/admin");
-              }}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer
-                bg-[#EC933A] hover:border-4 hover:border-[#641E21]
-                ${active === "dashboard" ? "border-4 border-[#641E21]" : ""}`}
-            >
-              <img src={dashboard} alt="Dashboard" />
-            </div>
-            <div className="absolute left-14 top-1/2 -translate-y-1/2 
-                            bg-white text-[#641E21] text-xs rounded-md px-3 py-1 
-                            opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-              Dashboard
-            </div>
-          </div>
+        <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
+          <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
+            Jurusan
+          </h2>
 
-          {/* Jurusan */}
-          <div className="relative group">
-            <div
-              onClick={() => setActive("grad")}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer
-                bg-[#EC933A] hover:border-4 hover:border-[#641E21]
-                ${active === "grad" ? "border-4 border-[#641E21]" : ""}`}
-            >
-              <img src={grad} alt="Grad" />
-            </div>
-            <div className="absolute left-14 top-1/2 -translate-y-1/2 
-                            bg-white text-[#641E21] text-xs rounded-md px-3 py-1 
-                            opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-              Jurusan
-            </div>
-          </div>
+          <SearchBar
+            query={search}
+            setQuery={setSearch}
+            placeholder="Pencarian"
+            filters={[
+              {
+                label: "Jurusan",
+                value: filterJurusan,
+                options: kodeOptions,
+                onChange: setFilterJurusan,
+              },
+            ]}
+            onAddClick={() => setMode("add")}
+            className="mb-4 w-full"
+          />
 
-          {/* Users */}
-          <div className="relative group">
-            <div
-              onClick={() => setActive("users")}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer
-                bg-[#EC933A] hover:border-4 hover:border-[#641E21]
-                ${active === "users" ? "border-4 border-[#641E21]" : ""}`}
-            >
-              <img src={users} alt="Users" />
-            </div>
-            <div className="absolute left-14 top-1/2 -translate-y-1/2 
-                            bg-white text-[#641E21] text-xs rounded-md px-3 py-1 
-                            opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-              Peserta Didik
-            </div>
-          </div>
-
-          {/* Guru */}
-          <div className="relative group">
-            <div
-              onClick={() => setActive("chalk")}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer
-                bg-[#EC933A] hover:border-4 hover:border-[#641E21]
-                ${active === "chalk" ? "border-4 border-[#641E21]" : ""}`}
-            >
-              <img src={chalk} alt="Chalk" />
-            </div>
-            <div className="absolute left-14 top-1/2 -translate-y-1/2 
-                            bg-white text-[#641E21] text-xs rounded-md px-3 py-1 
-                            opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-              Guru
-            </div>
-          </div>
-        </aside>
-
-        {/* Main */}
-        <main className="flex-1 p-10 rounded-l-3xl bg-[#641E21] shadow-inner">
-          <div>
-            <h2 className="text-white font-bold text-lg mb-6">Jurusan</h2>
-            
-            <div className="relative">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Pencarian"
-                className="pl-10 pr-10 py-2 rounded-lg bg-white text-black text-sm w-300 focus:outline-none"
+          <div className="mt-4">
+            {loading ? (
+              <p className="text-white">Loading data...</p>
+            ) : (
+              <Table
+                columns={columns}
+                data={dataWithNo}
+                showEdit
+                showDelete
+                onEdit={(row) => {
+                  setSelectedRow(row);
+                  setMode("edit");
+                }}
+                onDelete={(row) => {
+                  setSelectedRow(row);
+                  setIsDeleteOpen(true);
+                }}
               />
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-black" />
-            </div>
-
-            {/* Table */}
-            <div className="overflow-hidden rounded-xl mt-5">
-             <table className="w-full border-separate border-spacing-y-3">
-                <thead className="text-[#641E21] bg-[#E1D6C4]">
-                    <tr>
-                        <th className="py-3 px-4 text-center">No</th>
-                        <th className="py-3 px-4 text-center">Kode Jurusan</th>
-                        <th className="py-3 px-4 text-center">Nama Jurusan</th>
-                        <th className="py-3 px-4 text-center">Edit</th>
-                        <th className="py-3 px-4 text-center">Hapus</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredData.map((j, i) => (
-                    <tr
-                        key={i}
-                        className="bg-white shadow-md hover:bg-orange-200 transition-all duration-200 divide-x divide-transparent hover:divide-gray-400"
-                    >
-                        <td className="py-3 px-4 text-center font-semibold text-gray-700 group-hover:text-white">
-                            {i + 1}
-                        </td>
-                        <td className="py-3 px-4 font-semibold text-gray-700 text-center group-hover:text-white">
-                            {j.kode}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 text-center group-hover:text-white">
-                            {j.nama}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                            <img src={edit} alt="Edit" className="w-7 h-7 inline-block" />
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                            <img src={trash} alt="Hapus" className="w-7 h-7 inline-block" />
-                        </td>
-                    </tr>
-                    ))}
-                    {filteredData.length === 0 && (
-                    <tr>
-                        <td colSpan="4" className="text-center py-4 text-gray-500">
-                        Data tidak ditemukan
-                        </td>
-                    </tr>
-                    )}
-                </tbody>
-                </table>
-
-                <div
-                    onClick={() => alert("Tambah Data diklik")}
-                    className="fixed bottom-8 right-8"
-                    >
-                    <img src={add} alt="Tambah" className="w-20 h-20 bg-white rounded-full" />
-                </div>
-
-
-
-            </div>
+            )}
           </div>
         </main>
+
+        <DeleteConfirmationModal
+          isOpen={isDeleteOpen}
+          onClose={() => setIsDeleteOpen(false)}
+          onDelete={async () => {
+            try {
+              await deleteJurusan(selectedRow.id);
+              await fetchData();
+              toast.success("Data jurusan berhasil dihapus");
+              setIsDeleteOpen(false);
+            } catch (err) {
+              console.error(err);
+              toast.error("Gagal menghapus data");
+            }
+          }}
+          imageSrc={deleteImg}
+        />
       </div>
     </div>
   );

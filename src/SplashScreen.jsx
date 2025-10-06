@@ -15,10 +15,9 @@ export default function SplashScreenWithTransition() {
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
-          // Start transition when loading complete
           setTimeout(() => {
             setIsTransitioning(true);
-            setTimeout(() => setShowLogin(true), 1000); // Show login after roll animation
+            setTimeout(() => setShowLogin(true), 1000); 
           }, 1000);
           return 100;
         }
@@ -46,14 +45,14 @@ export default function SplashScreenWithTransition() {
         }}
       >
         <div className="h-full w-full flex flex-col justify-center items-center">
-          {/* Animated Abstract Background */}
+          {/* animasi abstrak */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#641E20] via-[#8B2635] to-[#330A0C]">
-            {/* Abstract curved shapes */}
+            {/* kurva */}
             <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-red-400/20 to-red-600/10 rounded-full blur-3xl animate-pulse"></div>
             <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-gradient-to-tl from-red-300/15 to-red-500/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
             <div className="absolute top-1/3 -right-20 w-64 h-64 bg-gradient-to-bl from-red-200/10 to-red-400/5 rounded-full blur-xl animate-pulse delay-2000"></div>
             
-            {/* Curved overlay elements */}
+            {/* kurva */}
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
               <defs>
                 <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -66,7 +65,7 @@ export default function SplashScreenWithTransition() {
                 </linearGradient>
               </defs>
               
-              {/* First curved layer - moves right to left */}
+              {/* kurva layer 1 */}
               <path d="M0,200 Q100,50 200,100 T400,150 L400,400 L0,400 Z" fill="url(#grad1)" className="animate-pulse">
                 <animateTransform
                   attributeName="transform"
@@ -78,7 +77,7 @@ export default function SplashScreenWithTransition() {
                 />
               </path>
               
-              {/* Second curved layer - moves left to right */}
+              {/* kurva layer 2 */}
               <path d="M0,300 Q150,180 300,220 T400,200 L400,400 L0,400 Z" fill="url(#grad2)" className="animate-pulse delay-1000">
                 <animateTransform
                   attributeName="transform"
@@ -90,7 +89,7 @@ export default function SplashScreenWithTransition() {
                 />
               </path>
               
-              {/* Third curved layer - diagonal movement */}
+              {/* kurva layer 3 */}
               <path d="M0,250 Q200,120 400,180 L400,400 L0,400 Z" fill="url(#grad1)" opacity="0.3">
                 <animateTransform
                   attributeName="transform"
@@ -103,16 +102,16 @@ export default function SplashScreenWithTransition() {
               </path>
             </svg>
 
-            {/* Floating particles */}
+            {/* float element */}
             <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-red-300/40 rounded-full animate-bounce delay-500"></div>
             <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-red-200/60 rounded-full animate-bounce delay-1000"></div>
             <div className="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-red-400/30 rounded-full animate-bounce delay-1500"></div>
           </div>
 
-          {/* Content */}
+          {/* konten */}
           <div className="relative z-10 flex flex-col items-center">
-            {/* Logo Container with Glow Effect */}
-            {/* Animated Penguin Logo */}
+            {/* logo */}
+            {/* animasi logo */}
             <div className="relative mb-8">
                 <div className="animate-bounce">
                     <div className="animate-pulse">
@@ -129,19 +128,19 @@ export default function SplashScreenWithTransition() {
                 </div>
             </div>
 
-            {/* Title with Enhanced Typography */}
+            {/* judul */}
             <h1 className="text-white text-4xl font-bold mb-3 text-center leading-tight">
               <span className="bg-gradient-to-r from-white via-red-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
                 Sistem Pengelolaan PKL
               </span>
             </h1>
             
-            {/* Subtitle */}
+            {/* keterangan */}
             <p className="text-red-100/80 text-base mb-8 text-center max-w-xs leading-relaxed font-light">
               SMKN 2 Singosari
             </p>
 
-            {/* Enhanced Loading Bar */}
+            {/* loading */}
             <div className="w-48 mb-4">
               <div className="w-full h-1.5 bg-red-900/30 rounded-full overflow-hidden backdrop-blur-sm border border-red-800/20">
                 <div 
@@ -158,17 +157,17 @@ export default function SplashScreenWithTransition() {
               </div>
             </div>
 
-            {/* Loading Text with Animation */}
+            {/* loading teks */}
             <p className="text-red-200/90 text-sm font-medium">
               <span className="inline-block animate-pulse">Loading</span>
               <span className="inline-block w-8 text-left">{dots}</span>
             </p>
           </div>
 
-          {/* Bottom Decoration */}
+          {/* dekorasi  */}
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-400/30 to-transparent"></div>
           
-          {/* Corner Decorations */}
+          {/* dekorasi pojok*/}
           <div className="absolute top-8 right-8 w-16 h-16 border-t-2 border-r-2 border-red-300/20 rounded-tr-3xl"></div>
           <div className="absolute bottom-8 left-8 w-16 h-16 border-b-2 border-l-2 border-red-300/20 rounded-bl-3xl"></div>
         </div>

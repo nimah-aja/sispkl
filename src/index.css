@@ -56,7 +56,7 @@ button {
   transition: border-color 0.25s;
 }
 
-/* Hilangkan hover hitam untuk tab buttons */
+/* button role login */
 .tab-button:hover {
   border-color: transparent !important;
 }
@@ -87,8 +87,6 @@ button:focus-visible {
     background-color: #E1D6C4;
   }
 }
-
-/* Tab Button Styles */
 .tab-button {
   padding: 8px 24px;
   font-size: 14px;
@@ -121,6 +119,8 @@ button:focus-visible {
   color: #EC933A !important;
   border-radius: 9999px !important;
 }
+
+/* ripple button login */
 .ripple-hover {
   position: relative;
   overflow: hidden;
@@ -139,7 +139,8 @@ button:focus-visible {
   opacity: 0;
   transition: width 0.4s ease, height 0.4s ease, opacity 0.6s ease;
 }
-/* Supaya tombol mata gak ada border/background */
+
+/* style password eyes */
 .password-toggle-btn {
   border: none !important;
   background: transparent !important;
@@ -151,6 +152,8 @@ button:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* ripple */
 @keyframes ripple {
   from {
     transform: scale(0);
@@ -173,7 +176,199 @@ button:focus-visible {
   animation: slide-in 0.3s ease-out;
 }
 
+/* button radius */
+.button-radius {
+  border-radius: 9999px;
+  width: 100px;
+  height: 40px;
+  border: none;
+  outline: none;
+  border-radius: 9999px;
+  background-color: var(--btn-bg, #EC933A); /* default warna */
+  color: var(--btn-text, white);
+  font-weight: 600;
+  padding: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
 
+/* active / ditekan */
+.button-radius:active {
+  background-color: var(--btn-active, #EA580C);
+}
 
-  
+/* focus */
+.button-radius:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* notifikasi add/edit/delete */
+@keyframes slideInRight {
+  0% {
+    transform: translateX(150%); 
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(150%); 
+    opacity: 0;
+  }
+}
+
+/* saat muncul */
+.my-slide-toast {
+  animation: slideInRight 0.8s ease-out forwards; 
+}
+
+/* saat keluar */
+.my-slide-toast[data-visible='false'] {
+  animation: slideOutRight 0.8s ease-in forwards; 
+}
+
+/* lingkaran */
+.circle {                /* default size */
+  width:28px;
+  height: 35px;
+  border-radius: 100%;
+  display: inline-block;
+  background-color: #641E20;   
+  vertical-align: middle;
+  align-items: center;
+  overflow: hidden;   
+  display: inline-flex;         
+  align-items: center;          
+  justify-content: center;  
+  margin: 2px;     
+}
+
+.circle:hover{
+  border: none;
+  color: white;
+}
+
+/* Scrollbar keseluruhan */
+::-webkit-scrollbar {
+  width: 10px; /* lebar scrollbar */
+  height: 10px; /* untuk horizontal */
+}
+
+/* Track (jalur belakang) */
+::-webkit-scrollbar-track {
+  background: #E1D6C4;
+  border-radius: 30px; /* biar track ikut melengkung */
+  padding: 1px;
+  width: 18px;
+}
+
+/* Thumb (bagian yang bisa digeser) */
+::-webkit-scrollbar-thumb {
+  background: #641E20;
+  border-radius: 35px; /* ini yang bikin ujung scrollbar melengkung */
+  border: 1px solid white;
+}
+
+/* Background kalender */
+.react-datepicker {
+  background-color: white !important;
+  color: black !important;
+  border-radius: 10px;
+  border: none;
+  padding: 20px;
+}
+
+.react-datepicker__navigation {
+  top: 50%; /* posisinya vertikal di tengah header */
+  transform: translateY(50%);
+  transform: translateX(25%);
+}
+
+.react-datepicker__navigation:active{
+  border:none;
+  border: transparent;
+}
+/* Header (bulan & tahun) */
+.react-datepicker__header {
+  border-bottom: none !important;
+  color: white !important;
+  background-color: transparent !important;
+  border-bottom: none; 
+
+}
+
+/* Hari biasa */
+.react-datepicker__day {
+  color: #641E20 !important;
+}
+
+/* Hari hover */
+.react-datepicker__day:hover {
+  background-color: #EC933A !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+/* Hari yang dipilih */
+.react-datepicker__day--selected {
+  background-color: #EC933A !important;
+  color: white !important;
+  border-radius: 50%;
+}
+/* biar grid tanggal tidak kepinggir, ditengah */
+.react-datepicker__month {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  padding-left:15px;/* ini bikin konten tengah */
+}
+.react-datepicker__day-names {
+  padding-left: 14px; /* atau padding sesuai keinginan */
+  padding-right: 10px;
+}
+.react-datepicker__today-button {
+  background-color: #EC933A !important; /* ganti bg */
+  color: white !important;               /* ganti teks */
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem; /* rounded */
+  font-weight: bold;
+}
+/* warna icon Clear */
+.react-datepicker__close-icon::after {
+  background-color: #EC933A  !important;
+  color: white !important; /* ganti warna X */
+  font-size: 1rem;            /* bisa atur ukuran */
+}
+
+/* hover */
+.react-datepicker__close-icon:active::after {
+  color: #F4A261 !important;
+}
+.react-datepicker__close-icon:active{
+  border: transparent !important;
+}
+
+/* button without border */
+button {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button:focus,
+button:hover,
+button:active {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
 

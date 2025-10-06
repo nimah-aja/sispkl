@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// import components
 import MouseRippleButton from "./components/MouseRippleButton";
+
+//import request
 import axios from "../utils/axiosInstance";
 import { refreshAccessToken, removeTokens, setTokens, getAccessToken } from "../utils/authHelper";
 
@@ -38,9 +42,9 @@ export default function PKLManagementSystem() {
         if (newToken) {
           const role = localStorage.getItem("role");
           switch (role) {
-            case "Admin": navigate("/dashboard/admin"); break;
-            case "Guru": navigate("/dashboard/guru"); break;
-            case "Siswa": navigate("/dashboard/siswa"); break;
+            case "Admin": navigate("/admin"); break;
+            case "Guru": navigate("/guru"); break;
+            case "Siswa": navigate("/siswa"); break;
             default: break;
           }
         }
@@ -48,9 +52,9 @@ export default function PKLManagementSystem() {
         // token masih valid, redirect
         const role = localStorage.getItem("role");
         switch (role) {
-          case "Admin": navigate("/dashboard/admin"); break;
-          case "Guru": navigate("/dashboard/guru"); break;
-          case "Siswa": navigate("/dashboard/siswa"); break;
+          case "Admin": navigate("/admin"); break;
+          case "Guru": navigate("/guru"); break;
+          case "Siswa": navigate("/siswa"); break;
           default: break;
         }
       }
@@ -58,11 +62,13 @@ export default function PKLManagementSystem() {
     checkToken();
   }, []);
 
+  // notifikasi toast saat timeout
   const showToast = (msg, type = "success", dur = 4000) => {
     setToast({ show: true, message: msg, type });
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), dur);
   };
 
+  // ambil input
   const roles = ["Admin","Guru","Siswa"];
   const getInputConfig = () => {
     switch (activeRole) {
@@ -75,6 +81,7 @@ export default function PKLManagementSystem() {
   const inputConfig = getInputConfig();
   const isPasswordField = inputConfig.secondField.type === "password";
 
+  // handler role
   const handleRoleChange = (role) => {
     setActiveRole(role);
     setUsername("");
@@ -83,6 +90,7 @@ export default function PKLManagementSystem() {
     setError("");
   };
 
+  // handler login
   const handleLogin = async (e) => {
   e.preventDefault();
   setLoading(true);
@@ -114,16 +122,16 @@ export default function PKLManagementSystem() {
     localStorage.setItem("role", role || activeRole);
 
     switch (role || activeRole) {
-      case "Admin": navigate("/dashboard/admin"); break;
-      case "Guru": navigate("/dashboard/guru"); break;
-      case "Siswa": navigate("/dashboard/siswa"); break;
+      case "Admin": navigate("/admin"); break;
+      case "Guru": navigate("/guru"); break;
+      case "Siswa": navigate("/siswa"); break;
       default: break;
     }
   } catch (err) {
     console.error(err);
     if (err.code === "ECONNABORTED") showToast("Server timeout", "error");
     else if (err.response?.data?.message) setError(err.response.data.message);
-    else setError("Login gagal, cek data Anda.");
+    else setError("Login gagal, cek data Anda.", error, 30000);
   } finally {
     setLoading(false);
   }
@@ -251,7 +259,7 @@ export default function PKLManagementSystem() {
               type="submit"
               disabled={loading}
               className="w-full text-white font-semibold py-3 px-4 rounded-lg mt-6 disabled:opacity-60"
-              style={{ backgroundColor: "#EC933A", border: "none", outline: "none" }} // 🌟 warna dasar
+              style={{ backgroundColor: "#EC933A", border: "none", outline: "none" }} 
             >
               {loading ? "Memproses..." : `Masuk sebagai ${activeRole}`}
             </MouseRippleButton>
