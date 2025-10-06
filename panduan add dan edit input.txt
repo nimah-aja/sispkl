@@ -1,0 +1,131 @@
+# Panduan penggunaan input Add dan Edit
+
+### Komponen Add ini bisa dipakai untuk form tambah data maupun edit data.
+Fitur utama:
+1. Validasi required dan minLength.
+2. Cek duplikasi data dari existingData.
+3. Support input text, number, textarea, select.
+4. Bisa pre-fill data saat edit dengan initialData.
+5. Navigasi Enter → ke input berikutnya.
+6. Tooltip saat kolom kosong & difokuskan.
+
+### Parameter
+  title,            // judul form misal tambah data
+  fields = [],      
+  onCancel,
+  onSubmit,
+  image,
+  containerClassName = "",
+  containerStyle = {},
+  existingData = [],    // validasi data sudah ada
+  backgroundStyle = {},
+  initialData = {},   // data awal saat display edit
+
+### Contoh item fields
+const inputFields = [
+  {
+    name: "nama",        // nama field (wajib unik)
+    label: "Nama Lengkap", // label ditampilkan
+    type: "text",        // text | number | textarea | select
+    minLength: 3,        // validasi minimal karakter
+    width: "full",       // full (1 kolom penuh) atau half (1/2 kolom)
+  },
+  {
+    name: "deskripsi",
+    label: "Deskripsi",
+    type: "textarea",
+    rows: 4,
+    width: "full",
+  },
+  {
+    name: "role",
+    label: "Role",
+    type: "select",
+    options: [
+      { label: "Admin", value: "admin" },
+      { label: "User", value: "user" },
+    ],
+  },
+];
+
+### Cara pakai komponen
+- Tambah data
+    <Add
+      title="Tambah Jurusan"
+      fields={inputFields}
+      image={guruImg}
+      existingData={jurusan}
+      onSubmit={async (formData, setFieldErrors) => {
+        const newJurusan = Object.fromEntries(formData);
+
+        // validasi kode minimal 2 karakter
+        const kode = newJurusan.kode || "";
+        if (kode.length < 2) {
+          const kurang = 2 - kode.length;
+          setFieldErrors({
+            kode: `Kolom Kode Jurusan minimal 2 karakter. Tambahkan ${kurang} karakter lagi.`
+          });
+          return;
+        }
+
+        // validasi nama minimal 10 karakter
+        const nama = newJurusan.nama || "";
+        if (nama.length < 10) {
+          const kurang = 10 - nama.length;
+          setFieldErrors({
+            nama: `Kolom Nama Jurusan minimal 10 karakter. Tambahkan ${kurang} karakter lagi.`
+          });
+          return;
+        }
+
+        await createJurusan(newJurusan);
+        await fetchData();
+        toast.success("Data jurusan berhasil ditambahkan");
+        setMode("list");
+      }}
+      onCancel={() => setMode("list")}
+      containerClassName="max-w-3xl bg-white"
+      containerStyle={{ maxHeight: "600px" }}
+      backgroundStyle={{ backgroundColor: '#E1D6C4' }}
+    />
+
+- Edit data
+    <Add
+      title="Edit Jurusan"
+      fields={inputFields}
+      image={editGrafik}
+      existingData={jurusan.filter(j => j.id !== selectedRow.id)}
+      initialData={selectedRow}
+      onSubmit={async (formData, setFieldErrors) => {
+        const updatedJurusan = Object.fromEntries(formData);
+
+        // validasi kode minimal 2 karakter
+        const kode = updatedJurusan.kode || "";
+        if (kode.length < 2) {
+          const kurang = 2 - kode.length;
+          setFieldErrors({
+            kode: `Kolom Kode Jurusan minimal 2 karakter. Tambahkan ${kurang} karakter lagi.`
+          });
+          return;
+        }
+
+        // validasi nama minimal 10 karakter
+        const nama = updatedJurusan.nama || "";
+        if (nama.length < 10) {
+          const kurang = 10 - nama.length;
+          setFieldErrors({
+            nama: `Kolom Nama Jurusan minimal 10 karakter. Tambahkan ${kurang} karakter lagi.`
+          });
+          return;
+        }
+
+        await updateJurusan(selectedRow.id, updatedJurusan);
+        await fetchData();
+        toast.success("Data jurusan berhasil diperbarui");
+        setMode("list");
+      }}
+      onCancel={() => setMode("list")}
+      containerClassName="max-w-3xl bg-white"
+      containerStyle={{ maxHeight: "600px" }}
+      backgroundStyle={{ backgroundColor: '#641E21' }}
+    />
