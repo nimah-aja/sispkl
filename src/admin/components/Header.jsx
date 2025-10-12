@@ -8,12 +8,11 @@ import { removeTokens } from "../../utils/authHelper";
 // import asset
 import logo from "../../assets/logo.png";
 import profile from "../../assets/profile.svg";
-
+import logoutIcon from "../../assets/logout.svg"
 
 export default function Header({ query, setQuery, user: propUser }) {
   const navigate = useNavigate();
 
-  // pakai props user dulu, kalau tidak ada baru dari localStorage
   const user = propUser || JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
     role: "Unknown",
@@ -70,14 +69,15 @@ export default function Header({ query, setQuery, user: propUser }) {
           {/* button */}
           <button
             onClick={handleLogout}
-            className="button-radius"
+            className="button-radius flex items-center gap-2 bg-[#3C3C3C] text-white px-4 py-2 rounded-full hover:bg-[#2d2d2d] transition"
             style={{
-              "--btn-bg": "#EC933A",
+              "--btn-bg": "#3A3D3D",
               "--btn-active": "#f4d0adff",
               "--btn-text": "white",
             }}
           >
-            Keluar
+            <img src={logoutIcon} alt="Logout" className="w-5 h-5 ml-3" />
+            <span className="font-semibold">Keluar</span>
           </button>
         </div>
       </div>

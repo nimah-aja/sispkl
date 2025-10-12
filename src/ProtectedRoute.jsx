@@ -5,7 +5,6 @@ export default function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
   if (!token) {
-    // kalau belum login, redirect ke halaman login
     return <Navigate to="/" replace />;
   }
 

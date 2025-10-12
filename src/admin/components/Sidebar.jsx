@@ -21,6 +21,7 @@ export default function Sidebar({ active, setActive }) {
     { title: "Industri", icon: sidebarCorporate, route: "/admin/industri", key: "sidebarCorporate" },
   ];
 
+  // main
   return (
     <aside className="w-20 bg-white h-screen flex flex-col items-center py-8 space-y-6">
       {items.map((item) => (

@@ -1,10 +1,11 @@
+import "react-datepicker/dist/react-datepicker.css";
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { ArrowLeft, Eye, EyeOff, Calendar, X } from "lucide-react";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
 
+// import assets
 import addSidebar from "../../assets/addSidebar.svg";
 import arrow from "../../assets/arrow.svg"; 
 
@@ -20,69 +21,68 @@ export default function Add({
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
 }) {
-
   const [fieldErrors, setFieldErrors] = useState({});
   const [focusedIdx, setFocusedIdx] = useState(null);
   const inputRefs = useRef([]);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedValues, setSelectedValues] = useState(initialData?.roles || [])
-  const [searchQuery, setSearchQuery] = useState("");
-
+  const [dropdownState, setDropdownState] = useState({});
+  const [searchQueries, setSearchQueries] = useState({});
 
   // Date
   const DateInput = React.forwardRef(
-  ({ value, onClick, onChange, placeholder, clearValue }, ref) => {
-    const handleInputChange = (e) => {
-      let input = e.target.value.replace(/\D/g, ""); 
+    ({ value, onClick, onChange, placeholder, clearValue }, ref) => {
+      const handleInputChange = (e) => {
+        let input = e.target.value.replace(/\D/g, ""); 
 
-      if (input.length > 8) input = input.slice(0, 8);
+        if (input.length > 8) input = input.slice(0, 8);
 
-      let formatted = input;
-      if (input.length > 4) {
-        formatted =
-          input.slice(0, 2) + "/" + input.slice(2, 4) + "/" + input.slice(4);
-      } else if (input.length > 2) {
-        formatted = input.slice(0, 2) + "/" + input.slice(2);
-      }
-      
-      e.target.value = formatted;
-      onChange(e); 
-    };
+        let formatted = input;
+        if (input.length > 4) {
+          formatted =
+            input.slice(0, 2) + "/" + input.slice(2, 4) + "/" + input.slice(4);
+        } else if (input.length > 2) {
+          formatted = input.slice(0, 2) + "/" + input.slice(2);
+        }
+        
+        e.target.value = formatted;
+        onChange(e); 
+      };
 
-    return (
-      <div className="relative w-full">
-        <input
-          ref={ref}
-          value={value}
-          onChange={handleInputChange}
-          onInvalid={(e) =>
-            e.target.setCustomValidity("Gunakan format dd/MM/yyyy (contoh: 25/12/2025)")
-          }
-          onInput={(e) => e.target.setCustomValidity("")}
-          placeholder={placeholder || "dd/MM/yyyy"}
-          pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/[0-9]{4}$"
-          title="Gunakan format dd/MM/yyyy (contoh: 25/12/2025)"
-          className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500 invalid:border-red-500"
-        />
-
-        {value ? (
-          <X
-            onClick={(e) => {
-              e.preventDefault();
-              clearValue();
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 cursor-pointer"
+      return (
+        <div className="relative w-full">
+          <input
+            ref={ref}
+            value={value}
+            onChange={handleInputChange}
+            onInvalid={(e) =>
+              e.target.setCustomValidity("Gunakan format dd/MM/yyyy (contoh: 25/12/2025)")
+            }
+            onInput={(e) => e.target.setCustomValidity("")}
+            placeholder={placeholder || "dd/MM/yyyy"}
+            pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/[0-9]{4}$"
+            title="Gunakan format dd/MM/yyyy (contoh: 25/12/2025)"
+            className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500 invalid:border-red-500"
           />
-        ) : (
-          <Calendar
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500 cursor-pointer"
-            onClick={onClick} 
-          />
-        )}
-      </div>
-    );
-  }
-);
+
+          {value ? (
+            <X
+              onClick={(e) => {
+                e.preventDefault();
+                clearValue();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 cursor-pointer"
+            />
+          ) : (
+            <Calendar
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500 cursor-pointer"
+              onClick={onClick} 
+            />
+          )}
+        </div>
+      );
+    }
+  );
 
   // switch
   const initialSwitches = useMemo(() => {
@@ -94,6 +94,7 @@ export default function Add({
     });
     return obj;
   }, [fields, initialData]);
+
   const [switchValues, setSwitchValues] = useState(initialSwitches);
 
   // refs untuk multiselect
@@ -128,6 +129,20 @@ export default function Add({
     }));
   };
 
+  const toggleDropdown = (name) => {
+    setDropdownState((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
+  };
+
+  const handleSearchChange = (name, value) => {
+    setSearchQueries((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const toggleOption = (fieldName, value) => {
     setSelectedValues((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
@@ -139,7 +154,6 @@ export default function Add({
     const formData = new FormData(e.target);
     const errors = {};
 
-    // validasi tiap field
     fields.forEach((field) => {
       let value;
       if (field.type === "multiselect") {
@@ -148,7 +162,11 @@ export default function Add({
         value = formData.get(field.name) || "";
       }
 
-      if (!value || (Array.isArray(value) && value.length === 0)) {
+      const initialValue = initialData[field.name];
+      if (
+        (!value || (Array.isArray(value) && value.length === 0)) &&
+        (initialValue === undefined || initialValue === "" || initialValue === null)
+      ) {
         errors[field.name] = `Kolom ${field.label} harus diisi.`;
         return;
       }
@@ -185,6 +203,7 @@ export default function Add({
     setFieldErrors({});
   };
 
+
   const handleKeyDown = (e, idx) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -207,35 +226,36 @@ export default function Add({
       }, {})
     );
 
-  // state untuk custom select
-const [open, setOpen] = useState(false);
-// cari field select
-const selectField = fields.find((f) => f.type === "select");
+  // simpan label terpilih per field
+  const [selectedLabels, setSelectedLabels] = useState(() => {
+    const labels = {};
+    fields.forEach((f) => {
+      if (f.type === "select") {
+        const initialLabel =
+          f.options.find((opt) => opt.value === initialData[f.name])?.label || "";
+        labels[f.name] = initialLabel;
+      }
+    });
+    return labels;
+  });
 
-// cari label berdasarkan initialData
-const initialSelectLabel = selectField
-  ? selectField.options.find((opt) => opt.value === initialData[selectField.name])?.label || ""
-  : "";
-
-// state label untuk select
-const [selectedLabel, setSelectedLabel] = useState(initialSelectLabel);
 
 
-const handleChange = (name, value) => {
-  // update ke FormData saat submit
-  const hiddenInput = document.querySelector(`input[name="${name}"]`);
-  if (hiddenInput) {
-    hiddenInput.value = value;
-  } else {
-    // bikin hidden input kalau belum ada
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = name;
-    input.value = value;
-    document.getElementById("addForm").appendChild(input);
-  }
-};
+  const handleChange = (name, value) => {
+    // update ke FormData saat submit
+    const hiddenInput = document.querySelector(`input[name="${name}"]`);
+    if (hiddenInput) {
+      hiddenInput.value = value;
+    } else {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      document.getElementById("addForm").appendChild(input);
+    }
+  };
 
+  // main
   return (
     <div
       className="flex h-screen w-screen justify-center items-center p-4"
@@ -288,44 +308,48 @@ const handleChange = (name, value) => {
                     <div className="relative w-full max-w-[600px]">
                       {/* Trigger */}
                       <div
-                        onClick={() => setOpen(!open)}
+                        onClick={() => toggleDropdown(field.name)}
                         className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
                       >
-                        {selectedLabel || `Pilih ${field.label}`}
+                        {selectedLabels[field.name] || `Pilih ${field.label}`}
                         <img
                           src={arrow}
                           alt="arrow"
                           className={`w-4 h-4 ml-2 transition-transform duration-200 ${
-                            open ? "rotate-180" : "rotate-0"
+                            dropdownState[field.name] ? "rotate-180" : "rotate-0"
                           }`}
                         />
                       </div>
 
-
-                      {open && (
+                      {dropdownState[field.name] && (
                         <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
-                          {/* 🔍 Input Search */}
+                          {/* Input Search */}
                           <input
                             type="text"
                             placeholder={`Cari ${field.label}...`}
                             className="w-full px-3 py-2 border-b text-sm focus:outline-none"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={searchQueries[field.name] || ""}
+                            onChange={(e) => handleSearchChange(field.name, e.target.value)}
                           />
 
                           <ul className="max-h-48 overflow-y-auto">
                             {field.options
                               .filter((opt) =>
-                                opt.label.toLowerCase().includes(searchQuery.toLowerCase())
+                                opt.label
+                                  .toLowerCase()
+                                  .includes((searchQueries[field.name] || "").toLowerCase())
                               )
                               .map((opt) => (
                                 <li
                                   key={opt.value}
                                   onClick={() => {
                                     handleChange(field.name, opt.value);
-                                    setSelectedLabel(opt.label);
-                                    setOpen(false);
-                                    setSearchQuery(""); // reset setelah pilih
+                                    setSelectedLabels((prev) => ({ ...prev, [field.name]: opt.label }));
+                                    setDropdownState((prev) => ({
+                                      ...prev,
+                                      [field.name]: false,
+                                    }));
+                                    handleSearchChange(field.name, "");
                                   }}
                                   className="px-4 py-2 cursor-pointer hover:bg-orange-50"
                                 >
@@ -472,13 +496,13 @@ const handleChange = (name, value) => {
                             name: "preventOverflow",
                             options: {
                               altAxis: true,
-                              tether: false, // biar popper bisa lepas dari container
+                              tether: false, 
                             },
                           },
                           {
                             name: "offset",
                             options: {
-                              offset: [0, 10], // jarak dari input
+                              offset: [0, 10], 
                             },
                           },
                         ]}
@@ -510,7 +534,7 @@ const handleChange = (name, value) => {
                           </div>
                         )}
                       />
-                      {/* hidden input supaya ikut ke FormData */}
+                      {/* hidden input */}
                       <input
                         type="hidden"
                         name={field.name}

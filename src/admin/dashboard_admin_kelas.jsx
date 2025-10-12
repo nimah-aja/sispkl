@@ -8,6 +8,7 @@ import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
+import Pagination from "./components/Pagination"; 
 
 // import request
 import { getKelas } from "../utils/services/admin/get_kelas";
@@ -31,9 +32,10 @@ export default function KelasPage() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [jurusanList, setJurusanList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10 ; 
 
-  const user =
-    JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const user =JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   useEffect(() => {
     const fetchKelas = async () => {
@@ -60,6 +62,7 @@ export default function KelasPage() {
     fetchJurusan();
   }, []);
 
+  // ambil data awal
   const fetchData = async () => {
     setLoading(true);
     const data = await getKelas();
@@ -71,7 +74,12 @@ export default function KelasPage() {
     fetchData();
   }, []);
 
-  // ===== FILTERING =====
+  // reset halaman
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterKelas]);
+
+  // filter
   const jurusanOptions = [
     ...new Set(
       kelas
@@ -82,7 +90,8 @@ export default function KelasPage() {
         .filter(Boolean)
     ),
   ];
-
+  
+  // Filter data
   const filteredData = kelas.filter((k) => {
     const s = search.toLowerCase();
 
@@ -99,11 +108,28 @@ export default function KelasPage() {
     return matchSearch && matchFilter;
   });
 
-  // ===== TABLE COLUMNS =====
+  // Nomor urut 
+  const dataWithNo = filteredData.map((item, i) => {
+    const jurusan = jurusanList.find((j) => j.id === item.jurusan_id);
+    return {
+      ...item,
+      no: i + 1,
+      jurusan_nama: jurusan ? jurusan.nama : "-",
+    };
+  });
+
+  // Pagination 
+  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
+  const paginatedData = dataWithNo.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // kolom tabel
   const columns = [
     {
       label: "Jurusan",
-      key: "jurusan_id",
+      key: "jurusan_nama",
       render: (_, row) => {
         const jurusan = jurusanList.find((j) => j.id === row.jurusan_id);
         return jurusan ? jurusan.nama : "-";
@@ -112,13 +138,8 @@ export default function KelasPage() {
     { label: "Nama Kelas", key: "nama" },
   ];
 
-  const dataWithNo = filteredData.map((item, i) => ({
-    ...item,
-    no: i + 1,
-  }));
-
-  // ===== INPUT FIELDS =====
-  const inputFieldsAdd = [
+  // kolom input
+    const inputFields = [
     {
       label: "Jurusan",
       name: "jurusan_id",
@@ -129,17 +150,18 @@ export default function KelasPage() {
     { label: "Nama Kelas", name: "nama", width: "full", minLength: 2 },
   ];
 
-  // ===== ADD FORM =====
+  // form add
   if (mode === "add") {
     return (
       <Add
         title="Tambah Data Kelas"
-        fields={inputFieldsAdd}
+        fields={inputFields}
         image={guruImg}
         existingData={kelas}
         onSubmit={async (formData, setFieldErrors) => {
           const newKelas = Object.fromEntries(formData);
-
+          
+          // validasi karakter
           if (!newKelas.nama || newKelas.nama.length < 2) {
             setFieldErrors({
               nama: "Nama kelas minimal 2 karakter.",
@@ -188,26 +210,28 @@ export default function KelasPage() {
     );
   }
 
-  // ===== EDIT FORM =====
+  // form edit
   if (mode === "edit" && selectedRow) {
     return (
       <Add
         title="Ubah Data Kelas"
-        fields={[
-          {
-            label: "Nama Kelas",
-            name: "nama",
-            width: "full",
-            minLength: 2,
-          },
-        ]}
+        fields={inputFields}
         image={editGrafik}
         existingData={kelas.filter((k) => k.id !== selectedRow.id)}
         initialData={selectedRow}
         onSubmit={async (formData, setFieldErrors) => {
           const formObj = Object.fromEntries(formData);
-          const updatedKelas = { nama: formObj.nama };
 
+          // Ambil nama dan jurusan, tapi biarkan jurusan pakai data lama kalau kosong
+          const updatedKelas = {
+            nama: formObj.nama,
+            jurusan_id: parseInt(
+              formObj.jurusan_id || selectedRow.jurusan_id,
+              10
+            ),
+          };
+
+          // validasi nama aja (biar tetap aman)
           if (!updatedKelas.nama || updatedKelas.nama.length < 2) {
             setFieldErrors({
               nama: "Nama kelas minimal 2 karakter.",
@@ -231,6 +255,7 @@ export default function KelasPage() {
             toast.error(apiError?.message || "Gagal memperbarui data");
           }
         }}
+
         onCancel={() => setMode("list")}
         containerStyle={{ maxHeight: "600px" }}
         backgroundStyle={{ backgroundColor: "#641E21" }}
@@ -238,7 +263,7 @@ export default function KelasPage() {
     );
   }
 
-  // ===== MAIN PAGE =====
+  // main
   return (
     <div className="bg-white min-h-screen w-full">
       <Header user={user} />
@@ -272,20 +297,28 @@ export default function KelasPage() {
             {loading ? (
               <p className="text-white">Loading data...</p>
             ) : (
-              <Table
-                columns={columns}
-                data={dataWithNo}
-                showEdit
-                showDelete
-                onEdit={(row) => {
-                  setSelectedRow(row);
-                  setMode("edit");
-                }}
-                onDelete={(row) => {
-                  setSelectedRow(row);
-                  setIsDeleteOpen(true);
-                }}
-              />
+              <>
+                <Table
+                  columns={columns}
+                  data={paginatedData} 
+                  showEdit
+                  showDelete
+                  onEdit={(row) => {
+                    setSelectedRow(row);
+                    setMode("edit");
+                  }}
+                  onDelete={(row) => {
+                    setSelectedRow(row);
+                    setIsDeleteOpen(true);
+                  }}
+                />
+
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
             )}
           </div>
         </main>

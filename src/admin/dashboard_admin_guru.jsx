@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
-// components
+// import components
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
+import Pagination from "./components/Pagination"; 
 
-// services
+// import request
 import { getGuru } from "../utils/services/admin/get_guru";
 import { createGuru } from "../utils/services/admin/add_guru";
 import { deleteGuru } from "../utils/services/admin/delete_guru";
 import { updateGuru } from "../utils/services/admin/edit_guru";
 
-// assets
+// import assets
 import guruImg from "../assets/addSidebar.svg";
 import editGrafik from "../assets/editGrafik.svg";
 import deleteImg from "../assets/deleteGrafik.svg";
@@ -29,9 +30,12 @@ export default function GuruPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; 
   
   const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
+  // ambil data awal
   const fetchData = async () => {
     setLoading(true);
     const data = await getGuru();
@@ -53,13 +57,19 @@ export default function GuruPage() {
     return { ...item, roles: roles.length ? roles : ["Guru"] };
   });
 
+  // reset halaman 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterGuru]);
+
+  // filter
   const roleOptions = [
     "Kapro",
     "Koordinator",
     "Pembimbing",
     "Wali Kelas",
   ];
-
+  
   // filter data
   const filteredData = mappedData.filter((k) => {
     const s = search.toLowerCase();
@@ -75,12 +85,22 @@ export default function GuruPage() {
     return matchSearch && matchFilter;
   });
 
-  // table
+  // Nomor urut 
+const dataWithNo = filteredData.map((item, i) => ({ ...item, no: i + 1 }));
+
+// Pagination 
+const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
+const paginatedData = dataWithNo.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+);
+
+// table
   const columns = [
-    { label: "Kode Guru", key: "kode_guru" },
+    { label: "Kode Guru", key: "kode_guru", sortable: false },
     { label: "Nama Guru", key: "nama" },
-    { label: "NIP", key: "nip" },
-    { label: "No. Telp", key: "no_telp" },
+    { label: "NIP", key: "nip", sortable: false },
+    { label: "No. Telp", key: "no_telp", sortable: false },
     { label: "Role", key: "roles", type: "select" },
   ];
 
@@ -126,32 +146,31 @@ export default function GuruPage() {
 
   // validasi semua field termasuk NIP
   const validateGuru = (data, isEdit = false) => {
-  const errors = {};
+    const errors = {};
 
-  if (!data.kode_guru || data.kode_guru.length < 3)
-    errors.kode_guru = "Kode Guru minimal 3 karakter";
+    if (!data.kode_guru || data.kode_guru.length < 3)
+      errors.kode_guru = "Kode Guru minimal 3 karakter";
 
-  if (!data.nama || data.nama.length < 2)
-    errors.nama = "Nama minimal 2 karakter";
+    if (!data.nama || data.nama.length < 2)
+      errors.nama = "Nama minimal 2 karakter";
 
-  if (!data.no_telp || data.no_telp.length < 10)
-    errors.no_telp = "No Telp minimal 10 karakter";
+    if (!data.no_telp || data.no_telp.length < 10)
+      errors.no_telp = "No Telp minimal 10 karakter";
 
-  if (!isEdit) {
-    if (!data.password || data.password.length < 6)
-      errors.password = "Password minimal 6 karakter";
-  }
+    if (!isEdit) {
+      if (!data.password || data.password.length < 6)
+        errors.password = "Password minimal 6 karakter";
+    }
 
-  const nipLen = (data.nip || "").length;
-  if (nipLen !== 18) {
-    errors.nip = `NIP harus 18 digit (sekarang ${nipLen})`;
-  }
+    const nipLen = (data.nip || "").length;
+    if (nipLen !== 18) {
+      errors.nip = `NIP harus 18 digit (sekarang ${nipLen})`;
+    }
 
-  return errors;
-};
+    return errors;
+  };
 
-
-  // FORM ADD
+  // form add
   if (mode === "add") {
     return (
       <Add
@@ -214,7 +233,7 @@ export default function GuruPage() {
     );
   }
 
-  // FORM EDIT
+  // form edit
   if (mode === "edit" && selectedRow) {
     return (
       <Add
@@ -272,7 +291,7 @@ export default function GuruPage() {
     );
   }
 
-  // LIST TABLE
+  // main
   return (
     <div className="bg-white min-h-screen w-full">
       <Header user={user}/>
@@ -306,26 +325,29 @@ export default function GuruPage() {
             {loading ? (
               <p className="text-white">Loading data...</p>
             ) : (
-              <Table
-                columns={columns}
-                data={filteredData}
-                showMore
-                onMoreClick={(row) => {
-                  const original = guru.find((g) => g.id === row.id);
-                  setSelectedRow(original);
-                  setMode("edit");
-                }}
-                onEdit={(row) => {
-                  const original = guru.find((g) => g.id === row.id);
-                  setSelectedRow(original);
-                  setMode("edit");
-                }}
-                onDelete={(row) => {
-                  setSelectedRow(row);
-                  setIsDeleteOpen(true);
-                }}
-              />
+              <>
+                <Table
+                  columns={columns}
+                  data={paginatedData}
+                  showEdit
+                  showDelete
+                  onEdit={(row) => {
+                    const original = guru.find((g) => g.id === row.id);
+                    setSelectedRow(original);
+                    setMode("edit");
+                  }}
+                  onDelete={(row) => {
+                    setSelectedRow(row);
+                    setIsDeleteOpen(true);
+                  }}
+                />
 
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
             )}
           </div>
         </main>

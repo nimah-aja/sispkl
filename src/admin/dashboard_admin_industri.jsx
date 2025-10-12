@@ -8,6 +8,7 @@ import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
+import Pagination from "./components/Pagination"; 
 
 // import request
 import { getIndustri } from "../utils/services/admin/get_industri";
@@ -31,6 +32,9 @@ export default function IndustriPage() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [jurusanList, setJurusanList] = useState([]);
+  const [filterBidang, setFilterBidang] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,21 +43,21 @@ export default function IndustriPage() {
       setIndustri(data);
       setLoading(false);
     };
-
+  
     const fetchJurusan = async () => {
       try {
         const jurusanData = await getJurusan();
-        setJurusanList(jurusanData); // ini array langsung
+        setJurusanList(jurusanData); 
       } catch (err) {
         console.error("Gagal ambil data jurusan:", err);
       }
     };
-
+  
     fetchData();
     fetchJurusan();
   }, []);
-
-
+  
+  
   // ambil data awal
   const fetchData = async () => {
     setLoading(true);
@@ -61,47 +65,10 @@ export default function IndustriPage() {
     setIndustri(data);
     setLoading(false);
   };
-
+  
   useEffect(() => {
-    fetchData();
+  fetchData();
   }, []);
-
-  // filter
-  // Ambil daftar jurusan unik yang dipakai oleh industri
-const jurusanOptions = [
-  ...new Set(
-    industri
-      .map((b) => {
-        const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
-        return jurusan ? jurusan.nama : null;
-      })
-      .filter(Boolean)
-  ),
-];
-
-// Filter data berdasarkan jurusan (nama), bukan id
-const filteredData = industri.filter((b) => {
-  const s = search.toLowerCase();
-
-  const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
-  const jurusanNama = jurusan ? jurusan.nama.toLowerCase() : "";
-
-  const matchSearch =
-    b.nama.toLowerCase().includes(s) ||
-    b.alamat.toLowerCase().includes(s) ||
-    b.bidang.toLowerCase().includes(s) ||
-    b.email.toLowerCase().includes(s) ||
-    b.no_telp.toLowerCase().includes(s) ||
-    b.pic.toLowerCase().includes(s) || 
-    jurusanNama.includes(s);
-
-  const matchFilter = filterIndustri
-    ? jurusanNama === filterIndustri.toLowerCase()
-    : true;
-
-  return matchSearch && matchFilter;
-});
-
 
   // validasi karakter
   const validateIndustri = (data) => {
@@ -119,26 +86,90 @@ const filteredData = industri.filter((b) => {
     return errors;
   };
 
+   // reset halaman 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterIndustri, filterBidang]);
+
+  // filter
+  const jurusanOptions = [
+    ...new Set(
+      industri
+        .map((b) => {
+          const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
+          return jurusan ? jurusan.nama : null;
+        })
+        .filter(Boolean)
+    ),
+  ];
+
+  const bidangOptions = [
+    ...new Set(industri.map((b) => b.bidang).filter(Boolean)),
+  ];
+
+  // Filter data berdasarkan jurusan (nama), bukan id
+  const filteredData = industri.filter((b) => {
+    const s = search.toLowerCase();
+
+    const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
+    const jurusanNama = jurusan ? jurusan.nama.toLowerCase() : "";
+
+    const matchSearch =
+      b.nama.toLowerCase().includes(s) ||
+      b.alamat.toLowerCase().includes(s) ||
+      b.bidang.toLowerCase().includes(s) ||
+      b.email.toLowerCase().includes(s) ||
+      b.no_telp.toLowerCase().includes(s) ||
+      b.pic.toLowerCase().includes(s) || 
+      jurusanNama.includes(s);
+
+    const matchFilterJurusan = filterIndustri
+    ? jurusanNama === filterIndustri.toLowerCase()
+    : true;
+
+    const matchFilterBidang = filterBidang
+      ? b.bidang.toLowerCase() === filterBidang.toLowerCase()
+      : true;
+
+    return matchSearch && matchFilterJurusan && matchFilterBidang;
+  });
+
+  // Nomor urut 
+  const dataWithNo = filteredData.map((item, i) => {
+      const jurusan = jurusanList.find((j) => j.id === item.jurusan_id);
+      return {
+        ...item,
+        no: i + 1,
+        jurusan_nama: jurusan ? jurusan.nama : "-", 
+      };
+    });
+
+  // Pagination 
+  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
+  const paginatedData = dataWithNo.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // kolom tabel
   const columns = [
     { label: "Nama Industri", key: "nama" },
     { label: "Alamat", key: "alamat" },
     { label: "Bidang", key: "bidang" },
     { label: "Email", key: "email" },
-    { label: "No. Telp", key: "no_telp" },
+    { label: "No. Telp", key: "no_telp", sortable: false },
     { label: "Pembimbing", key: "pic" },
-    { label: "No. Telp Pembimbing", key: "pic_telp" },
+    { label: "No. Telp Pembimbing", key: "pic_telp", sortable: false },
     {
       label: "Jurusan",
-      key: "jurusan_id",
+      key: "jurusan_nama", 
       render: (_, row) => {
         const jurusan = jurusanList.find((j) => j.id === row.jurusan_id);
         return jurusan ? jurusan.nama : "-";
       },
-    }
-  ];
+    },
 
-  const dataWithNo = filteredData.map((item, i) => ({ ...item, no: i + 1 }));
+  ];
 
   // kolom input
   const inputFields = [
@@ -160,7 +191,6 @@ const filteredData = industri.filter((b) => {
       })),
     },
   ];
-
 
   // form add
   if (mode === "add") {
@@ -239,7 +269,7 @@ const filteredData = industri.filter((b) => {
   //form edit
   if (mode === "edit" && selectedRow) {
     return (
-      <Add
+    <Add
         title="Ubah Data Industri"
         fields={inputFields}
         image={editGrafik}
@@ -311,6 +341,7 @@ const filteredData = industri.filter((b) => {
     );
   }
 
+  // main
   return (
     <div className="bg-white min-h-screen w-full">
       <Header />
@@ -335,33 +366,43 @@ const filteredData = industri.filter((b) => {
                 options: jurusanOptions,
                 onChange: setFilterIndustri,
               },
+              {
+                label: "Bidang",
+                value: filterBidang,
+                options: bidangOptions,
+                onChange: setFilterBidang,
+              },
             ]}
             onAddClick={() => setMode("add")}
             className="mb-4 w-full"
           />
 
-
           <div className="mt-4">
             {loading ? (
               <p className="text-white">Loading data...</p>
             ) : (
-              <Table
-                columns={columns}
-                data={dataWithNo}
-                showMore
-                onMoreClick={(row) => {
-                  setSelectedRow(row);
-                  setMode("edit");
-                }}
-                onEdit={(row) => {
-                  setSelectedRow(row);
-                  setMode("edit");
-                }}
-                onDelete={(row) => {
-                  setSelectedRow(row);
-                  setIsDeleteOpen(true);
-                }}
-              />
+              <>
+                <Table
+                  columns={columns}
+                  data={paginatedData}
+                  showEdit
+                  showDelete
+                  onEdit={(row) => {
+                    setSelectedRow(row);
+                    setMode("edit");
+                  }}
+                  onDelete={(row) => {
+                    setSelectedRow(row);
+                    setIsDeleteOpen(true);
+                  }}
+                />
+
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
             )}
           </div>
         </main>
