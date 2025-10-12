@@ -26,7 +26,7 @@ export default function SearchBar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-
+  // main
   return (
     <div ref={wrapperRef}  className={`flex flex-wrap items-center gap-3 ${className}`}>
       {/* Input Search */}
@@ -72,7 +72,6 @@ export default function SearchBar({
               className={`w-4 h-4 ml-2 transition-transform ${openIndex === i ? "rotate-180" : ""}`}
             />
           </div>
-
 
           {/* Dropdown */}
           {openIndex === i && (

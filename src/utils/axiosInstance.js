@@ -3,7 +3,7 @@ import { getAccessToken, refreshAccessToken, setTokens, removeTokens } from "./a
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 10000,
+  timeout: 90000,
 });
 
 // Pas request: tambah Authorization header
@@ -31,8 +31,19 @@ instance.interceptors.response.use(
         originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
         return instance(originalRequest);
       } else {
-        removeTokens();            // hapus token lama
-        window.location.href = "/"; // redirect ke login
+        removeTokens();
+        import.meta.env.MODE === "development"
+          ? console.log("Redirect ke login (no reload)")
+          : null;
+
+        // Gunakan navigation SPA (React Router) kalau ada
+        if (window.reactNavigate) {
+          window.reactNavigate("/"); // nanti kita inject
+        } else {
+          // fallback kalau belum siap
+          console.warn("navigate belum tersedia, fallback reload");
+          window.location.assign("/"); // pakai assign biar bisa ditangani
+        }
       }
     }
 

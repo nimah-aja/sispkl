@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MoreVertical } from "lucide-react";
+import { ArrowUp, ArrowDown } from "lucide-react"; 
 
-// import asset
+// import assets
 import trash from "../../assets/trash.svg";
 import edit from "../../assets/edit.svg";
 import arrow from "../../assets/arrow.svg";
@@ -19,12 +20,11 @@ export default function Table({
 }) {
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
-
   const [openMultiIndex, setOpenMultiIndex] = useState(null);
   const [multiPos, setMultiPos] = useState({ x: 0, y: 0 });
-
   const menuRef = useRef(null);
   const multiRef = useRef(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   // tutup menu saat klik di luar
   useEffect(() => {
@@ -37,9 +37,7 @@ export default function Table({
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleMenuClick = (e, i) => {
@@ -54,21 +52,88 @@ export default function Table({
     setOpenMultiIndex(openMultiIndex === `${i}-${idx}` ? null : `${i}-${idx}`);
   };
 
+  // handle klik header untuk sorting
+  const handleSort = (key, isNumeric) => {
+    if (isNumeric) return; // skip kolom angka
+    setSortConfig((prev) => {
+      if (prev.key === key && prev.direction === "asc") {
+        return { key, direction: "desc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
+  // fungsi sorting data
+  const sortedData = React.useMemo(() => {
+    if (!sortConfig.key) return data;
+
+    return [...data].sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+
+      // Dorong "-" atau kosong ke bawah
+      if ((aVal === "-" || aVal === "" || aVal == null) && (bVal !== "-" && bVal !== "" && bVal != null))
+        return 1;
+      if ((bVal === "-" || bVal === "" || bVal == null) && (aVal !== "-" && aVal !== "" && aVal != null))
+        return -1;
+
+      // Sorting angka
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+      }
+
+      // Sorting string biasa
+      return sortConfig.direction === "asc"
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal));
+    });
+  }, [data, sortConfig]);
+
+  const isNumericColumn = (key, data) => typeof data?.[0]?.[key] === "number";
+
+  // main
   return (
     <div
       className={`rounded-xl mt-5 border-2 border-[#E1D6C4] ${className}`}
       style={{ maxHeight: "400px", overflowY: "auto" }}
     >
       <table className="min-w-full border-collapse">
-        {/* table header */}
+        {/* header */}
         <thead className="bg-white text-black border-b sticky top-0 z-10">
           <tr>
             {showMore && <th className="py-3 px-0 text-center bg-white"></th>}
-            {columns.map((col, idx) => (
-              <th key={idx} className="py-3 px-4 text-center bg-white">
-                {col.label}
-              </th>
-            ))}
+            {columns.map((col, idx) => {
+              const numeric = isNumericColumn(col.key, data);
+              const isActive = sortConfig.key === col.key;
+              const direction = sortConfig.direction;
+
+              return (
+                <th
+                  key={idx}
+                  onClick={() =>
+                    col.sortable !== false && !numeric && handleSort(col.key, numeric)
+                  } // hanya bisa sort kalau sortable !== false
+                  className={`py-3 px-4 text-center bg-white ${
+                    col.sortable === false ? "cursor-default" : "cursor-pointer select-none"
+                  }`}
+                >
+
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{col.label}</span>
+                    {!numeric && (
+                      <>
+                        {isActive && direction === "asc" && (
+                          <ArrowUp size={14} />
+                        )}
+                        {isActive && direction === "desc" && (
+                          <ArrowDown size={14} />
+                        )}
+                      </>
+                    )}
+                  </div>
+                </th>
+              );
+            })}
             {showEdit && <th className="py-3 px-4 text-center bg-white">Ubah</th>}
             {showDelete && (
               <th className="py-3 px-4 text-center bg-white">Hapus</th>
@@ -76,15 +141,15 @@ export default function Table({
           </tr>
         </thead>
 
-        {/* table body */}
+        {/* body */}
         <tbody>
-          {data.length > 0 ? (
-            data.map((row, i) => (
+          {sortedData.length > 0 ? (
+            sortedData.map((row, i) => (
               <tr
                 key={row.id || i}
                 className="bg-white border-b hover:bg-orange-50 transition"
               >
-                {/* Titik tiga */}
+                {/* titik tiga */}
                 {showMore && (
                   <td className="py-3 px-0 text-center relative">
                     <div
@@ -131,13 +196,9 @@ export default function Table({
                     </div>
                   </td>
                 )}
-
                 {showDelete && (
                   <td className="py-3 px-4 text-center">
-                    <div
-                      onClick={() => onDelete(row)}
-                      className="hover:opacity-70"
-                    >
+                    <div onClick={() => onDelete(row)} className="hover:opacity-70">
                       <img src={trash} alt="Hapus" className="w-6 h-6 mx-auto" />
                     </div>
                   </td>
@@ -162,14 +223,13 @@ export default function Table({
         </tbody>
       </table>
 
-      {/* Dropdown titik tiga */}
+      {/* dropdown titik tiga */}
       {openMenuIndex !== null && (
         <div
           ref={menuRef}
           className="fixed bg-white shadow-md rounded-md border border-[#E1D6C4] z-50 min-w-[150px]"
           style={{ top: menuPos.y, left: menuPos.x }}
         >
-          {/* segitiga pointer */}
           <div
             className="absolute top-3 -left-2 w-0 h-0 
               border-t-4 border-b-4 border-r-4 
@@ -198,14 +258,13 @@ export default function Table({
         </div>
       )}
 
-      {/* Dropdown multi select */}
+      {/* dropdown multi select */}
       {openMultiIndex !== null && (
         <div
           ref={multiRef}
           className="fixed bg-white border-2 border-[#E1D6C4] rounded-lg shadow-md z-50 max-h-48 overflow-y-auto min-w-[160px]"
           style={{ top: multiPos.y, left: multiPos.x }}
         >
-          {/* segitiga pointer */}
           <div
             className="absolute -top-2 left-4 w-0 h-0
               border-l-4 border-r-4 border-b-4

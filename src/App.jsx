@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import SplashScreen from "./SplashScreen";
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import PKLManagementSystem from "./login/Login"; 
 import DashboardAdmin from "./admin/dashboard_admin"; 
 import DashboardAdminJurusan from "./admin/dashboard_admin_jurusan"; 
@@ -10,61 +9,46 @@ import DashboardAdminGuru from "./admin/dashboard_admin_guru";
 import DashboardAdminIndustri from "./admin/dashboard_admin_industri"; 
 import { Toaster } from "react-hot-toast";
 
+function AppContent() {
+  const navigate = useNavigate();
 
-function App() {
-  // const [showSplash, setShowSplash] = useState(true);
-
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     setShowSplash(false);
-  //   }, 2000); // tampil 2 detik
-  //   return () => clearTimeout(timer);
-  // }, []);
-
-  // if (showSplash) {
-  //   return <SplashScreen />;
-  // }
+  useEffect(() => {
+    window.reactNavigate = navigate;
+  }, [navigate]);
 
   return (
-    <Router>
-      <Toaster position="bottom-right" reverseOrder={false} />
-
-      <Routes>
-        {/* Login page */}
-        <Route path="/" element={<PKLManagementSystem />} />
-
-        {/* Dashboard admin */}
-        <Route path="/admin" element={<DashboardAdmin />} />
-
-        {/* Dashboard admin jurusan */}
-        <Route path="/admin/jurusan" element={<DashboardAdminJurusan />} />
-
-        {/* Dashboard admin kelas */}
-        <Route path="/admin/kelas" element={<DashboardAdminKelas/>} />
-
-         {/* Dashboard admin siswa */}
-        <Route path="/admin/siswa" element={<DashboardAdminSiswa/>} />
-
-        {/* Dashboard admin guru */}
-        <Route path="/admin/guru" element={<DashboardAdminGuru/>} />
-
-         {/* Dashboard admin industri */}
-        <Route path="/admin/industri" element={<DashboardAdminIndustri/>} />
-      </Routes>
+    <>
       <Toaster
         position="bottom-right"
         reverseOrder={false}
         toastOptions={{
-          className: 'my-slide-toast', 
           style: {
             background: '#f9f9f9ff',
             color: '#35a71bff',
             border: `2px solid #35a71bff`,
             borderRadius: '8px',
-            padding: '8px 16px'
+            padding: '8px 16px',
           },
         }}
       />
+
+      <Routes>
+        <Route path="/" element={<PKLManagementSystem />} />
+        <Route path="/admin" element={<DashboardAdmin />} />
+        <Route path="/admin/jurusan" element={<DashboardAdminJurusan />} />
+        <Route path="/admin/kelas" element={<DashboardAdminKelas />} />
+        <Route path="/admin/siswa" element={<DashboardAdminSiswa />} />
+        <Route path="/admin/guru" element={<DashboardAdminGuru />} />
+        <Route path="/admin/industri" element={<DashboardAdminIndustri />} />
+      </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

@@ -45,7 +45,7 @@ export default function MouseRippleButton({
           key={ripple.id}
           className="absolute rounded-full opacity-50 animate-ripple"
           style={{
-            backgroundColor: "#E1D6C4", // 🌟 warna ripple
+            backgroundColor: "#E1D6C4", 
             left: ripple.x - ripple.size / 2,
             top: ripple.y - ripple.size / 2,
             width: ripple.size,

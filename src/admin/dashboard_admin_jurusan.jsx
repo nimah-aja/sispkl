@@ -8,6 +8,7 @@ import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
+import Pagination from "./components/Pagination";
 
 // import request
 import { getJurusan } from "../utils/services/admin/get_jurusan";
@@ -29,7 +30,9 @@ export default function JurusanPage() {
   const [mode, setMode] = useState("list");
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; 
+
   const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   // ambil data awal
@@ -44,17 +47,6 @@ export default function JurusanPage() {
     fetchData();
   }, []);
 
-  // filter
-  const kodeOptions = [...new Set(jurusan.map((j) => j.kode))];
-
-  const filteredData = jurusan.filter((j) => {
-    const s = search.toLowerCase();
-    const matchSearch =
-      j.nama.toLowerCase().includes(s) || j.kode.toLowerCase().includes(s);
-    const matchFilter = filterJurusan ? j.kode === filterJurusan : true;
-    return matchSearch && matchFilter;
-  });
-
   // validasi karakter
   const validateJurusan = (data) => {
     const errors = {};
@@ -65,14 +57,38 @@ export default function JurusanPage() {
     return errors;
   };
 
+  // reset halaman
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterJurusan]);
+
+  // filter
+  const kodeOptions = [...new Set(jurusan.map((j) => j.kode))];
+  
+  // Filter data 
+  const filteredData = jurusan.filter((j) => {
+    const s = search.toLowerCase();
+    const matchSearch =
+      j.nama.toLowerCase().includes(s) || j.kode.toLowerCase().includes(s);
+    const matchFilter = filterJurusan ? j.kode === filterJurusan : true;
+    return matchSearch && matchFilter;
+  });
+
+  // Nomor urut
+  const dataWithNo = filteredData.map((item, i) => ({ ...item, no: i + 1 }));
+
+  // Pagination
+  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
+  const paginatedData = dataWithNo.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // kolom tabel
   const columns = [
     { label: "Kode Jurusan", key: "kode" },
     { label: "Nama Jurusan", key: "nama" }
   ];
-
-  const dataWithNo = filteredData.map((item, i) => ({ ...item, no: i + 1 }));
 
   // kolom input
   const inputFields = [
@@ -170,6 +186,7 @@ export default function JurusanPage() {
     );
   }
 
+  // main
   return (
     <div className="bg-white min-h-screen w-full">
       <Header user={user}/>
@@ -189,7 +206,7 @@ export default function JurusanPage() {
             placeholder="Pencarian"
             filters={[
               {
-                label: "Jurusan",
+                label: "Kode Jurusan",
                 value: filterJurusan,
                 options: kodeOptions,
                 onChange: setFilterJurusan,
@@ -203,20 +220,30 @@ export default function JurusanPage() {
             {loading ? (
               <p className="text-white">Loading data...</p>
             ) : (
-              <Table
-                columns={columns}
-                data={dataWithNo}
-                showEdit
-                showDelete
-                onEdit={(row) => {
-                  setSelectedRow(row);
-                  setMode("edit");
-                }}
-                onDelete={(row) => {
-                  setSelectedRow(row);
-                  setIsDeleteOpen(true);
-                }}
-              />
+              <>
+                <Table
+                  columns={columns}
+                  data={paginatedData}
+                  showEdit
+                  showDelete
+                  onEdit={(row) => {
+                    setSelectedRow(row);
+                    setMode("edit");
+                  }}
+                  onDelete={(row) => {
+                    setSelectedRow(row);
+                    setIsDeleteOpen(true);
+                  }}
+                />
+
+                <div className="flex justify-center mt-4">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              </>
             )}
           </div>
         </main>

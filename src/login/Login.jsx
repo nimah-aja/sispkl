@@ -137,6 +137,13 @@ export default function PKLManagementSystem() {
   }
 };
 
+// auto hapus pesan error setelah ... durasi
+useEffect(() => {
+  if (error) {
+    const timer = setTimeout(() => setError(""), 5000);
+    return () => clearTimeout(timer);
+  }
+}, [error]);
 
   return (
     <div className="h-screen w-screen flex overflow-hidden">
@@ -156,7 +163,6 @@ export default function PKLManagementSystem() {
           <img src={vector} alt="Vector" className="absolute w-[45px] top-[40px] left-[130px] z-10" />
         </div>
       </div>
-
 
       {/*Sebelah kanan */}
       <div className="flex-1 bg-[#641E20] p-8 flex flex-col justify-center">
@@ -196,7 +202,6 @@ export default function PKLManagementSystem() {
               ))}
             </div>
           </div>
-          
 
           {/* Form login */}
           <form className="space-y-4" onSubmit={handleLogin}>
@@ -268,7 +273,6 @@ export default function PKLManagementSystem() {
           </form>
         </div>
       </div>
-
     
       {/* Toast notifikasi */}
       {toast.show && (

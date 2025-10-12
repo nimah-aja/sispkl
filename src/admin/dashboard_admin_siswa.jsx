@@ -8,6 +8,7 @@ import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
+import Pagination from "./components/Pagination"; 
 
 // import request
 import { getSiswa } from "../utils/services/admin/get_siswa";
@@ -33,6 +34,8 @@ export default function SiswaPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
   const [kelasList, setKelasList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; 
 
   useEffect(() => {
     const fetchKelas = async () => {
@@ -59,69 +62,62 @@ export default function SiswaPage() {
     fetchData();
   }, []);
 
+  // DD.MM.YYYY
+  const formatDateToDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr; // kalau bukan tanggal valid, balikin apa adanya
+    return d.toLocaleDateString("id-ID"); // otomatis jadi dd/mm/yyyy
+  };
+
+  // YYYY.MM.DD
+  const formatDateToYYYYMMDD = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return ""; // kalau invalid
+    return d.toISOString().split("T")[0]; // hasil: yyyy-MM-dd
+  };
+
+  // reset halaman
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterSiswa]);
+
   // filter
-  // filter
-const kelasOptions = [
-  ...new Set(
-    siswa
-      .map((k) => {
-        const kelas = kelasList.find((c) => c.id === k.kelas_id);
-        return kelas ? kelas.nama : null;
-      })
-      .filter(Boolean)
-  ),
-];
+  const kelasOptions = [
+    ...new Set(
+      siswa
+        .map((k) => {
+          const kelas = kelasList.find((c) => c.id === k.kelas_id);
+          return kelas ? kelas.nama : null;
+        })
+        .filter(Boolean)
+    ),
+  ];
+  
+  // Filter data berdasarkan nama kelas, bukan id
+  const filteredData = siswa.filter((k) => {
+    const s = search.toLowerCase();
 
-// Filter data berdasarkan nama kelas, bukan id
-const filteredData = siswa.filter((k) => {
-  const s = search.toLowerCase();
+    const kelas = kelasList.find((c) => c.id === k.kelas_id);
+    const kelasNama = kelas ? kelas.nama.toLowerCase() : "";
 
-  const kelas = kelasList.find((c) => c.id === k.kelas_id);
-  const kelasNama = kelas ? kelas.nama.toLowerCase() : "";
+    const matchSearch =
+      k.nama_lengkap.toLowerCase().includes(s) ||
+      k.nisn.toLowerCase().includes(s) ||
+      k.alamat.toLowerCase().includes(s) ||
+      k.no_telp.toLowerCase().includes(s) ||
+      k.tanggal_lahir.toString().includes(s) ||
+      kelasNama.includes(s);
 
-  const matchSearch =
-    k.nama_lengkap.toLowerCase().includes(s) ||
-    k.nisn.toLowerCase().includes(s) ||
-    k.alamat.toLowerCase().includes(s) ||
-    k.no_telp.toLowerCase().includes(s) ||
-    k.tanggal_lahir.toString().includes(s) ||
-    kelasNama.includes(s);
+    const matchFilter = filterSiswa
+      ? kelasNama === filterSiswa.toLowerCase()
+      : true;
 
-  const matchFilter = filterSiswa
-    ? kelasNama === filterSiswa.toLowerCase()
-    : true;
-
-  return matchSearch && matchFilter;
-});
-
-
-  // kolom untuk table
-  const columns = [
-  { label: "Kelas", key: "kelas_id" },
-  { label: "Nama Lengkap", key: "nama_lengkap" },
-  { label: "NISN", key: "nisn"},
-  { label: "Alamat", key: "alamat" },
-  { label: "No. Telepon", key: "no_telp" },
-  { label: "Tanggal Lahir", key: "tanggal_lahir" },
-];
-
-// DD.MM.YYYY
-const formatDateToDDMMYYYY = (dateStr) => {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr; // kalau bukan tanggal valid, balikin apa adanya
-  return d.toLocaleDateString("id-ID"); // otomatis jadi dd/mm/yyyy
-};
-
-// YYYY.MM.DD
-const formatDateToYYYYMMDD = (dateStr) => {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d)) return ""; // kalau invalid
-  return d.toISOString().split("T")[0]; // hasil: yyyy-MM-dd
-};
-
-
+    return matchSearch && matchFilter;
+  });
+    
+  // Nomor urut 
   const dataWithNo = filteredData.map((item, i) => {
     // cari nama kelas berdasarkan kelas_id
     const kelas = kelasList.find((k) => k.id === item.kelas_id);
@@ -133,9 +129,23 @@ const formatDateToYYYYMMDD = (dateStr) => {
       tanggal_lahir: formatDateToDDMMYYYY(item.tanggal_lahir), 
     };
   });
+  
+  // Pagination 
+  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
+  const paginatedData = dataWithNo.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-
-
+  // kolom untuk table
+  const columns = [
+    { label: "Kelas", key: "kelas_id" },
+    { label: "Nama Lengkap", key: "nama_lengkap" },
+    { label: "NISN", key: "nisn", sortable: false},
+    { label: "Alamat", key: "alamat" },
+    { label: "No. Telepon", key: "no_telp", sortable: false },
+    { label: "Tanggal Lahir", key: "tanggal_lahir", sortable: false },
+  ];
 
   // kolom input
   const inputFields = [
@@ -153,181 +163,181 @@ const formatDateToYYYYMMDD = (dateStr) => {
     { label: "Tanggal Lahir", name: "tanggal_lahir", width: "full", type: "date" },
   ];
 
+  // validasi nisn
+  const validateNISN = (nisn) => {
+    const len = (nisn || "").length;
+    if (len < 10) {
+      return `NISN harus 10 digit. Anda baru memasukkan ${len}, kurang ${10 - len}.`;
+    } else if (len > 10) {
+      return `NISN harus 10 digit. Anda memasukkan ${len}, kelebihan ${len - 10}.`;
+    } else {
+      return "NISN harus 10 digit angka.";
+    }
+  };
 
-// validasi nisn
-const validateNISN = (nisn) => {
-  const len = (nisn || "").length;
-  if (len < 10) {
-    return `NISN harus 10 digit. Anda baru memasukkan ${len}, kurang ${10 - len}.`;
-  } else if (len > 10) {
-    return `NISN harus 10 digit. Anda memasukkan ${len}, kelebihan ${len - 10}.`;
-  } else {
-    return "NISN harus 10 digit angka.";
+  // form add
+  if (mode === "add") {
+    return (
+      <Add
+        title="Tambah Data Siswa"
+        fields={inputFields}
+        image={guruImg}
+        existingData={siswa}
+        onSubmit={async (formData, setFieldErrors) => {
+          const newSiswa = Object.fromEntries(formData);
+
+          // validasi karakter
+          const errors = {};
+          if (!newSiswa.nama_lengkap || newSiswa.nama_lengkap.trim().length < 3) {
+            errors.nama_lengkap = "Nama lengkap minimal 3 karakter.";
+          }
+          if (!newSiswa.no_telp || newSiswa.no_telp.length < 10) {
+            errors.no_telp = "No. telepon minimal 10 karakter.";
+          }
+          if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+          }
+
+          // konversi kelas_id ke number
+          newSiswa.kelas_id = parseInt(newSiswa.kelas_id, 10);
+
+          try {
+            await createSiswa(newSiswa);
+            await fetchData();
+            toast.success("Data siswa berhasil ditambahkan");
+            setMode("list");
+          } catch (err) {
+            const apiError = err.response?.data?.error;
+            const rawMessage = apiError?.message || "";
+            const fieldErrors = {};
+
+            // validasi nisn
+            if (rawMessage.toLowerCase().includes("nisn must be exactly 10 digits")) {
+              fieldErrors.nisn = validateNISN(newSiswa.nisn);
+            }
+
+            // error khusus
+            if (rawMessage.toLowerCase().includes("kelas not found")) {
+              toast.error("Kelas ID tidak ada di sistem");
+              return;
+            }
+            if (/kelas_id must be positive/i.test(rawMessage.trim())) {
+              toast.error("Kelas ID harus angka positif");
+              return;
+            }
+            if (rawMessage.toLowerCase().includes("kelas with this nama already exists in the jurusan")) {
+              toast.error("Kelas dengan nama tersebut sudah ada");
+              return;
+            }
+            if (rawMessage.toLowerCase().includes("tanggal_lahir")) {
+              toast.error("tanggal lahir tidak valid");
+              return;
+            }
+
+            // fields errors
+            if (Object.keys(fieldErrors).length > 0) {
+              setFieldErrors(fieldErrors);
+              return;
+            }
+
+            // error lain
+            toast.error(apiError?.message || "Gagal menambahkan data");
+          }
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+      />
+    );
   }
-};
 
-// form add
-if (mode === "add") {
-  return (
-    <Add
-      title="Tambah Data Siswa"
-      fields={inputFields}
-      image={guruImg}
-      existingData={siswa}
-      onSubmit={async (formData, setFieldErrors) => {
-        const newSiswa = Object.fromEntries(formData);
+  // form edit
+  if (mode === "edit" && selectedRow) {
+    return (
+      // EDIT
+      <Add
+        title="Ubah Data Siswa"
+        fields={inputFields}
+        image={editGrafik}
+        existingData={siswa.filter((k) => k.id !== selectedRow.id)}
+        initialData={{
+          ...selectedRow,
+          tanggal_lahir: selectedRow.tanggal_lahir
+            ? formatDateToYYYYMMDD(selectedRow.tanggal_lahir)
+            : "",
+        }}
+        onSubmit={async (formData, setFieldErrors) => {
+          const updatedSiswa = Object.fromEntries(formData);
 
-        // validasi karakter
-        const errors = {};
-        if (!newSiswa.nama_lengkap || newSiswa.nama_lengkap.trim().length < 3) {
-          errors.nama_lengkap = "Nama lengkap minimal 3 karakter.";
-        }
-        if (!newSiswa.no_telp || newSiswa.no_telp.length < 10) {
-          errors.no_telp = "No. telepon minimal 10 karakter.";
-        }
-        if (Object.keys(errors).length > 0) {
-          setFieldErrors(errors);
-          return;
-        }
-
-        // konversi kelas_id ke number
-        newSiswa.kelas_id = parseInt(newSiswa.kelas_id, 10);
-
-        try {
-          await createSiswa(newSiswa);
-          await fetchData();
-          toast.success("Data siswa berhasil ditambahkan");
-          setMode("list");
-        } catch (err) {
-          const apiError = err.response?.data?.error;
-          const rawMessage = apiError?.message || "";
-          const fieldErrors = {};
-
-          // validasi nisn
-          if (rawMessage.toLowerCase().includes("nisn must be exactly 10 digits")) {
-            fieldErrors.nisn = validateNISN(newSiswa.nisn);
+          // validasi karakter
+          const errors = {};
+          if (!updatedSiswa.nama_lengkap || updatedSiswa.nama_lengkap.trim().length < 3) {
+            errors.nama_lengkap = "Nama lengkap minimal 3 karakter.";
           }
-
-          // error khusus
-          if (rawMessage.toLowerCase().includes("kelas not found")) {
-            toast.error("Kelas ID tidak ada di sistem");
-            return;
+          if (!updatedSiswa.no_telp || updatedSiswa.no_telp.length < 10) {
+            errors.no_telp = "No. telepon minimal 10 karakter.";
           }
-          if (/kelas_id must be positive/i.test(rawMessage.trim())) {
-            toast.error("Kelas ID harus angka positif");
-            return;
-          }
-          if (rawMessage.toLowerCase().includes("kelas with this nama already exists in the jurusan")) {
-            toast.error("Kelas dengan nama tersebut sudah ada");
-            return;
-          }
-          if (rawMessage.toLowerCase().includes("tanggal_lahir")) {
-            toast.error("tanggal lahir tidak valid");
+          if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
             return;
           }
 
-          // fields errors
-          if (Object.keys(fieldErrors).length > 0) {
-            setFieldErrors(fieldErrors);
-            return;
+          // konversi kelas_id
+          if (updatedSiswa.kelas_id) {
+            updatedSiswa.kelas_id = parseInt(updatedSiswa.kelas_id, 10);
           }
 
-          // error lain
-          toast.error(apiError?.message || "Gagal menambahkan data");
-        }
-      }}
-      onCancel={() => setMode("list")}
-      containerStyle={{ maxHeight: "600px" }}
-    />
-  );
-}
+          try {
+            await updateSiswa(selectedRow.id, updatedSiswa);
+            await fetchData();
+            toast.success("Data siswa berhasil diperbarui");
+            setMode("list");
+          } catch (err) {
+            const apiError = err.response?.data?.error;
+            const rawMessage = apiError?.message || "";
 
-// form edit
-if (mode === "edit" && selectedRow) {
-  return (
-    // EDIT
-    <Add
-      title="Ubah Data Siswa"
-      fields={inputFields}
-      image={editGrafik}
-      existingData={siswa.filter((k) => k.id !== selectedRow.id)}
-      initialData={{
-        ...selectedRow,
-        tanggal_lahir: selectedRow.tanggal_lahir
-          ? formatDateToYYYYMMDD(selectedRow.tanggal_lahir)
-          : "",
-      }}
-      onSubmit={async (formData, setFieldErrors) => {
-        const updatedSiswa = Object.fromEntries(formData);
+            const fieldErrors = {};
 
-        // validasi karakter
-        const errors = {};
-        if (!updatedSiswa.nama_lengkap || updatedSiswa.nama_lengkap.trim().length < 3) {
-          errors.nama_lengkap = "Nama lengkap minimal 3 karakter.";
-        }
-        if (!updatedSiswa.no_telp || updatedSiswa.no_telp.length < 10) {
-          errors.no_telp = "No. telepon minimal 10 karakter.";
-        }
-        if (Object.keys(errors).length > 0) {
-          setFieldErrors(errors);
-          return;
-        }
+            // validasi nisn
+            if (rawMessage.toLowerCase().includes("nisn must be exactly 10 digits")) {
+              fieldErrors.nisn = validateNISN(newSiswa.nisn);
+            }
 
-        // konversi kelas_id
-        if (updatedSiswa.kelas_id) {
-          updatedSiswa.kelas_id = parseInt(updatedSiswa.kelas_id, 10);
-        }
+            // error khusus
+            if (rawMessage.toLowerCase().includes("kelas not found")) {
+              toast.error("Kelas ID tidak ada di sistem");
+              return;
+            }
+            if (/kelas_id must be positive/i.test(rawMessage.trim())) {
+              toast.error("Kelas ID harus angka positif");
+              return;
+            }
+            if (rawMessage.toLowerCase().includes("kelas with this nama already exists in the jurusan")) {
+              toast.error("Kelas dengan nama tersebut sudah ada");
+              return;
+            }
+            if (rawMessage.toLowerCase().includes("tanggal_lahir")) {
+              toast.error("tanggal lahir tidak valid");
+              return;
+            }
 
-        try {
-          await updateSiswa(selectedRow.id, updatedSiswa);
-          await fetchData();
-          toast.success("Data siswa berhasil diperbarui");
-          setMode("list");
-        } catch (err) {
-          const apiError = err.response?.data?.error;
-          const rawMessage = apiError?.message || "";
+            if (Object.keys(fieldErrors).length > 0) {
+              setFieldErrors(fieldErrors);
+              return; 
+            }
 
-          const fieldErrors = {};
-
-          // validasi nisn
-          if (rawMessage.toLowerCase().includes("nisn must be exactly 10 digits")) {
-            fieldErrors.nisn = validateNISN(newSiswa.nisn);
+            // error lain
+            toast.error(apiError?.message || "Gagal memperbarui data");
           }
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "600px" }}
+        backgroundStyle={{ backgroundColor: "#641E21" }}
+      />
+    );
+  }
 
-          // error khusus
-          if (rawMessage.toLowerCase().includes("kelas not found")) {
-            toast.error("Kelas ID tidak ada di sistem");
-            return;
-          }
-          if (/kelas_id must be positive/i.test(rawMessage.trim())) {
-            toast.error("Kelas ID harus angka positif");
-            return;
-          }
-          if (rawMessage.toLowerCase().includes("kelas with this nama already exists in the jurusan")) {
-            toast.error("Kelas dengan nama tersebut sudah ada");
-            return;
-          }
-          if (rawMessage.toLowerCase().includes("tanggal_lahir")) {
-            toast.error("tanggal lahir tidak valid");
-            return;
-          }
-
-          if (Object.keys(fieldErrors).length > 0) {
-            setFieldErrors(fieldErrors);
-            return; 
-          }
-
-          // error lain
-          toast.error(apiError?.message || "Gagal memperbarui data");
-        }
-      }}
-      onCancel={() => setMode("list")}
-      containerStyle={{ maxHeight: "600px" }}
-      backgroundStyle={{ backgroundColor: "#641E21" }}
-    />
-  );
-}
-
+  // main
   return (
     <div className="bg-white min-h-screen w-full">
       <Header  user={user}/>
@@ -361,25 +371,29 @@ if (mode === "edit" && selectedRow) {
             {loading ? (
               <p className="text-white">Loading data...</p>
             ) : (
-              <Table
-                columns={columns}
-                data={dataWithNo}
-                showMore
-                onMoreClick={(row) => {
-                  const original = siswa.find((s) => s.id === row.id);
-                  setSelectedRow(original);
-                  setMode("edit");
-                }}
-                onEdit={(row) => {
-                  const original = siswa.find((s) => s.id === row.id); 
-                  setSelectedRow(original);
-                  setMode("edit");
-                }}
-                onDelete={(row) => {
-                  setSelectedRow(row);
-                  setIsDeleteOpen(true);
-                }}
-              />
+                <>
+                  <Table
+                    columns={columns}
+                    data={paginatedData}
+                    showEdit
+                    showDelete
+                    onEdit={(row) => {
+                      const original = siswa.find((s) => s.id === row.id); 
+                      setSelectedRow(original);
+                      setMode("edit");
+                    }}
+                    onDelete={(row) => {
+                      setSelectedRow(row);
+                      setIsDeleteOpen(true);
+                    }}
+                  />
+
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+              </>
             )}
           </div>
         </main>
