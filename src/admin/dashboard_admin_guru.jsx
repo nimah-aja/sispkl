@@ -304,7 +304,6 @@ const paginatedData = dataWithNo.slice(
           <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
             Guru
           </h2>
-
           <SearchBar
             query={search}
             setQuery={setSearch}

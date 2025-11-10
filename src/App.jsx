@@ -8,6 +8,7 @@ import DashboardAdminSiswa from "./admin/dashboard_admin_siswa";
 import DashboardAdminGuru from "./admin/dashboard_admin_guru"; 
 import DashboardAdminIndustri from "./admin/dashboard_admin_industri"; 
 import { Toaster } from "react-hot-toast";
+import RoleOption from "./guru/role_option";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ function AppContent() {
         <Route path="/admin/siswa" element={<DashboardAdminSiswa />} />
         <Route path="/admin/guru" element={<DashboardAdminGuru />} />
         <Route path="/admin/industri" element={<DashboardAdminIndustri />} />
+        <Route path="/role" element={<RoleOption />} />
       </Routes>
     </>
   );

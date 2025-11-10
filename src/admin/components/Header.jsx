@@ -1,17 +1,22 @@
-import React from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 
 // helper
 import { removeTokens } from "../../utils/authHelper";
 
+// import components
+import LogoutModal from "../components/Logout"; 
+
 // import asset
 import logo from "../../assets/logo.png";
 import profile from "../../assets/profile.svg";
-import logoutIcon from "../../assets/logout.svg"
+import logoutIcon from "../../assets/logout.svg";
+import logoutImage from "../../assets/logout.jpg";
 
 export default function Header({ query, setQuery, user: propUser }) {
   const navigate = useNavigate();
+  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
 
   const user = propUser || JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
@@ -21,6 +26,7 @@ export default function Header({ query, setQuery, user: propUser }) {
   const handleLogout = () => {
     removeTokens();
     localStorage.removeItem("user");
+    setIsLogoutOpen(false);
     navigate("/");
   };
 
@@ -68,7 +74,7 @@ export default function Header({ query, setQuery, user: propUser }) {
 
           {/* button */}
           <button
-            onClick={handleLogout}
+            onClick={() => setIsLogoutOpen(true)} 
             className="button-radius flex items-center gap-2 bg-[#3C3C3C] text-white px-4 py-2 rounded-full hover:bg-[#2d2d2d] transition"
             style={{
               "--btn-bg": "#3A3D3D",
@@ -79,6 +85,13 @@ export default function Header({ query, setQuery, user: propUser }) {
             <img src={logoutIcon} alt="Logout" className="w-5 h-5 ml-3" />
             <span className="font-semibold">Keluar</span>
           </button>
+
+          <LogoutModal
+            isOpen={isLogoutOpen}
+            onClose={() => setIsLogoutOpen(false)}
+            onConfirm={handleLogout}
+            imageSrc={logoutImage}
+          />
         </div>
       </div>
     </header>

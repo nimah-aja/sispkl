@@ -35,6 +35,7 @@ export default function IndustriPage() {
   const [filterBidang, setFilterBidang] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -344,7 +345,7 @@ export default function IndustriPage() {
   // main
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header />
+      <Header user={user}/>
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />

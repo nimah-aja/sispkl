@@ -8,6 +8,10 @@ import { format } from "date-fns";
 // import assets
 import addSidebar from "../../assets/addSidebar.svg";
 import arrow from "../../assets/arrow.svg"; 
+import cancelImg from "../../assets/cancel.svg"; 
+
+// import components
+import DeleteConfirmationModal from "../components/Cancel"; 
 
 export default function Add({
   title,
@@ -21,6 +25,13 @@ export default function Add({
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
 }) {
+  const [modalText, setModalText] = useState({
+    title: "Apakah Anda yakin untuk kembali?",
+    subtitle: "Data yang sudah diisi akan terhapus."
+  });
+
+  const [isChanged, setIsChanged] = useState(false); 
+  const isEditMode = Object.keys(initialData).length > 0; 
   const [fieldErrors, setFieldErrors] = useState({});
   const [focusedIdx, setFocusedIdx] = useState(null);
   const inputRefs = useRef([]);
@@ -28,6 +39,7 @@ export default function Add({
   const [selectedValues, setSelectedValues] = useState(initialData?.roles || [])
   const [dropdownState, setDropdownState] = useState({});
   const [searchQueries, setSearchQueries] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Date
   const DateInput = React.forwardRef(
@@ -239,8 +251,6 @@ export default function Add({
     return labels;
   });
 
-
-
   const handleChange = (name, value) => {
     // update ke FormData saat submit
     const hiddenInput = document.querySelector(`input[name="${name}"]`);
@@ -253,6 +263,44 @@ export default function Add({
       input.value = value;
       document.getElementById("addForm").appendChild(input);
     }
+  };
+
+  useEffect(() => {
+    const form = document.getElementById("addForm");
+    if (!form) return;
+
+    const handleInput = () => {
+      setIsChanged(true);
+    };
+
+    form.addEventListener("input", handleInput);
+    return () => form.removeEventListener("input", handleInput);
+  }, []);
+
+  const handleCancelClick = () => {
+    let title = "Apakah Anda yakin untuk kembali?";
+    let subtitle = "Data yang sudah diisi akan terhapus.";
+
+    if (!isEditMode && !isChanged) {
+      // Kondisi 1: Add data, belum isi apapun
+      title = "Kembali tanpa menambah data?";
+      subtitle = "Anda belum mengisi data apapun.";
+    } else if (!isEditMode && isChanged) {
+      // Kondisi 2: Add data, sudah isi sebagian
+      title = "Apakah Anda yakin ingin membatalkan penambahan data?";
+      subtitle = "Data yang telah diisi akan hilang.";
+    } else if (isEditMode && !isChanged) {
+      //  Kondisi 3: Edit data, belum mengubah apa-apa
+      title = "Kembali tanpa mengubah data?";
+      subtitle = "Tidak ada perubahan yang akan disimpan.";
+    } else if (isEditMode && isChanged) {
+      //  Kondisi 4: Edit data, sudah ubah isinya
+      title = "Apakah Anda yakin ingin membatalkan perubahan?";
+      subtitle = "Perubahan yang telah Anda buat tidak akan disimpan.";
+    }
+
+    setModalText({ title, subtitle });
+    setIsModalOpen(true);
   };
 
   // main
@@ -268,7 +316,7 @@ export default function Add({
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
-            onClick={onCancel}
+            onClick={() => setIsModalOpen(true)}
             className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
           >
             <ArrowLeft size={20} />
@@ -573,7 +621,7 @@ export default function Add({
         <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancelClick} // buka modal
             className="button-radius"
             style={{
               "--btn-bg": "#3A3D3D",
@@ -583,6 +631,7 @@ export default function Add({
           >
             Batal
           </button>
+
           <button
             type="submit"
             form="addForm"
@@ -596,7 +645,23 @@ export default function Add({
             Simpan
           </button>
         </div>
+
+        <DeleteConfirmationModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onDelete={() => {
+            setIsModalOpen(false);
+            if (onCancel) onCancel();
+          }}
+          imageSrc={cancelImg}
+          title={modalText.title}
+          subtitle={modalText.subtitle}
+        />
+
       </div>
     </div>
   );
+  
 }
+
+
