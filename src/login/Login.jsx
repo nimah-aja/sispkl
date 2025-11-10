@@ -43,7 +43,7 @@ export default function PKLManagementSystem() {
           const role = localStorage.getItem("role");
           switch (role) {
             case "Admin": navigate("/admin"); break;
-            case "Guru": navigate("/guru"); break;
+            case "Guru": navigate("/role"); break;
             case "Siswa": navigate("/siswa"); break;
             default: break;
           }
@@ -53,7 +53,7 @@ export default function PKLManagementSystem() {
         const role = localStorage.getItem("role");
         switch (role) {
           case "Admin": navigate("/admin"); break;
-          case "Guru": navigate("/guru"); break;
+          case "Guru": navigate("/role"); break;
           case "Siswa": navigate("/siswa"); break;
           default: break;
         }
@@ -96,46 +96,82 @@ export default function PKLManagementSystem() {
   setLoading(true);
   setError("");
 
-  const endpoints = { 
-    Admin: "/auth/login", 
-    Guru: "/auth/guru/login", 
-    Siswa: "/auth/siswa/login" 
+  const endpoints = {
+    Admin: "/auth/login",
+    Guru: "/auth/guru/login",
+    Siswa: "/auth/siswa/login",
   };
 
   let payload = {};
   switch (activeRole) {
-    case "Admin": payload = { username, password }; break;
-    case "Guru": payload = { kode_guru: username, password }; break;
-    case "Siswa": payload = { nama_lengkap: username, nisn: password }; break;
+    case "Admin":
+      payload = { username, password };
+      break;
+    case "Guru":
+      payload = { kode_guru: username, password };
+      break;
+    case "Siswa":
+      payload = { nama_lengkap: username, nisn: password };
+      break;
+    default:
+      break;
   }
 
   try {
     const res = await axios.post(endpoints[activeRole], payload);
-    const { access_token, refresh_token, role } = res.data;
+    const { access_token, refresh_token, user } = res.data;
 
-    // simpan token terenkripsi di FE
+    // Simpan token terenkripsi
     setTokens({
-      access_token,    // langsung tanpa encrypt
-      refresh_token
+      access_token,
+      refresh_token,
     });
 
-    localStorage.setItem("role", role || activeRole);
+    // Simpan data user ke localStorage
+    localStorage.setItem("role", activeRole);
 
-    switch (role || activeRole) {
-      case "Admin": navigate("/admin"); break;
-      case "Guru": navigate("/guru"); break;
-      case "Siswa": navigate("/siswa"); break;
-      default: break;
+    if (user && activeRole === "Guru") {
+      localStorage.setItem("kode_guru", user.kode_guru || "");
+      localStorage.setItem("nama_guru", user.nama || "");
+      localStorage.setItem("is_koordinator", user.is_koordinator ? "true" : "false");
+      localStorage.setItem("is_pembimbing", user.is_pembimbing ? "true" : "false");
+      localStorage.setItem("is_wali_kelas", user.is_wali_kelas ? "true" : "false");
+      localStorage.setItem("is_kaprog", user.is_kaprog ? "true" : "false");
     }
+
+    if (user && activeRole === "Siswa") {
+      localStorage.setItem("nama_siswa", user.nama_lengkap || "");
+      localStorage.setItem("nisn", user.nisn || "");
+    }
+
+    // Redirect ke halaman sesuai role
+    redirectUser(activeRole);
   } catch (err) {
     console.error(err);
     if (err.code === "ECONNABORTED") showToast("Server timeout", "error");
     else if (err.response?.data?.message) setError(err.response.data.message);
-    else setError("Login gagal, cek data Anda.", error, 30000);
+    else setError("Login gagal, cek data Anda.");
   } finally {
     setLoading(false);
   }
 };
+
+const redirectUser = (role) => {
+  switch (role) {
+    case "Admin":
+      navigate("/admin");
+      break;
+    case "Guru":
+      navigate("/role");
+      break;
+    case "Siswa":
+      navigate("/siswa");
+      break;
+    default:
+      break;
+  }
+};
+
 
 // auto hapus pesan error setelah ... durasi
 useEffect(() => {
