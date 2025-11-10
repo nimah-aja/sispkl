@@ -18,7 +18,7 @@ cd sispkl
 npm install
 
 4. Jalankan proyek (harus punya node js, kalo belum install):
-npm start
+npm run dev
 
 ## 2️⃣ Panduan Berkolaborasi
 
