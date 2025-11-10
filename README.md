@@ -2,6 +2,10 @@
 
 Proyek ini dibuat menggunakan **React** dengan struktur modular agar mudah dikembangkan beberapa orang secara bersamaan.  
 
+Install dulu ❗:
+1. Node js
+2. Git
+   
 ---
 
 ### 1️⃣ Clone Repository
