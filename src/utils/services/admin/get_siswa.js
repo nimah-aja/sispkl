@@ -10,3 +10,10 @@ export const getSiswa = async () => {
 
   return siswaList;
 };
+
+export const getSiswaById = async (id) => {
+  const res = await axios.get(`/api/siswa/${id}`);
+  return res.data.data;
+};
+
+
