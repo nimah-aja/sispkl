@@ -20,7 +20,7 @@ import ellipseUngu from "../assets/elipsungu.png";
 import vector from "../assets/Vector.png";
 import kelompok from "../assets/kelompok.png";
 import titik3 from "../assets/titik_3.png";
-import kelolaText from "../assets/Kelola seluruh proses dan data PKL anda dengan mudah dalam satu sistem.png";
+import kelolaText from "../assets/teks.png";
 import norr from "../assets/norr.png";
 
 export default function PKLManagementSystem() {
@@ -32,6 +32,8 @@ export default function PKLManagementSystem() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const isSiswa = activeRole === "Siswa";
+
 
   // Auto cek access token / refresh
   useEffect(() => {
@@ -72,10 +74,10 @@ export default function PKLManagementSystem() {
   const roles = ["Admin","Guru","Siswa"];
   const getInputConfig = () => {
     switch (activeRole) {
-      case "Admin": return { firstField: { label: "Username", placeholder: "Masukkan username admin", type: "text" }, secondField: { label: "Password", placeholder: "••••••••", type: "password" } };
-      case "Guru": return { firstField: { label: "Kode Guru", placeholder: "Masukkan kode guru", type: "text" }, secondField: { label: "Password", placeholder: "••••••••", type: "password" } };
+      case "Admin": return { firstField: { label: "Username", placeholder: "Masukkan username admin", type: "text" }, secondField: { label: "Password", placeholder: "Masukkan password", type: "password" } };
+      case "Guru": return { firstField: { label: "Kode Guru", placeholder: "Masukkan kode guru", type: "text" }, secondField: { label: "Password", placeholder: "Masukkan password", type: "password" } };
       case "Siswa": return { firstField: { label: "Nama Lengkap", placeholder: "Masukkan nama lengkap", type: "text" }, secondField: { label: "NISN", placeholder: "Masukkan NISN", type: "text" } };
-      default: return { firstField: { label: "Username", placeholder: "Masukkan username", type: "text" }, secondField: { label: "Password", placeholder: "••••••••", type: "password" } };
+      default: return { firstField: { label: "Username", placeholder: "Masukkan username", type: "text" }, secondField: { label: "Password", placeholder: "Masukkan password", type: "password" } };
     }
   };
   const inputConfig = getInputConfig();
@@ -92,69 +94,104 @@ export default function PKLManagementSystem() {
 
   // handler login
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  const endpoints = {
-    Admin: "/auth/login",
-    Guru: "/auth/guru/login",
-    Siswa: "/auth/siswa/login",
+    const endpoints = {
+      Admin: "/auth/login",
+      Guru: "/auth/guru/login",
+      Siswa: "/auth/siswa/login",
+    };
+
+    // Bentuk payload sesuai role
+    let payload = {};
+    switch (activeRole) {
+      case "Admin":
+        payload = {
+          username: username.trim(),
+          password: password.trim(),
+        };
+        break;
+
+      case "Guru":
+        payload = {
+          kode_guru: username.trim(),
+          password: password.trim(),
+        };
+        break;
+
+      case "Siswa":
+        payload = {
+          nama_lengkap: username.trim(),
+          nisn: password.trim(),
+        };
+        break;
+    }
+
+
+    try {
+      const res = await axios.post(endpoints[activeRole], payload);
+      const { access_token, refresh_token, user } = res.data;
+
+      //  Validasi role yang dikembalikan dari backend
+      if (activeRole === "Admin" && user.role !== "adm") {
+        setError("Akun ini bukan Admin!");
+        setLoading(false);
+        return;
+      }
+      if (activeRole === "Guru" && user.role !== "gru") {
+        setError("Akun ini bukan Guru!");
+        setLoading(false);
+        return;
+      }
+      if (activeRole === "Siswa" && user.role !== "ssw") {
+        setError("Akun ini bukan Siswa!");
+        setLoading(false);
+        return;
+      }
+
+      // Simpan token
+      setTokens({ access_token, refresh_token });
+
+      // Simpan role & user info
+      localStorage.setItem("role", activeRole);
+
+      if (user && activeRole === "Guru") {
+        localStorage.setItem("kode_guru", user.kode_guru || "");
+        localStorage.setItem("nama_guru", user.nama || "");
+        localStorage.setItem("is_koordinator", user.is_koordinator ? "true" : "false");
+        localStorage.setItem("is_pembimbing", user.is_pembimbing ? "true" : "false");
+        localStorage.setItem("is_wali_kelas", user.is_wali_kelas ? "true" : "false");
+        localStorage.setItem("is_kaprog", user.is_kaprog ? "true" : "false");
+      }
+
+      if (user && activeRole === "Siswa") {
+        localStorage.setItem("user", JSON.stringify({
+          name: user.nama_lengkap,
+          role: "Siswa",
+          id: user.id,
+          kelas_id: user.kelas_id,
+          is_active: user.is_active
+        }));
+      }
+
+
+      redirectUser(activeRole);
+    } catch (err) {
+      console.error(err);
+      if (err.code === "ECONNABORTED") {
+        showToast("Server timeout", "error");
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Login gagal, periksa data Anda.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  let payload = {};
-  switch (activeRole) {
-    case "Admin":
-      payload = { username, password };
-      break;
-    case "Guru":
-      payload = { kode_guru: username, password };
-      break;
-    case "Siswa":
-      payload = { nama_lengkap: username, nisn: password };
-      break;
-    default:
-      break;
-  }
-
-  try {
-    const res = await axios.post(endpoints[activeRole], payload);
-    const { access_token, refresh_token, user } = res.data;
-
-    // Simpan token terenkripsi
-    setTokens({
-      access_token,
-      refresh_token,
-    });
-
-    // Simpan data user ke localStorage
-    localStorage.setItem("role", activeRole);
-
-    if (user && activeRole === "Guru") {
-      localStorage.setItem("kode_guru", user.kode_guru || "");
-      localStorage.setItem("nama_guru", user.nama || "");
-      localStorage.setItem("is_koordinator", user.is_koordinator ? "true" : "false");
-      localStorage.setItem("is_pembimbing", user.is_pembimbing ? "true" : "false");
-      localStorage.setItem("is_wali_kelas", user.is_wali_kelas ? "true" : "false");
-      localStorage.setItem("is_kaprog", user.is_kaprog ? "true" : "false");
-    }
-
-    if (user && activeRole === "Siswa") {
-      localStorage.setItem("nama_siswa", user.nama_lengkap || "");
-      localStorage.setItem("nisn", user.nisn || "");
-    }
-
-    // Redirect ke halaman sesuai role
-    redirectUser(activeRole);
-  } catch (err) {
-    console.error(err);
-    if (err.code === "ECONNABORTED") showToast("Server timeout", "error");
-    else if (err.response?.data?.message) setError(err.response.data.message);
-    else setError("Login gagal, cek data Anda.");
-  } finally {
-    setLoading(false);
-  }
-};
 
 const redirectUser = (role) => {
   switch (role) {
@@ -266,16 +303,44 @@ useEffect(() => {
               </label>
               <div className="relative">
                 <input
-                  type={isPasswordField && showPassword ? "text" : inputConfig.secondField.type}
+                  type={
+                    isSiswa
+                      ? "text" // NISN tetap text biar bisa dikontrol
+                      : isPasswordField && showPassword
+                      ? "text"
+                      : inputConfig.secondField.type
+                  }
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    if (isSiswa) {
+                      // hanya angka & max 10 digit
+                      const onlyNumber = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setPassword(onlyNumber);
+                    } else {
+                      setPassword(e.target.value);
+                    }
+                  }}
                   placeholder={inputConfig.secondField.placeholder}
-                  title={`Mohon isi kolom ${inputConfig.secondField.label} terlebih dahulu.`}
+                  inputMode={isSiswa ? "numeric" : undefined}
+                  pattern={isSiswa ? "[0-9]{10}" : undefined}
+                  maxLength={isSiswa ? 10 : undefined}
+                  title={
+                    isSiswa
+                      ? "NISN harus berupa angka dan maksimal 10 digit"
+                      : `Mohon isi kolom ${inputConfig.secondField.label} terlebih dahulu.`
+                  }
                   className="w-full px-4 py-3 bg-[#E1D6C4] border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-500 pr-12"
-                  onInvalid={(e) => e.target.setCustomValidity(`Mohon isi kolom ${inputConfig.secondField.label} terlebih dahulu.`)}
+                  onInvalid={(e) =>
+                    e.target.setCustomValidity(
+                      isSiswa
+                        ? "NISN harus berupa angka dan maksimal 10 digit"
+                        : `Mohon isi kolom ${inputConfig.secondField.label} terlebih dahulu.`
+                    )
+                  }
                   onInput={(e) => e.target.setCustomValidity("")}
                   required
                 />
+
                 {isPasswordField && (
                   <button
                     type="button"

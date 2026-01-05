@@ -12,8 +12,7 @@ import LogoutModal from "../components/Logout";
 import logo from "../../assets/logo.png";
 import profile from "../../assets/profile.svg";
 import logoutIcon from "../../assets/logout.svg";
-import logoutImage from "../../assets/logout.jpg";
-
+import logoutImage from "../../assets/keluar.svg";
 export default function Header({ query, setQuery, user: propUser }) {
   const navigate = useNavigate();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);

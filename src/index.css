@@ -228,20 +228,16 @@ button:focus-visible {
 }
 
 /* lingkaran */
-.circle {               
-  width:28px;
-  height: 35px;
-  border-radius: 100%;
-  display: inline-block;
-  background-color: #641E20;   
-  vertical-align: middle;
+.circle {
+  width: 24px;             /* atau ukuran lingkaranmu */
+  height: 24px;
+  border-radius: 9999px;   /* biar bulat sempurna */
+  background-color: #E1D6C4; /* contoh warna background */
+  display: flex;
   align-items: center;
-  overflow: hidden;   
-  display: inline-flex;         
-  align-items: center;          
-  justify-content: center;  
-  margin: 2px;     
+  justify-content: center;
 }
+
 
 .circle:hover{
   border: none;
@@ -369,3 +365,23 @@ button:active {
   box-shadow: none !important;
   border: none !important;
 }
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(110%);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.text_white {
+  color: white !important;
+}
+
