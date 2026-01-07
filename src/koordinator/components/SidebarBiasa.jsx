@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 // import assets
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
 import sidebarUsers from "../../assets/sidebarUsers.svg";
-import pengajuanPKL from "../../assets/pengajuan_pkl.svg";
+import pengajuanPKL from "../../assets/pengajuan_PKL.svg";
 import Pembimbing from "../../assets/pembimbing_sidebar.svg";
 import suratPengantaran from "../../assets/surat_pengantaran.svg";
 import monitoring from "../../assets/monitoring.svg";

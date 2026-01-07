@@ -54,7 +54,7 @@ export default function PopupNotifikasi({
 
       {/* Container */}
       <div
-        className="fixed right-6 top-20 z-50 bg-[#641E20] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="fixed right-16 top-25 z-50 bg-[#641E20] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         style={{ width }}
       >
         {/* HEADER */}
@@ -75,7 +75,7 @@ export default function PopupNotifikasi({
         </div>
 
         {/* TABS */}
-        {tabs.length > 0 && (
+        {/* {tabs.length > 0 && (
           <div className="flex border-b border-white/20">
             {tabs.map((tab) => (
               <button
@@ -91,7 +91,7 @@ export default function PopupNotifikasi({
               </button>
             ))}
           </div>
-        )}
+        )} */}
 
         {/* LIST */}
         <div
@@ -108,21 +108,17 @@ export default function PopupNotifikasi({
             filteredNotifications.map((notif, i) => (
               <div
                 key={i}
-                onClick={notif.onClick}
-                className={`
-                  bg-white rounded-xl p-4 shadow-sm
-                  ${notif.onClick ? "cursor-pointer hover:bg-gray-50" : ""}
-                `}
+                className="bg-white rounded-xl p-4 shadow-sm"
+                onClick={() => notif.onClick?.()}
               >
-
                 <div className="flex gap-3">
                   {/* ICON */}
                   {notif.icon && (
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{
-                        backgroundColor: notif.iconBg || "#fb923c",
-                      }}
+                      // style={{
+                      //   backgroundColor: notif.iconBg || "#fb923c",
+                      // }}
                     >
                       {notif.icon}
                     </div>
@@ -149,16 +145,12 @@ export default function PopupNotifikasi({
                         {notif.actions.map((btn, idx) => (
                           <button
                             key={idx}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              btn.onClick();
-                            }}
+                            onClick={btn.onClick}
                             className="px-4 py-1.5 rounded-md text-xs font-medium text-white"
                             style={{ backgroundColor: btn.color }}
                           >
                             {btn.label}
                           </button>
-
                         ))}
                       </div>
                     )}
@@ -172,7 +164,7 @@ export default function PopupNotifikasi({
 
         {/* FOOTER */}
         <div className="border-t border-white/20">
-          <button onClick={() => navigate("/siswa/riwayat_pengajuan")} className="w-full py-3 text-sm text-white !bg-transparent">
+          <button onClick={() => navigate("/guru/koordinator/pengajuanPKL")} className="w-full py-3 text-sm text-white !bg-transparent">
             Lihat Riwayat Notifikasi
           </button>
           

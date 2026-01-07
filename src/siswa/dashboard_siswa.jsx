@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
 import KalenderPKL from "./components/Calender";
@@ -9,12 +10,18 @@ import AktivitasTerkini from "./components/AktivitasTerkini";
 import DashboardCard from "./components/DashboardCard";
 import Header from "./components/Header";
 import QuickActions from "./components/QuickAction";
-import QuickActionsPager from "./components/dot";
+import QuickActionsPager from "./components/Dot";
 import PKLProgressCircle from "./components/Progress";
 import { getPengajuanMe } from "../utils/services/siswa/pengajuan_pkl";
 import {getIndustri} from "../utils/services/admin/get_industri";
 import {getGuru} from "../utils/services/admin/get_guru";
 import ChatbotIframe from "./components/Chatbot";
+import { createPortal } from "react-dom";
+import Detail from "./components/Detail";
+
+import { connectWS, disconnectWS } from "../utils/webSocket";
+
+
 
 
 
@@ -34,6 +41,9 @@ dayjs.extend(relativeTime);
 
 
 export default function DashboardSiswa() {
+  const navigate = useNavigate();
+  const [openDetail, setOpenDetail] = useState(false);
+  const [detailData, setDetailData] = useState(null);
   const [active, setActive] = useState("sidebarDashboard");
   const [industriMap, setIndustriMap] = useState({});
   const [guruMap, setGuruMap] = useState({});
@@ -108,7 +118,6 @@ useEffect(() => {
   
     return t.format("DD MMMM YYYY • HH:mm");
   };
-  
 
 
   const fetchPKL = async () => {
@@ -128,7 +137,17 @@ useEffect(() => {
             title: "Anda Mengajukan PKL",
             description: `Pengajuan PKL di ${namaIndustri}`,
             time: dayjs(item.tanggal_permohonan),
+
+            onClick: () => {
+              setDetailData({
+                ...item,
+                namaIndustri,
+                namaGuru: guruMap[item.processed_by] || "-",
+              });
+              setOpenDetail(true);
+            },
           });
+
         }
 
         if (item.decided_at) {
@@ -139,11 +158,21 @@ useEffect(() => {
             type: item.status === "Approved" ? "approved" : "rejected",
             title:
               item.status === "Approved"
-                ? `${namaGuru} telah menyetujui pengajuan anda`
-                : `${namaGuru} telah menolak pengajuan anda`,
+                ? `${namaGuru} Menyetujui Pengajuan Anda`
+                : `${namaGuru} Menolak Pengajuan Anda`,
             description: `Pengajuan PKL di ${namaIndustri}`,
             time: dayjs(item.decided_at),
+
+            onClick: () => {
+              setDetailData({
+                ...item,
+                namaIndustri,
+                namaGuru,
+              });
+              setOpenDetail(true);
+            },
           });
+
         }
       });
 
@@ -167,6 +196,42 @@ useEffect(() => {
 
   fetchPKL();
 }, [industriMap, guruMap]);
+
+// WS
+useEffect(() => {
+  connectWS((data) => {
+    /**
+     * Contoh data dari backend:
+     * {
+     *   type: "approved",
+     *   title: "Kaprog menyetujui pengajuan",
+     *   message: "PKL di PT ABC",
+     *   time: "2026-01-06T14:22:00"
+     * }
+     */
+
+    const notifBaru = {
+      type: data.type || "info",
+      title: data.title,
+      description: data.message,
+      time: dayjs(data.time || new Date()).fromNow(),
+      onClick: () => {
+        if (data.pengajuan_id) {
+          // optional: buka detail
+          navigate(`/siswa/pengajuan/${data.pengajuan_id}`);
+        }
+      },
+    };
+
+    // ⬆️ MASUKKAN KE AKTIVITAS PALING ATAS
+    setAktivitas((prev) => [notifBaru, ...prev]);
+  });
+
+  return () => {
+    disconnectWS();
+  };
+}, [navigate]);
+
 
 
 
@@ -218,6 +283,14 @@ useEffect(() => {
 
     fetchPKL();
   }, []);
+
+  const safeValue = (value) => {
+    if (value === null || value === undefined || value === "" || value === "Invalid Date") {
+      return "-";
+    }
+    return value;
+  };
+
 
   return (
     <div className="flex h-screen bg-white">
@@ -279,6 +352,49 @@ useEffect(() => {
             )}
           </div>
         </main>
+        {openDetail && detailData &&
+          createPortal(
+            <Detail
+              mode="view"
+              title="Detail PKL"
+              size="half"
+              onClose={() => {
+                setOpenDetail(false);
+                setDetailData(null);
+              }}
+              initialData={{
+                nama_industri: safeValue(detailData.namaIndustri),
+                status: safeValue(detailData.status),
+                tanggal_permohonan: safeValue(dayjs(
+                  detailData.tanggal_permohonan
+                ).format("DD MMMM YYYY HH:mm")),
+                tanggal_mulai: safeValue(dayjs(
+                  detailData.tanggal_mulai
+                ).format("DD MMMM YYYY HH:mm")),
+                tanggal_selesai: safeValue(dayjs(
+                  detailData.tanggal_selesai
+                ).format("DD MMMM YYYY HH:mm")),
+                pembimbing: safeValue(detailData.namaGuru),
+                diproses_oleh: safeValue(detailData.processed_by ? (detailData.namaGuru) : "-"),
+                tanggal_diproses: safeValue(dayjs(
+                  detailData.decided_at
+                ).format("DD MMMM YYYY HH:mm")),
+              }}
+              fields={[
+                { name: "nama_industri", label: "Industri", full: true },
+                { name: "status", label: "Status" },
+                { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
+                {name : "tanggal_diproses", label: "Tanggal Diproses" },
+                { name: "tanggal_mulai", label: "Tanggal Mulai PKL" },
+                { name: "tanggal_selesai", label: "Tanggal Selesai PKL" },
+                { name: "pembimbing", label: "Pembimbing" },
+                { name: "diproses_oleh", label: "Diproses Oleh" },
+              ]}
+            />,
+            document.body
+          )
+        }
+
       </div>
     </div>
   );

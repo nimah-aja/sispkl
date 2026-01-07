@@ -9,7 +9,7 @@ import Table from "./components/Table";
 
 // import assets
 import sidebarUsers from "../assets/sidebarUsers.svg";
-import pengajuanPKL from "../assets/pengajuan_pkl.svg";
+import pengajuanPKL from "../assets/pengajuan_PKL.svg";
 import Pembimbing from "../assets/pembimbing.svg";
 import suratPengantaran from "../assets/surat_pengantaran.svg";
 import monitoring from "../assets/monitoring.svg";

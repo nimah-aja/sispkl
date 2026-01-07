@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 // import components
 import Header from "./components/Header";
@@ -24,6 +29,8 @@ import deleteImg from "../assets/deleteGrafik.svg";
 import saveImg from "../assets/save.svg";
 
 export default function GuruPage() {
+  const [openExport, setOpenExport] = useState(false);
+  const exportRef = useRef(null);
   const [search, setSearch] = useState("");
   const [filterGuru, setFilterGuru] = useState("");
   const [active, setActive] = useState("sidebarChalk");
@@ -37,7 +44,7 @@ export default function GuruPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
   
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
 
   // ambil data awal
   const fetchData = async () => {
@@ -112,9 +119,9 @@ export default function GuruPage() {
   const inputFields = [
     { label: "Kode Guru", name: "kode_guru", width: "half", minLength: 3 },
     { label: "Nama Guru", name: "nama", width: "half", minLength: 2 },
-    { label: "NIP", name: "nip", width: "half", minLength: 18 },
-    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10 },
-    { label: "Password", name: "password", type: "password", width: "full", minLength: 6 },
+    { label: "NIP", name: "nip", width: "half", minLength: 18, placeholder : "Harus 18 digit" },
+    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
+    { label: "Password", name: "password", type: "password", width: "full", minLength: 6, placeholder : "Min 6 digit" },
     {
       label: "Role",
       name: "roles",
@@ -132,7 +139,7 @@ export default function GuruPage() {
   const inputFieldsUpdate = [
     { label: "Kode Guru", name: "kode_guru", width: "half", minLength: 3 },
     { label: "Nama Guru", name: "nama", width: "half", minLength: 2 },
-    { label: "NIP", name: "nip", width: "half", minLength: 18 },
+    { label: "NIP", name: "nip", width: "half", minLength: 18,    },
     { label: "No. Telp", name: "no_telp", width: "half", minLength: 10 },
     {
       label: "Role",
@@ -173,6 +180,45 @@ export default function GuruPage() {
 
     return errors;
   };
+
+  // Export 
+  const exportData = React.useMemo(
+  () =>
+    dataWithNo.map((item, i) => ({
+      No: i + 1,
+      "Kode Guru": item.kode_guru,
+      "Nama Guru": item.nama,
+      NIP: item.nip,
+      "No. Telp": item.no_telp,
+      Role: item.roles.join(", "),
+    })),
+  [dataWithNo]
+);
+
+// PDF
+const handleExportPdf = () => {
+  const doc = new jsPDF();
+
+  doc.text("Data Guru", 14, 15);
+
+  autoTable(doc, {
+    startY: 20,
+    head: [Object.keys(exportData[0] || {})],
+    body: exportData.map((item) => Object.values(item)),
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [100, 30, 33] },
+  });
+
+  doc.save("data_guru.pdf");
+};
+
+// Excel
+const handleExportExcel = () => {
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data Guru");
+  XLSX.writeFile(workbook, "data_guru.xlsx");
+};
 
   // form add
   if (mode === "add") {
@@ -353,6 +399,10 @@ export default function GuruPage() {
     );
   }
 
+
+  
+
+
   // main
   return (
     <div className="bg-white min-h-screen w-full">
@@ -363,9 +413,47 @@ export default function GuruPage() {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-          <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
-            Guru
-          </h2>
+        <div className="flex items-center justify-between mb-4">
+              <h2 className="text-white text-2xl font-bold">
+                Guru
+              </h2>
+  
+              {/* EXPORT */}
+              <div className="relative -left-316" ref={exportRef}>
+                <button
+                  onClick={() => setOpenExport(!openExport)}
+                  className="flex items-center gap-2 px-4 py-2 !bg-transparent text-white rounded-full"
+                >
+                  <Download size={20} />
+                </button>
+  
+                {openExport && (
+                  <div className="absolute -right-25 -mt-5 p-2 !bg-white border border-[#E1D6C4] rounded-lg shadow-md z-50">
+                    <button
+                      onClick={() => {
+                        handleExportExcel();
+                        setOpenExport(false);
+                      }}
+                      className="flex items-center gap-2 px-3 !bg-transparent py-2 hover:!bg-gray-100 text-sm w-full"
+                    >
+                      <FileSpreadsheet size={16} className="text-green-500" />
+                      Excel
+                    </button>
+  
+                    <button
+                      onClick={() => {
+                        handleExportPdf();
+                        setOpenExport(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                    >
+                      <FileText size={16} className="text-red-500" />
+                      PDF
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           <SearchBar
             query={search}
             setQuery={setSearch}

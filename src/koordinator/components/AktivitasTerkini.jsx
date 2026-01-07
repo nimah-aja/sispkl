@@ -12,6 +12,7 @@ export default function AktivitasTerkini({
   items = [],
   color = "#641E21",
   showFooter = true,
+   onItemClick, 
 }) {
   const navigate = useNavigate();
 
@@ -59,11 +60,17 @@ export default function AktivitasTerkini({
           items.map((notif, idx) => (
             <div
               key={idx}
-              onClick={notif.onClick}
-              className={`
-                bg-white p-4 rounded-lg flex gap-4
-                ${notif.onClick ? "cursor-pointer hover:bg-gray-50" : ""}
-              `}
+             onClick={() => onItemClick?.(notif)}
+              className="
+                bg-white
+                p-4
+                rounded-lg
+                flex
+                gap-4
+                cursor-pointer
+                hover:bg-gray-50
+                transition
+              "
             >
 
               {/* ICON */}
@@ -122,7 +129,7 @@ export default function AktivitasTerkini({
       {/* FOOTER */}
       {showFooter && items.length > 0 && (
         <div
-          onClick={() => navigate("/siswa/riwayat_pengajuan")}
+          onClick={() => navigate("/guru/koordinator/pengajuanPKL")}
           className="
             mt-4
             py-3
@@ -135,7 +142,7 @@ export default function AktivitasTerkini({
             border-t border-white/20
           "
         >
-          Lihat Riwayat Notifikasi
+          Lihat Riwayat Pengajuan
         </div>
       )}
     </div>

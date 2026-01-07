@@ -44,7 +44,7 @@ import DataPerizinan from "./kapro/data_perizinan";
   import Pembimbingperpindahan from "./pembimbing/perpindahan";
   
 // Siswa
-import DashboardSiswa from "./siswa/Dashboard_siswa";
+import DashboardSiswa from "./siswa/dashboard_siswa";
 import FormPengajuan from "./siswa/pengajuan_pkl";
 import FormPengajuanPindah from "./siswa/pengajuan_perpindahan_pkl";
 import FormPerizinan from "./siswa/perizinan_pkl";
@@ -71,6 +71,7 @@ function AppContent() {
             border: `2px solid #35a71bff`,
             borderRadius: '8px',
             padding: '8px 16px',
+            zIndex: !1000000,
           },
         }}
       />

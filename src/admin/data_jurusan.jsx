@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+
 import toast from "react-hot-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -30,6 +32,8 @@ import deleteImg from "../assets/deleteGrafik.svg";
 import saveImg from "../assets/save.svg"
 
 export default function JurusanPage() {
+  const exportRef = useRef(null);
+  const [openExport, setOpenExport] = useState(false);
   const [search, setSearch] = useState("");
   const [filterJurusan, setFilterJurusan] = useState("");
   const [active, setActive] = useState("sidebarGrad");
@@ -48,7 +52,7 @@ export default function JurusanPage() {
 
 
 
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
 
   const fetchData = async () => {
     setLoading(true);
@@ -129,6 +133,70 @@ export default function JurusanPage() {
       })),
     },
   ];
+
+  const exportData = filteredData.map((j, i) => {
+    const guru = guruList.find((g) => g.id === j.kaprog_guru_id);
+
+    return {
+      No: i + 1,
+      "Kode Jurusan": j.kode,
+      "Nama Jurusan": j.nama,
+      Kaprog: guru ? guru.nama : "-",
+    };
+  });
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(14);
+    doc.text("Data Jurusan", 14, 15);
+
+    autoTable(doc, {
+      startY: 20,
+      head: [[
+        "No",
+        "Kode Jurusan",
+        "Nama Jurusan",
+        "Kaprog",
+      ]],
+      body: exportData.map((row) => [
+        row.No,
+        row["Kode Jurusan"],
+        row["Nama Jurusan"],
+        row.Kaprog,
+      ]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [100, 30, 33] },
+    });
+
+    doc.save("data-jurusan.pdf");
+  };
+
+  const downloadExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Jurusan");
+
+    XLSX.writeFile(workbook, "data-jurusan.xlsx");
+  };
+
+  // nutup otomatis
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (exportRef.current && !exportRef.current.contains(e.target)) {
+        setOpenExport(false);
+      }
+    }
+
+    if (openExport) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openExport]);
 
 
   // FORM ADD
@@ -254,52 +322,11 @@ export default function JurusanPage() {
     );
   }
 
-  const exportData = filteredData.map((j, i) => {
-    const guru = guruList.find((g) => g.id === j.kaprog_guru_id);
+  
 
-    return {
-      No: i + 1,
-      "Kode Jurusan": j.kode,
-      "Nama Jurusan": j.nama,
-      Kaprog: guru ? guru.nama : "-",
-    };
-  });
 
-  const downloadPDF = () => {
-    const doc = new jsPDF();
+  
 
-    doc.setFontSize(14);
-    doc.text("Data Jurusan", 14, 15);
-
-    autoTable(doc, {
-      startY: 20,
-      head: [[
-        "No",
-        "Kode Jurusan",
-        "Nama Jurusan",
-        "Kaprog",
-      ]],
-      body: exportData.map((row) => [
-        row.No,
-        row["Kode Jurusan"],
-        row["Nama Jurusan"],
-        row.Kaprog,
-      ]),
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [100, 30, 33] },
-    });
-
-    doc.save("data-jurusan.pdf");
-  };
-
-  const downloadExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Jurusan");
-
-    XLSX.writeFile(workbook, "data-jurusan.xlsx");
-  };
   // main
   return (
     <div className="bg-white min-h-screen w-full">
@@ -310,9 +337,48 @@ export default function JurusanPage() {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-          <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
-            Jurusan
-          </h2>
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-white font-bold text-base sm:text-lg">
+              Jurusan
+            </h2>
+    
+            {/* EXPORT */}
+            <div className="relative -left-315" ref={exportRef}>
+              <button
+                onClick={() => setOpenExport(!openExport)}
+                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+              >
+                <Download size={18} />
+              </button>
+
+              {openExport && (
+                <div className="absolute left-10 !bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                  <button
+                    onClick={() => {
+                      downloadExcel();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 !bg-transparent py-2 hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Excel
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      downloadPDF();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileText size={16} className="text-red-600" />
+                    PDF
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
 
           <SearchBar
             query={search}
@@ -326,25 +392,13 @@ export default function JurusanPage() {
                 onChange: setFilterJurusan,
               },
             ]}
-            onAddClick={() => setMode("add")}
+            onAddClick={() => {
+              setOpenExport(false);
+              setMode("add");
+            }}
+
             className="mb-4 w-full"
           />
-
-          <div className="flex gap-3 mb-4">
-            <button
-              onClick={downloadPDF}
-              className="px-4 py-2 bg-white text-[#641E21] rounded font-semibold hover:bg-gray-100"
-            >
-              Download PDF
-            </button>
-
-            <button
-              onClick={downloadExcel}
-              className="px-4 py-2 bg-white text-[#641E21] rounded font-semibold hover:bg-gray-100"
-            >
-              Download Excel
-            </button>
-          </div>
 
 
           <div className="mt-4">

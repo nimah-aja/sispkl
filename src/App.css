@@ -4,6 +4,9 @@
   padding: 2rem;
   text-align: center;
 }
+.react-hot-toast {
+  z-index: 1000000 !important;
+}
 
 .logo {
   height: 6em;

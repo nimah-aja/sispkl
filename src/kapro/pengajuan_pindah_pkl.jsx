@@ -5,11 +5,18 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import dayjs from 'dayjs';
 
+import { createPortal } from "react-dom";
+import Detail from "./components/Detail";
+
+
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
 import SearchBar from "./components/Search";
 
 const DataPengajuanPKL = () => {
+  const [openDetail, setOpenDetail] = useState(false);
+  const [detailData, setDetailData] = useState(null);
+
   const [active, setActive] = useState("pindah_pkl");
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState("Status");
@@ -31,12 +38,34 @@ const DataPengajuanPKL = () => {
   };
 
   const submissions = [
-    { id: 1, name: 'Mengajukan PKL', description: 'Telah mengajukan tempat PKL di JV', time: '2026-01-04T10:00:00', hasActions: false, type: "submit" },
-    { id: 2, name: 'Anda Menyetujui Pengajuan', description: 'Persetujuan PKL di UBIG', time: '2026-01-04T09:00:00', hasActions: false, type: "approved" },
-    { id: 3, name: 'Anda Menolak Pengajuan', description: 'Pengajuan PKL di Tmint ditolak', time: '2026-01-03T15:00:00', hasActions: false, type: "rejected" },
-    { id: 4, name: 'Mengajukan PKL', description: 'Mengajukan PKL di hummatch', time: '2026-01-03T12:00:00', hasActions: false, type: "submit" },
-    { id: 5, name: 'Diantebes Mengajukan PKL di UBIG', description: 'Mengajukan PKL di UBIG', time: '2026-01-02T14:00:00', hasActions: true, type: "submit" },
-  ];
+  {
+    id: 1,
+    type: "submit",
+    name: "Mengajukan PKL",
+    description: "Telah mengajukan tempat PKL di JV",
+    time: "2026-01-04T10:00:00",
+    industri: "JV Company",
+    nama_siswa: "Mirza",
+    nisn: "1234567890",
+    kelas: "XI RPL 1",
+    jurusan: "RPL",
+    status: "Menunggu",
+  },
+  {
+    id: 2,
+    type: "approved",
+    name: "Anda Menyetujui Pengajuan",
+    description: "Persetujuan PKL di UBIG",
+    time: "2026-01-04T09:00:00",
+    industri: "UBIG",
+    nama_siswa: "Azhar",
+    nisn: "987654321",
+    kelas: "XI RPL 2",
+    jurusan: "RPL",
+    status: "Disetujui",
+  },
+];
+
 
   const sortedSubmissions = submissions.sort((a,b) => new Date(b.time) - new Date(a.time));
 
@@ -159,13 +188,17 @@ const DataPengajuanPKL = () => {
             }]}
           />
 
-          <div className="mt-6 space-y-3">
+          <div className="mt-6 space-y-3" >
             {filteredSubmissions.map((sub, index) => (
               <div key={sub.id}>
                 {renderDayLabel(sub, index) && (
                   <div className="text-white font-semibold mb-2">{renderDayLabel(sub, index)}</div>
                 )}
-                <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all">
+                <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
+                onClick={() => {
+                  setDetailData(sub);
+                  setOpenDetail(true);
+                }}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 rounded-full">
@@ -191,6 +224,40 @@ const DataPengajuanPKL = () => {
           </div>
 
         </main>
+        {openDetail && detailData &&
+          createPortal(
+            <Detail
+              mode="view"
+              title="Detail Pengajuan Pindah PKL"
+              size="half"
+              onClose={() => {
+                setOpenDetail(false);
+                setDetailData(null);
+              }}
+              initialData={{
+                nama_industri: detailData.industri || "-",
+                nama_siswa: detailData.nama_siswa || "-",
+                nisn: detailData.nisn || "-",
+                kelas: detailData.kelas || "-",
+                jurusan: detailData.jurusan || "-",
+                status: detailData.status || "-",
+                tanggal_permohonan: dayjs(detailData.time).format(
+                  "DD MMM YYYY HH:mm"
+                ),
+              }}
+              fields={[
+                { name: "nama_industri", label: "Industri", full: true },
+                { name: "nama_siswa", label: "Nama Siswa" },
+                { name: "nisn", label: "NISN" },
+                { name: "kelas", label: "Kelas" },
+                { name: "jurusan", label: "Jurusan" },
+                { name: "status", label: "Status" },
+                { name: "tanggal_permohonan", label: "Tanggal Pengajuan" },
+              ]}
+            />,
+            document.body
+          )}
+
       </div>
     </div>
   );

@@ -1,4 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+
 import {
   FilePlus,
   ArrowLeftRight,
@@ -7,20 +9,24 @@ import {
 } from "lucide-react";
 
 export default function QuickActions({ onAction }) {
+  const navigate = useNavigate();                     
   const actions = [
     {
+      onClick: () => navigate("/guru/kaprodi/pengajuanPKL"),
       label: "Pengajuan PKL",
       icon: <FilePlus size={20} className="text-blue-600" />,
       bg: "bg-blue-100",
       key: "pengajuan_pkl",
     },
     {
+      onClick: () => navigate("/guru/kaprodi/pengajuan_pindah_pkl"),
       label: "Pengajuan Pindah PKL",
       icon: <ArrowLeftRight size={20} className="text-green-600" />,
       bg: "bg-green-100",
       key: "pindah_pkl",
     },
     {
+      onClick: () => navigate("/guru/kaprodi/perizinan"),
       label: "Izin PKL",
       icon: <CalendarX size={20} className="text-purple-600" />,
       bg: "bg-purple-100",

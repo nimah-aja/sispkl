@@ -8,7 +8,7 @@ import { removeTokens } from "../../utils/authHelper";
 
 // components
 import LogoutModal from "../components/Logout";
-import PopupNotifikasi from "../components/PopupNotifikasi";
+import PopupNotifikasi from "./PopupNotifikasi";
 
 // assets
 import profile from "../../assets/profile.svg";
@@ -37,7 +37,7 @@ export default function HeaderKoordinator({
     propUser ||
     JSON.parse(localStorage.getItem("user")) || {
       name: "Pengguna",
-      role: "Koordinator",
+      role: "Siswa",
     };
 
   const handleLogout = () => {
@@ -53,6 +53,7 @@ export default function HeaderKoordinator({
     title: item.title,
     description: item.description,
     time: item.time,
+    onClick: item.onClick,
     icon:
       item.type === "approved" ? (
         <CheckCircle className="w-5 h-5 text-white" />
@@ -124,7 +125,7 @@ export default function HeaderKoordinator({
         {/* Logout */}
         <button
           onClick={() => setIsLogoutOpen(true)}
-          className="button-radius flex items-center gap-2 bg-[#3C3C3C] text-white px-4 py-2 rounded-full hover:bg-[#2d2d2d] transition"
+          className="button-radius flex items-center gap-2 !bg-[#3A3D3D] text-white px-4 py-2 rounded-full hover:bg-[#2d2d2d] transition"
         >
           <img src={logoutIcon} alt="Logout" className="w-5 h-5 ml-3" />
           <span className="font-semibold">Keluar</span>

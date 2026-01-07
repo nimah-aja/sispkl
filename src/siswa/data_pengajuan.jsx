@@ -1,25 +1,123 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FilePlus, CheckCircle, XCircle, User, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import dayjs from 'dayjs';
 
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
 import SearchBar from "./components/Search";
 
+import dayjs from "dayjs";
+import { getPengajuanMe } from "../utils/services/siswa/pengajuan_pkl";
+import { getIndustri } from "../utils/services/admin/get_industri";
+import { getGuru } from "../utils/services/admin/get_guru";
+import { createPortal } from "react-dom";
+import Detail from "./components/Detail";
+
+
 const RiwayatPengajuan = () => {
+  const [submissions, setSubmissions] = useState([]);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [detailData, setDetailData] = useState(null);
   const [active, setActive] = useState("riwayat_pengajuan");
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState("Status");
   const [openExport, setOpenExport] = useState(false);
   const exportRef = useRef(null);
 
-  const user = {
-    name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "KAPROG",
+  const [user] = useState(
+      JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "Siswa" }
+    );
+
+  useEffect(() => {
+  const fetchRiwayat = async () => {
+    try {
+      const [pengajuanRes, industriRes, guruRes] = await Promise.all([
+        getPengajuanMe(),
+        getIndustri(),
+        getGuru(),
+      ]);
+
+      // 🔁 bikin map
+      const industriMap = {};
+      industriRes.forEach(i => {
+        industriMap[i.id] = i.nama;
+      });
+
+      const guruMap = {};
+      guruRes.forEach(g => {
+        guruMap[g.id] = g.nama;
+      });
+
+      const list = pengajuanRes.data || [];
+      const riwayatList = [];
+
+      list.forEach(item => {
+        const namaIndustri =
+          industriMap[item.industri_id] || "Industri tidak diketahui";
+
+        // SUBMIT
+        if (item.tanggal_permohonan) {
+          riwayatList.push({
+            id: `submit-${item.id}`,
+            type: "submit",
+            name: "Anda Mengajukan PKL",
+            description: `Pengajuan PKL di ${namaIndustri}`,
+            time: item.tanggal_permohonan,
+
+            onClick: () => {
+              setDetailData({
+                ...item,
+                namaIndustri,
+                namaGuru: guruMap[item.processed_by] || "-",
+              });
+              setOpenDetail(true);
+            },
+          });
+        }
+
+        // APPROVED / REJECTED
+        if (item.decided_at) {
+          const namaGuru =
+            guruMap[item.processed_by] || "Kaprog";
+
+          riwayatList.push({
+            id: `decide-${item.id}`,
+            type: item.status === "Approved" ? "approved" : "rejected",
+            name:
+              item.status === "Approved"
+                ? `${namaGuru} Menyetujui Pengajuan`
+                : `${namaGuru} Menolak Pengajuan`,
+            description: `Pengajuan PKL di ${namaIndustri}`,
+            time: item.decided_at,
+
+            onClick: () => {
+              setDetailData({
+                ...item,
+                namaIndustri,
+                namaGuru,
+              });
+              setOpenDetail(true);
+            },
+          });
+        }
+      });
+
+      // urutkan terbaru
+      riwayatList.sort(
+        (a, b) => new Date(b.time) - new Date(a.time)
+      );
+
+      setSubmissions(riwayatList);
+    } catch (err) {
+      console.error("Gagal ambil riwayat pengajuan", err);
+    }
   };
+
+  fetchRiwayat();
+}, []);
+
 
   const getSubmissionIcon = (type) => {
     switch(type) {
@@ -30,22 +128,17 @@ const RiwayatPengajuan = () => {
     }
   };
 
-  const submissions = [
-    { id: 1, name: 'Mengajukan PKL', description: 'Telah mengajukan tempat PKL di JV', time: '2026-01-04T10:00:00', hasActions: false, type: "submit" },
-    { id: 2, name: 'Anda Menyetujui Pengajuan', description: 'Persetujuan PKL di UBIG', time: '2026-01-04T09:00:00', hasActions: false, type: "approved" },
-    { id: 3, name: 'Anda Menolak Pengajuan', description: 'Pengajuan PKL di Tmint ditolak', time: '2026-01-03T15:00:00', hasActions: false, type: "rejected" },
-    { id: 4, name: 'Mengajukan PKL', description: 'Mengajukan PKL di hummatch', time: '2026-01-03T12:00:00', hasActions: false, type: "submit" },
-    { id: 5, name: 'Diantebes Mengajukan PKL di UBIG', description: 'Mengajukan PKL di UBIG', time: '2026-01-02T14:00:00', hasActions: true, type: "submit" },
-  ];
+  
 
   const sortedSubmissions = submissions.sort((a,b) => new Date(b.time) - new Date(a.time));
 
-  const filteredSubmissions = sortedSubmissions.filter(sub => {
+  const filteredSubmissions = submissions.filter(sub => {
     const lowerQuery = query.toLowerCase();
+
     const matchesQuery =
       sub.name.toLowerCase().includes(lowerQuery) ||
       sub.description.toLowerCase().includes(lowerQuery) ||
-      dayjs(sub.time).format('YYYY-MM-DD HH:mm').toLowerCase().includes(lowerQuery);
+      dayjs(sub.time).format("YYYY-MM-DD HH:mm").includes(lowerQuery);
 
     let matchesStatus = true;
     if (statusFilter === "Menunggu") matchesStatus = sub.type === "submit";
@@ -54,6 +147,24 @@ const RiwayatPengajuan = () => {
 
     return matchesQuery && matchesStatus;
   });
+
+  const notifications = submissions.map((item) => ({
+    type: item.type, // submit | approved | rejected
+    title: item.name,
+    description: item.description,
+    time: item.time,
+    onClick: item.onClick,
+  }));
+
+  const safeValue = (value) => {
+    if (value === null || value === undefined || value === "") {
+      return "-";
+    }
+    return value;
+  };
+
+
+
 
   const exportData = filteredSubmissions.map((sub, i) => ({
     No: i + 1,
@@ -105,7 +216,7 @@ const RiwayatPengajuan = () => {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header query={query} setQuery={setQuery} user={user} />
+      <Header query={query} setQuery={setQuery} user={user}  notifications={notifications}/>
       <div className="flex">
         <div className="hidden md:block">
           <Sidebar active={active} setActive={setActive} />
@@ -113,10 +224,10 @@ const RiwayatPengajuan = () => {
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-none md:rounded-l-3xl shadow-inner">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-white text-2xl font-bold">Data Pengajuan Pindah PKL</h2>
+            <h2 className="text-white text-2xl font-bold">Riwayat Pengajuan PKL</h2>
 
             {/* EXPORT DROPDOWN */}
-            <div className="relative  -left-250" ref={exportRef}>
+            <div className="relative  -left-262" ref={exportRef}>
               <button
                 onClick={() => setOpenExport(!openExport)}
                 className="flex items-center gap-2 px-4 py-2 !bg-transparent
@@ -165,7 +276,7 @@ const RiwayatPengajuan = () => {
                 {renderDayLabel(sub, index) && (
                   <div className="text-white font-semibold mb-2">{renderDayLabel(sub, index)}</div>
                 )}
-                <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all">
+                <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all"   onClick={sub.onClick}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 rounded-full">
@@ -191,6 +302,39 @@ const RiwayatPengajuan = () => {
           </div>
 
         </main>
+        {openDetail && detailData &&
+          createPortal(
+            <Detail
+              mode="view"
+              title="Detail PKL"
+              size="half"
+              onClose={() => {
+                setOpenDetail(false);
+                setDetailData(null);
+              }}
+              initialData={{
+                nama_industri: safeValue(detailData.namaIndustri),
+                status: safeValue(detailData.status),
+                tanggal_permohonan: safeValue(dayjs(
+                  detailData.tanggal_permohonan || detailData.decided_at
+                ).format("DD MMMM YYYY HH:mm")),
+                tanggal_mulai: safeValue(detailData.tanggal_mulai),
+                tanggal_selesai: safeValue(detailData.tanggal_selesai),
+                pembimbing: safeValue(detailData.namaGuru),
+              }}
+              fields={[
+                { name: "nama_industri", label: "Industri", full: true },
+                { name: "status", label: "Status" },
+                { name: "tanggal_permohonan", label: "Tanggal Pengajuan" },
+                { name: "tanggal_mulai", label: "Tanggal Mulai PKL" },
+                { name: "tanggal_selesai", label: "Tanggal Selesai PKL" },
+                { name: "pembimbing", label: "Pembimbing " },
+              ]}
+            />,
+            document.body
+          )
+        }
+
       </div>
     </div>
   );

@@ -164,7 +164,7 @@ export default function PopupNotifikasi({
 
         {/* FOOTER */}
         <div className="border-t border-white/20">
-          <button onClick={() => navigate("/aktivitas")} className="w-full py-3 text-sm text-white !bg-transparent">
+          <button onClick={() => navigate("/guru/kaprodi/pengajuanPKL")} className="w-full py-3 text-sm text-white !bg-transparent">
             Lihat Riwayat Notifikasi
           </button>
           

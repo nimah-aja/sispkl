@@ -21,7 +21,7 @@ import ProfileRolePopup from "./Swicth";
 // import asset
 import logo from "../../assets/logo.png";
 import logoutIcon from "../../assets/logout.svg";
-import logoutImage from "../../assets/logout.jpg";
+import logoutImage from "../../assets/keluar.svg";
 import addImage from "../../assets/add_image.svg";
 
 export default function Header({ query, setQuery, user: propUser, notifications = [], }) {
