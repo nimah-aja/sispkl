@@ -58,7 +58,7 @@ const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
   const itemsPerPage = 5;
 
   const user = {
-    name: "Loren Schmitt",
+    name: localStorage.getItem("nama_guru") || "Guru SMK",
     role: "Koordinator",
   };
 

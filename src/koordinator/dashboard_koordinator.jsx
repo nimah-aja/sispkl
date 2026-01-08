@@ -41,9 +41,9 @@ export default function KoordinatorDashboard() {
   // Data dummy
   useEffect(() => {
     const dummyData = [
-      { title: "Peserta PKL", icon: sidebarUsers, value: 25 },
-      { title: "Pengajuan PKL", icon: pengajuanPKL, value: 10 },
-      { title: "Pembimbing", icon: Pembimbing, value: 5 },
+      { title: "Data Peserta PKL", icon: sidebarUsers, value: 20 },
+      { title: "Pengajuan PKL", icon: pengajuanPKL, value: 2 },
+      { title: "Pembimbing", icon: Pembimbing, value: 2 },
       { title: "Surat Pengantaran", icon: suratPengantaran, value: 8 },
       { title: "Monitoring", icon: monitoring, value: 12 },
       { title: "Surat Penjemputan", icon: suratPenjemputan, value: 6 },
