@@ -41,12 +41,15 @@ import PengajuanPKL from "../assets/pengajuan_PKL.svg";
 import Pembimbing from "../assets/pembimbing.svg";
 import profile from "../assets/profile.svg";
 import toast from "react-hot-toast";
+import pengajuanPKL from "../assets/pengajuan_PKL.svg";
+
 
 // utils
 import { getPKLApplications, approvePKLApplication, rejectPKLApplication, } from "../utils/services/kapro/pengajuanPKL";
 import { getIndustriPreview } from "../utils/services/kapro/industri";
 import { getPembimbingPKL } from "../utils/services/kapro/pembimbing";
 import {getGuru} from "../utils/services/admin/get_guru"
+
 
 export default function KaprodiDashboard() {
   const navigate = useNavigate();
@@ -565,7 +568,9 @@ export default function KaprodiDashboard() {
           {/* CARD */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
             {cards.map((item, i) => (
-              <DashboardCard key={i} item={item} />
+              <DashboardCard key={i} item={item} onClick={() => {if (item.title.includes("Industri")) navigate("/guru/kaprodi/industri");
+                      else if (item.title.includes("Pengajuan PKL")) navigate("/guru/kaprodi/pengajuanPKL");
+                      else if (item.title.includes("Pembimbing")) navigate("/guru/kaprodi/pembimbing");}}/>
             ))}
           </div>
 

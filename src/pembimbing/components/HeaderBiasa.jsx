@@ -7,6 +7,8 @@ import {
   Search
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import { FileUp, Printer } from "lucide-react";
+
 
 
 // helper
@@ -25,6 +27,7 @@ import logoutImage from "../../assets/keluar.svg";
 import addImage from "../../assets/add_image.svg";
 
 export default function Header({ query, setQuery, user: propUser, notifications = [], }) {
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -71,6 +74,15 @@ export default function Header({ query, setQuery, user: propUser, notifications 
     setHasUnread(unread);
   }, [notifications]);
 
+  useEffect(() => {
+    const handleClickOutside = () => setIsAddOpen(false);
+    if (isAddOpen) {
+      window.addEventListener("click", handleClickOutside);
+    }
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, [isAddOpen]);
+
+
 
 
   return (
@@ -91,7 +103,48 @@ export default function Header({ query, setQuery, user: propUser, notifications 
         <div className="flex items-center space-x-6">
           
           {/* Icons */}
-            <img src={addImage} alt="Addimg" className="w-9"/>
+            <div className="relative">
+              <img
+                src={addImage}
+                alt="Add"
+                className="w-9 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAddOpen((v) => !v);
+                }}
+
+              />
+
+              {isAddOpen && (
+                <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg p-3 border border-gray-400 z-50 overflow-hidden">
+                  
+                  {/* Upload Pengantaran */}
+                  <button
+                    onClick={() => {
+                      setIsAddOpen(false);
+                      navigate("/guru/pembimbing/uploadPengantaran"); // ganti sesuai route kamu
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:!bg-gray-100 !bg-transparent text-left"
+                  >
+                    <FileUp className="w-5 h-5 text-orange-500" />
+                    Upload Pengantaran
+                  </button>
+
+                  {/* Cetak Surat */}
+                  <button
+                    onClick={() => {
+                      setIsAddOpen(false);
+                      navigate("/guru/pembimbing/cetakDokumen"); // ganti sesuai route kamu
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:!bg-gray-100 !bg-transparent text-left"
+                  >
+                    <Printer className="w-5 h-5 text-blue-600" />
+                    Cetak Surat
+                  </button>
+                </div>
+              )}
+              </div>
+
             <button
               onClick={() => {
                 setIsNotificationOpen((v) => !v);

@@ -85,7 +85,7 @@ export default function HeaderKoordinator({
       {/* RIGHT SIDE */}
       <div className="flex items-center gap-4">
         {/* Add Icon */}
-        <img src={addImage} alt="Add" className="w-9" />
+        {/* <img src={addImage} alt="Add" className="w-9" /> */}
 
         {/* Notification */}
         <button

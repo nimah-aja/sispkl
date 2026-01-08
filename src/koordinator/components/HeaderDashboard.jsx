@@ -131,7 +131,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
       <div className="flex items-center gap-4">
 
         {/* Icons */}
-        <img src={addImage} alt="Addimg" className="w-9"/>
+        {/* <img src={addImage} alt="Addimg" className="w-9"/> */}
         <button
           onClick={() => {
             setIsNotificationOpen((v) => !v);

@@ -13,6 +13,7 @@ import DashboardAdminKelas from "./admin/data_kelas";
 import DashboardAdminSiswa from "./admin/data_siswa"; 
 import DashboardAdminGuru from "./admin/data_guru"; 
 import DashboardAdminIndustri from "./admin/data_industri"; 
+import AdminPengajuan from "./admin/data_pengajuan";
 
   // WALI KELAS
   import DashboardWaliKelas from  "./wali_kelas/dashboard_walikelas";
@@ -45,6 +46,8 @@ import PembimbingSiswa from "./pembimbing/siswa";
 import PembimbingPermasalahan from "./pembimbing/permasalahan";
 import PembimbingPerizinan from "./pembimbing/perizinan";
 import PindahPKLPembimbing from "./pembimbing/perpindahan";
+import UploadPengantaran from "./pembimbing/upload_pengantaran";
+import CetakDokumen from "./pembimbing/cetak_dokumen"
   
 // siswa
 import DashboardSiswa from "./siswa/dashboard_siswa";
@@ -90,6 +93,7 @@ function AppContent() {
         <Route path="/admin/guru" element={<DashboardAdminGuru />} />
         <Route path="/admin/industri" element={<DashboardAdminIndustri />} />
         <Route path="/role" element={<RoleOption />} />
+        <Route path="/admin/pengajuan" element={<AdminPengajuan />} />
 
         {/* WALI KELAS */}
         <Route path="/guru/wali_kelas/" element={<DashboardWaliKelas />} />
@@ -103,6 +107,9 @@ function AppContent() {
           <Route path="/guru/pembimbing/permasalahan" element={<PembimbingPermasalahan />} />
           <Route path="/guru/pembimbing/perizinan" element={<PembimbingPerizinan />} />
           <Route path="/guru/pembimbing/perpindahan" element={<PindahPKLPembimbing />} />
+          <Route path="/guru/pembimbing/uploadPengantaran" element={<UploadPengantaran />} />
+          <Route path="/guru/pembimbing/cetakDokumen" element={<CetakDokumen />} />
+
 
         {/* Koordinator */}
         <Route path="/guru/koordinator" element={<KoordinatorDashboard/>}/>

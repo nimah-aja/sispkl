@@ -213,11 +213,7 @@ export default function IndustriPage() {
       label: "Pembimbing",
       name: "pic",
       width: "half",
-      type: "select",
-      options: pembimbingList.map((p) => ({
-        value: p.nama,
-        label: p.nama,
-      })),
+      type: "text",
     },
 
     { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },

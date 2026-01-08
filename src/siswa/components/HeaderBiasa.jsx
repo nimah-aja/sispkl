@@ -92,7 +92,7 @@ export default function HeaderKoordinator({
         <div className="flex items-center space-x-6">
           
           {/* Icons */}
-            <img src={addImage} alt="Addimg" className="w-9"/>
+            {/* <img src={addImage} alt="Addimg" className="w-9"/> */}
             <button
               onClick={() => {
                 setIsNotificationOpen((v) => !v);

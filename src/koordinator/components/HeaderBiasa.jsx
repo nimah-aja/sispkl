@@ -91,7 +91,7 @@ export default function Header({ query, setQuery, user: propUser, notifications 
         <div className="flex items-center space-x-6">
           
           {/* Icons */}
-            <img src={addImage} alt="Addimg" className="w-9"/>
+            {/* <img src={addImage} alt="Addimg" className="w-9"/> */}
             <button
               onClick={() => {
                 setIsNotificationOpen((v) => !v);

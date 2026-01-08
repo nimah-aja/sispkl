@@ -142,7 +142,10 @@ export default function PKLDashboard() {
           {/* DASHBOARD CARD */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
             {dataDisplay.map((item, i) => (
-              <DashboardCard key={i} item={item} />
+              <DashboardCard key={i} item={item} onClick={() => {if (item.title.includes("Data Peserta PKL")) navigate("/guru/pembimbing/siswa");
+                      else if (item.title.includes("Permasalahan")) navigate("/guru/pembimbing/permasalahan");
+                      else if (item.title.includes("Perizinan")) navigate("/guru/pembimbing/perizinan");
+                     else if (item.title.includes("Perpindahan PKL")) navigate("/guru/pembimbing/perpindahan");}}/> 
             ))}
           </div>
 

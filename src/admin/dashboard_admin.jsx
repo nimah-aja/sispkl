@@ -45,7 +45,7 @@ export default function PKLDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "admin" };
 
   // warna grafik utama
   const COLORS = [
