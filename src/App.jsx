@@ -30,9 +30,8 @@ import Monitoring from "./koordinator/monitoring";
 import DataPenjemputan from "./koordinator/data_penjemputan"
 import PindahPKL from "./koordinator/data_pindah_pkl"
 import Pembekalan from "./koordinator/jadwal_pembekalan"
-import pindahPKL from "./pembimbing/perpindahan"
 
-// Kapro
+// kapro
 import KaprodiDashboard from "./kapro/dashboard_kaprog";
 import DataIndustriKaprog from "./kapro/data_industri";
 import DataPembimbing from "./kapro/data_pembimbing";
@@ -40,14 +39,14 @@ import DataPengajuanPindahPKL from "./kapro/pengajuan_pindah_pkl";
 import DataPengajuanPKL from "./kapro/pengajuan_pkl";
 import DataPerizinan from "./kapro/data_perizinan";
  
- // PEMBIMBING
+// pembimbing
 import DashboardPembimbing from "./pembimbing/dashboard_pembimbing";
 import PembimbingSiswa from "./pembimbing/siswa";
 import PembimbingPermasalahan from "./pembimbing/permasalahan";
 import PembimbingPerizinan from "./pembimbing/perizinan";
-
+import PindahPKLPembimbing from "./pembimbing/perpindahan";
   
-// Siswa
+// siswa
 import DashboardSiswa from "./siswa/dashboard_siswa";
 import FormPengajuan from "./siswa/pengajuan_pkl";
 import FormPengajuanPindah from "./siswa/pengajuan_perpindahan_pkl";
@@ -103,7 +102,7 @@ function AppContent() {
           <Route path="/guru/pembimbing/siswa" element={<PembimbingSiswa />} />
           <Route path="/guru/pembimbing/permasalahan" element={<PembimbingPermasalahan />} />
           <Route path="/guru/pembimbing/perizinan" element={<PembimbingPerizinan />} />
-          <Route path="/guru/pembimbing/perpindahan" element={<pindahPKL />} />
+          <Route path="/guru/pembimbing/perpindahan" element={<PindahPKLPembimbing />} />
 
         {/* Koordinator */}
         <Route path="/guru/koordinator" element={<KoordinatorDashboard/>}/>

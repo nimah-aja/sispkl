@@ -17,7 +17,7 @@ export default function Sidebar({ active, setActive }) {
     { title: "Peserta Didik", icon: sidebarUsers, route: "/guru/pembimbing/siswa", key: "siswa" },
     { title: "Permasalahan", icon: sidebarChalk, route: "/guru/pembimbing/permasalahan", key: "permasalahan" },
     { title: "Perizinan", icon: sidebarCorporate, route: "/guru/pembimbing/perizinan", key: "perizinan" },
-    { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/guru/pembimbing/perpindahanPKL", key: "perpindahanPKL" }
+    { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/guru/pembimbing/perpindahan", key: "perpindahanPKL" }
   ];
 
   // main
