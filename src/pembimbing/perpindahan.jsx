@@ -25,7 +25,7 @@ export default function DataSiswaPKL() {
 
   const navigate = useNavigate();
   const user =
-    JSON.parse(localStorage.getItem("user")) || { name: "Wali Kelas", role: "Guru" };
+    JSON.parse(localStorage.getItem("user")) || { name: "Pem", role: "Guru" };
 
   // Data dummy siswa PKL
   const dummyDataSiswa = [

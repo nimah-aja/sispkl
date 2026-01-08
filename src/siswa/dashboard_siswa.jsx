@@ -305,14 +305,15 @@ useEffect(() => {
         {/* MAIN CONTENT */}
         <main className="p-6 overflow-auto">
           {/* Grid Status & Jadwal */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-            <div className="space-y-6">
-              <StatusPengajuanPKL dataPKL={activePKLData} />
-            </div>
-            <div className="space-y-6">
-              <JadwalPKLCard dataPKL={activePKLData} />
-            </div>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+  <div className="space-y-6 min-h-0">
+    <StatusPengajuanPKL dataPKL={activePKLData} />
+  </div>
+  <div className="space-y-6 min-h-0">
+    <JadwalPKLCard dataPKL={activePKLData} />
+  </div>
+</div>
+
 
           {/* Quick Actions */}
           <div className="mt-6">

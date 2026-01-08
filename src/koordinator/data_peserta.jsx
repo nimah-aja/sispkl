@@ -180,7 +180,7 @@ export default function DataPeserta() {
   XLSX.writeFile(wb, "data_peserta_pkl.xlsx");
 };
 
-const handleExportPdf = () => {
+const handleExportPDF = () => {
   if (!exportData.length) return;
   const doc = new jsPDF();
   doc.text("Data Peserta PKL", 14, 15);
@@ -198,7 +198,7 @@ const handleExportPdf = () => {
 
 
   return (
-    <div className="flex h-screen w-full bg-white">
+    <div className="flex min-h-screen w-full bg-white">
       {/* SIDEBAR */}
       <Sidebar active={active} setActive={setActive} />
 
@@ -207,47 +207,46 @@ const handleExportPdf = () => {
         <Header query={query} setQuery={setQuery} user={user} />
 
         <main className="flex-1 h-full min-h-screen p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-tl-3xl shadow-inner">
-          <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-white text-2xl font-bold">
-                          Data Peserta PKL
-                        </h2>
-            
-                        {/* EXPORT */}
-                        <div className="relative -left-280" ref={exportRef}>
-                          <button
-                            onClick={() => setOpenExport(!openExport)}
-                            className="flex items-center gap-2 px-4 py-2 !bg-transparent text-white rounded-full"
-                          >
-                            <Download size={20} />
-                          </button>
-            
-                          {openExport && (
-                            <div className="absolute -right-25 -mt-5 p-2 !bg-white border border-[#E1D6C4] rounded-lg shadow-md z-50">
-                              <button
-                                onClick={() => {
-                                  handleExportExcel();
-                                  setOpenExport(false);
-                                }}
-                                className="flex items-center gap-2 px-3 !bg-transparent py-2 hover:!bg-gray-100 text-sm w-full"
-                              >
-                                <FileSpreadsheet size={16} className="text-green-500" />
-                                Excel
-                              </button>
-            
-                              <button
-                                onClick={() => {
-                                  handleExportPdf();
-                                  setOpenExport(false);
-                                }}
-                                className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                              >
-                                <FileText size={16} className="text-red-500" />
-                                PDF
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+          <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                                        <h2 className="text-white font-bold text-base sm:text-lg">
+                                          Data Peserta PKL
+                                        </h2>
+                            
+                                        <div className="relative" ref={exportRef}>
+                                          <button
+                                            onClick={() => setOpenExport(!openExport)}
+                                            className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                                          >
+                                            <Download size={18} />
+                                          </button>
+                            
+                                          {openExport && (
+                                            <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                                              <button
+                                                onClick={() => {
+                                                  handleExportExcel();
+                                                  setOpenExport(false);
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                                              >
+                                                <FileSpreadsheet size={16} className="text-green-600" />
+                                                Excel
+                                              </button>
+                            
+                                              <button
+                                                onClick={() => {
+                                                  handleExportPDF();
+                                                  setOpenExport(false);
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                                              >
+                                                <FileText size={16} className="text-red-600" />
+                                                PDF
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
 
 
           <SearchBar

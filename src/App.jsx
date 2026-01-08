@@ -27,6 +27,10 @@ import DataPeserta from "./koordinator/data_peserta";
 import PembimbingKoordinator from "./koordinator/pembimbing";
 import DataPengantaran from "./koordinator/data_pengantaran";
 import Monitoring from "./koordinator/monitoring";
+import DataPenjemputan from "./koordinator/data_penjemputan"
+import PindahPKL from "./koordinator/data_pindah_pkl"
+import Pembekalan from "./koordinator/jadwal_pembekalan"
+import pindahPKL from "./pembimbing/perpindahan"
 
 // Kapro
 import KaprodiDashboard from "./kapro/dashboard_kaprog";
@@ -37,11 +41,11 @@ import DataPengajuanPKL from "./kapro/pengajuan_pkl";
 import DataPerizinan from "./kapro/data_perizinan";
  
  // PEMBIMBING
-  import DashboardPembimbing from "./pembimbing/dashboard_pembimbing";
-  import PembimbingSiswa from "./pembimbing/siswa";
-  import PembimbingPermasalahan from "./pembimbing/permasalahan";
-  import PembimbingPerizinan from "./pembimbing/perizinan";
-  import Pembimbingperpindahan from "./pembimbing/perpindahan";
+import DashboardPembimbing from "./pembimbing/dashboard_pembimbing";
+import PembimbingSiswa from "./pembimbing/siswa";
+import PembimbingPermasalahan from "./pembimbing/permasalahan";
+import PembimbingPerizinan from "./pembimbing/perizinan";
+
   
 // Siswa
 import DashboardSiswa from "./siswa/dashboard_siswa";
@@ -89,7 +93,7 @@ function AppContent() {
         <Route path="/role" element={<RoleOption />} />
 
         {/* WALI KELAS */}
-        <Route path="/guru/wali_kelas/walikelas" element={<DashboardWaliKelas />} />
+        <Route path="/guru/wali_kelas/" element={<DashboardWaliKelas />} />
         <Route path="/guru/wali_kelas/siswa" element={<WalkelSiswa />} />
         <Route path="/guru/wali_kelas/datapermasalahansiswa" element={<WalkelPermasalahan />} />
         <Route path="/guru/wali_kelas/dataperizinansiswa" element={<WalkelPerizinan />} />
@@ -99,7 +103,7 @@ function AppContent() {
           <Route path="/guru/pembimbing/siswa" element={<PembimbingSiswa />} />
           <Route path="/guru/pembimbing/permasalahan" element={<PembimbingPermasalahan />} />
           <Route path="/guru/pembimbing/perizinan" element={<PembimbingPerizinan />} />
-          <Route path="/guru/pembimbing/perpindahan" element={<Pembimbingperpindahan />} />
+          <Route path="/guru/pembimbing/perpindahan" element={<pindahPKL />} />
 
         {/* Koordinator */}
         <Route path="/guru/koordinator" element={<KoordinatorDashboard/>}/>
@@ -108,6 +112,9 @@ function AppContent() {
         <Route path="/guru/koordinator/pembimbing" element={<PembimbingKoordinator/>}/>
         <Route path="/guru/koordinator/suratPengantaran" element={<DataPengantaran/>}/>
         <Route path="/guru/koordinator/monitoring" element={<Monitoring/>}/>
+        <Route path = "/guru/koordinator/suratPenjemputan" element = {<DataPenjemputan/>}/>
+        <Route path = "/guru/koordinator/perpindahanPKL" element = {<PindahPKL/>}/>
+        <Route path = "/guru/koordinator/pembekalan" element = {<Pembekalan/>}/>
 
         {/* Kapro */}
         <Route path="/guru/kaprodi" element={<KaprodiDashboard/>}/>

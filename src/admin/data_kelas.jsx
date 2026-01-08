@@ -394,47 +394,46 @@ export default function KelasPage() {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h2 className="text-white font-bold text-base sm:text-lg">
-              Kelas
-            </h2>
-
-            {/* EXPORT */}
-            <div className="relative -left-319" ref={exportRef}>
-              <button
-                onClick={() => setOpenExport(!openExport)}
-                className="flex items-center px-3 py-2 text-white hover:bg-white/10 !bg-transparent rounded-full transition"
-              >
-                <Download size={18} />
-              </button>
-
-              {openExport && (
-                <div className="absolute -right-25 bg-white border border-gray-200 rounded-lg shadow-md z-50 p-2">
-                  <button
-                    onClick={() => {
-                      downloadExcel();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 !bg-transparent py-2 hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileSpreadsheet size={16} className="text-green-600" />
-                    Excel
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      downloadPDF();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileText size={16} className="text-red-600" />
-                    PDF
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                      <h2 className="text-white font-bold text-base sm:text-lg">
+                        Kelas
+                      </h2>
+          
+                      <div className="relative" ref={exportRef}>
+                        <button
+                          onClick={() => setOpenExport(!openExport)}
+                          className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                        >
+                          <Download size={18} />
+                        </button>
+          
+                        {openExport && (
+                          <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                            <button
+                              onClick={() => {
+                                downloadExcel();
+                                setOpenExport(false);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                            >
+                              <FileSpreadsheet size={16} className="text-green-600" />
+                              Excel
+                            </button>
+          
+                            <button
+                              onClick={() => {
+                                downloadPDF();
+                                setOpenExport(false);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                            >
+                              <FileText size={16} className="text-red-600" />
+                              PDF
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
 
           <SearchBar

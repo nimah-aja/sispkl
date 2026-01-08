@@ -23,14 +23,14 @@ export default function Sidebar({ active, setActive }) {
       { title: "Pembimbing", icon: Pembimbing, route: "/guru/koordinator/pembimbing", key: "Pembimbing" },
       { title: "Surat pengantaran", icon: suratPengantaran, route: "/guru/koordinator/suratPengantaran", key: "suratPengantaran" },
       { title: "Monitoring", icon: monitoring, route: "/guru/koordinator/monitoring", key: "monitoring" },
-      { title: "Surat Penjemputan", icon: suratPenjemputan, route: "/koordinator/suratPenjemputan", key: "suratPenjemputan" },
-      { title: "Perpindahan PKL", icon: perpindahanPKL, route: "/koordinator/perpindahanPKL", key: "perpindahanPKL" },
-      { title: "Pembekalan", icon: pembekalan, route: "/koordinator/pembekalan", key: "pembekalan" },
+      { title: "Surat Penjemputan", icon: suratPenjemputan, route: "/guru/koordinator/suratPenjemputan", key: "suratPenjemputan" },
+      { title: "Perpindahan PKL", icon: perpindahanPKL, route: "/guru/koordinator/perpindahanPKL", key: "perpindahanPKL" },
+      { title: "Pembekalan", icon: pembekalan, route: "/guru/koordinator/pembekalan", key: "pembekalan" },
     ];
 
   // main
   return (
-    <aside className="mt-18 w-20 bg-white h-screen flex flex-col items-center py-8 space-y-6 ">
+    <aside className="mt-18 w-20 bg-white !h-full flex flex-col items-center py-8 space-y-6">
       {items.map((item) => (
         <div key={item.key} className="relative group">
           <div

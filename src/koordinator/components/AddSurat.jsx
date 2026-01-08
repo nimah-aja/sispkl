@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff, Calendar, X } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
+import jsPDF from "jspdf";
 
 // import assets
 import addSidebar from "../../assets/addSidebar.svg";
@@ -15,6 +16,7 @@ import silang from "../../assets/silang.svg"
 // import components
 import DeleteConfirmationModal from "../components/Cancel"; 
 import SaveConfirmationModal from "../components/Save";
+import SuratPreview from "../components/suratPreview"
 
 export default function Add({
   title,
@@ -32,6 +34,44 @@ export default function Add({
     title: "Apakah Anda yakin untuk kembali?",
     subtitle: "Data yang sudah diisi akan terhapus."
   });
+  const [previewData, setPreviewData] = useState({});
+
+
+  const [suratData, setSuratData] = useState({
+    nomor: "",
+    tanggal: "",
+    kepada: "",
+    alamat: "",
+    perihal: "",
+    isi: "",
+    pengirim: "",
+    jabatan: "",
+    });
+
+    const exportSuratPDF = (data) => {
+        const doc = new jsPDF();
+
+        doc.setFontSize(14);
+        doc.text("SURAT PENGANTARAN", 105, 20, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.text(`No: ${data.nomor}`, 20, 35);
+        doc.text(`Tanggal: ${data.tanggal}`, 20, 42);
+
+        doc.text(`Kepada: ${data.kepada}`, 20, 55);
+        doc.text(`Alamat: ${data.alamat}`, 20, 62);
+        doc.text(`Perihal: ${data.perihal}`, 20, 70);
+
+        doc.text(data.isi || "-", 20, 85);
+
+        doc.text("Hormat kami,", 140, 140);
+        doc.text(data.pengirim || "-", 140, 155);
+        doc.text(data.jabatan || "-", 140, 162);
+
+        doc.save("surat_pengantaran.pdf");
+        };
+
+
 
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isChanged, setIsChanged] = useState(false); 
@@ -44,6 +84,12 @@ export default function Add({
   const [dropdownState, setDropdownState] = useState({});
   const [searchQueries, setSearchQueries] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+        setPreviewData(initialData);
+    }
+    }, [initialData]);
 
   // Date
   const DateInput = React.forwardRef(
@@ -352,11 +398,11 @@ export default function Add({
         <div className="flex flex-1 overflow-hidden">
           {/* kiri */}
           <div className="hidden md:flex w-1/2 items-center justify-center border-r p-4">
-            <img
-              src={image || addSidebar}
-              alt="addSidebar"
-              className="max-w-xs w-full h-auto object-contain"
+            <SuratPreview
+            data={suratData}
+            onExport={() => exportSuratPDF(suratData)}
             />
+
           </div>
 
           {/* kanan */}
@@ -545,6 +591,12 @@ export default function Add({
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300 focus:ring-orange-500"
                       }`}
+                      onChange={(e) =>
+                        setSuratData((prev) => ({
+                        ...prev,
+                        [field.name]: e.target.value,
+                        }))
+                    }
                     />
                   ) : field.type === "password" ? (
                     <div className="relative w-full">
@@ -572,9 +624,16 @@ export default function Add({
                     <div>
                       <DatePicker
                         selected={dateValues[field.name]}
-                        onChange={(date) =>
-                          setDateValues((prev) => ({ ...prev, [field.name]: date }))
-                        }
+                        onChange={(date) => {
+                            setDateValues((prev) => ({ ...prev, [field.name]: date }));
+                            setSuratData((prev) => ({
+                                ...prev,
+                                [field.name]: date
+                                ? format(date, "dd/MM/yyyy")
+                                : "",
+                            }));
+                            }}
+
                         className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
                         calendarClassName=" w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
                         dayClassName={() =>
@@ -640,6 +699,12 @@ export default function Add({
                       name={field.name}
                       type={field.type || "text"}
                       ref={(el) => (inputRefs.current[idx] = el)}
+                      onChange={(e) =>
+                        setSuratData((prev) => ({
+                        ...prev,
+                        [field.name]: e.target.value,
+                        }))
+                    }
                       defaultValue={initialData[field.name] || ""}
                       onKeyDown={(e) => handleKeyDown(e, idx)}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${

@@ -120,7 +120,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
       {/* TITLE */}
       <div>
         <h1 className="font-extrabold text-[#641E20]" style={{ fontSize: "40px" }}>
-          DASHBOARD KOORDINATOR
+          DASHBOARD WALI KELAS
         </h1>
         <p className="text-sm font-bold text-black mt-1">
           Selamat datang {user.name}!

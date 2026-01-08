@@ -1,267 +1,256 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "../utils/axiosInstance";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { useRef } from "react";
 
 // Components
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
+import Sidebar from "./components/SidebarBiasa";
+import Header from "./components/HeaderBiasa";
+import Table from "./components/Table";
+import SearchBar from "./components/Search";
+import Pagination from "./components/Pagination";
 
 export default function DataPermasalahanSiswa() {
-  const [active, setActive] = useState("sidebarPermasalahan");
-  const [query, setQuery] = useState("");
+  const exportRef = useRef(null);
+  const [openExport, setOpenExport] = useState(false);
+
+  const [active, setActive] = useState("permasalahan");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [industriFilter, setIndustriFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [dataPermasalahan, setDataPermasalahan] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const navigate = useNavigate();
-  const user =
-    JSON.parse(localStorage.getItem("user")) || { name: "Wali Kelas", role: "Guru" };
+  const itemsPerPage = 2;
 
-  // Data dummy permasalahan siswa
+  const user = {
+    name: localStorage.getItem("nama_guru") || "Guru SMK",
+    role: "Pembimbing",
+  };
+
+
+  // ================= DUMMY DATA =================
   const dummyDataPermasalahan = [
     {
       pelapor: "Siswa",
       nama: "Firli Zulfa Azzahra",
       tanggal: "01/05/2025",
       masalah: "Kesulitan memahami materi Matematika",
-      status: "Proses"
-    },
-    {
-      pelapor: "Siswa",
-      nama: "Andi Pratama",
-      tanggal: "15/11/2025",
-      masalah: "Konflik dengan teman sekelas",
-      status: "Proses"
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Siti Nurhaliza",
-      tanggal: "18/11/2025",
-      masalah: "Sering terlambat masuk kelas",
-      status: "Proses"
+      status: "Proses",
     },
     {
       pelapor: "Pembimbing",
       nama: "Budi Santoso",
       tanggal: "20/11/2025",
       masalah: "Nilai rapor menurun drastis",
-      status: "Selesai"
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Dewi Lestari",
-      tanggal: "22/11/2025",
-      masalah: "Bullying dari senior",
-      status: "Selesai"
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Rizki Ramadhan",
-      tanggal: "25/11/2025",
-      masalah: "Tidak mengerjakan tugas",
-      status: "Selesai"
+      status: "Selesai",
     },
     {
       pelapor: "Siswa",
       nama: "Maya Anggraini",
       tanggal: "28/11/2025",
       masalah: "Kesulitan adaptasi di sekolah baru",
-      status: "Proses"
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Farhan Maulana",
-      tanggal: "01/12/2025",
-      masalah: "Masalah keluarga mempengaruhi prestasi",
-      status: "Proses"
-    },
-    {
-      pelapor: "Siswa",
-      nama: "Linda Wijaya",
-      tanggal: "03/12/2025",
-      masalah: "Kehilangan motivasi belajar",
-      status: "Selesai"
+      status: "Proses",
     },
     {
       pelapor: "Pembimbing",
       nama: "Putri Maharani",
       tanggal: "05/12/2025",
       masalah: "Bolos sekolah tanpa keterangan",
-      status: "Proses"
-    }
+      status: "Selesai",
+    },
+    {
+      pelapor: "Siswa",
+      nama: "Andi Pratama",
+      tanggal: "15/11/2025",
+      masalah: "Konflik dengan teman sekelas",
+      status: "Proses",
+    },
   ];
 
+  // ================= LOAD DATA =================
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        // Ganti dengan endpoint API yang sesuai untuk data permasalahan siswa
-        // const res = await axios.get("/api/permasalahan-siswa");
-        // setDataPermasalahan(res.data.data);
-        
-        // Sementara gunakan dummy data
-        setTimeout(() => {
-          setDataPermasalahan(dummyDataPermasalahan);
-          setLoading(false);
-        }, 500);
-      } catch (err) {
-        console.error("Fetch data error:", err);
-        setError("Gagal mengambil data dari server.");
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    setDataPermasalahan(dummyDataPermasalahan);
   }, []);
 
-  // Filter data permasalahan
-  const filteredPermasalahan = dataPermasalahan.filter((item) => {
-    const matchQuery = item.nama.toLowerCase().includes(query.toLowerCase()) ||
-                       item.pelapor.toLowerCase().includes(query.toLowerCase()) ||
-                       item.masalah.toLowerCase().includes(query.toLowerCase());
-    const matchStatus = !statusFilter || item.status === statusFilter;
-    
-    return matchQuery && matchStatus;
+  // reset pagination jika filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, dateFilter]);
+
+  // ================= HELPER =================
+  const parseDate = (dateStr) => {
+    const [day, month, year] = dateStr.split("/");
+    return new Date(`${year}-${month}-${day}`);
+  };
+
+  // ================= FILTER DATA =================
+  const filteredData = dataPermasalahan.filter((item) => {
+    const q = search.toLowerCase();
+
+    const matchSearch =
+      item.nama.toLowerCase().includes(q) ||
+      item.pelapor.toLowerCase().includes(q) ||
+      item.masalah.toLowerCase().includes(q);
+
+    const matchStatus = statusFilter ? item.status === statusFilter : true;
+
+    const matchDate = dateFilter
+      ? parseDate(item.tanggal).toDateString() ===
+        new Date(dateFilter).toDateString()
+      : true;
+
+    return matchSearch && matchStatus && matchDate;
   });
 
-  // Get unique values for filters
-  const uniqueStatus = [...new Set(dataPermasalahan.map(s => s.status))];
+  // nomor urut
+  const dataWithNo = filteredData.map((item, i) => ({
+    ...item,
+    no: i + 1,
+  }));
+
+  // pagination
+  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
+  const paginatedData = dataWithNo.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // ================= TABLE =================
+  const columns = [
+    { label: "Pelapor", key: "pelapor" },
+    { label: "Nama", key: "nama" },
+    { label: "Tanggal", key: "tanggal" },
+    { label: "Masalah", key: "masalah" },
+    { label: "Status", key: "status" },
+  ];
+
+  const statusOptions = [...new Set(dataPermasalahan.map((d) => d.status))];
+
+  const exportData = filteredData.map((item, i) => ({
+    No: i + 1,
+    Pelapor: item.pelapor,
+    Nama: item.nama,
+    Tanggal: item.tanggal,
+    Masalah: item.masalah,
+    Status: item.status,
+  }));
+
+  const handleExportExcel = () => {
+    if (!exportData.length) return;
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Permasalahan Siswa");
+    XLSX.writeFile(wb, "data_permasalahan_siswa.xlsx");
+  };
+
+  const handleExportPDF = () => {
+    if (!exportData.length) return;
+    const doc = new jsPDF();
+    doc.text("Data Permasalahan Peserta Didik", 14, 15);
+    autoTable(doc, {
+      startY: 20,
+      head: [Object.keys(exportData[0])],
+      body: exportData.map((d) => Object.values(d)),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [100, 30, 33] },
+    });
+    doc.save("data_permasalahan_siswa.pdf");
+  };
+
 
   return (
     <div className="bg-white min-h-screen w-full">
-      {/* Header */}
-      <Header query={query} setQuery={setQuery} user={user} />
+      <Header user={user} />
 
-      <div className="flex flex-col md:flex-row">
-        {/* Sidebar */}
+      <div className="flex">
         <div className="hidden md:block">
           <Sidebar active={active} setActive={setActive} />
         </div>
 
-        {/* Main content */}
-        <main className="flex-1 p-6 md:p-10 rounded-none bg-[#6B2E3E] min-h-screen">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-white font-semibold">Loading data...</p>
+        <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
+          <div className="flex items-center mb-6 gap-1 w-full relative">
+            <h2 className="text-white font-bold text-lg">
+              Permasalahan
+            </h2>
+
+            <div className="relative" ref={exportRef}>
+              <button
+                onClick={() => setOpenExport(!openExport)}
+                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+              >
+                <Download size={18} />
+              </button>
+
+              {openExport && (
+                <div className="absolute left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                  <button
+                    onClick={() => {
+                      handleExportExcel();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Excel
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleExportPDF();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileText size={16} className="text-red-600" />
+                    PDF
+                  </button>
+                </div>
+              )}
             </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center bg-red-100 rounded-xl p-6 shadow-md">
-              <p className="text-red-600 font-medium">{error}</p>
             </div>
-          ) : (
-            <>
-              {/* Header Section */}
-              <div className="mb-8">
-                <h1 className="text-white text-3xl font-bold mb-8">Data Permasalahan Siswa</h1>
-                
-                {/* Search and Filter Row */}
-                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-8">
-                  {/* Search Bar */}
-                  <div className="relative flex-1 max-w-2xl">
-                    <input
-                      type="text"
-                      placeholder="Pencarian"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      className="w-full px-5 py-3 pl-12 rounded-full bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 shadow-md"
+
+
+          {/* SEARCH & FILTER */}
+          <SearchBar
+            query={search}
+            setQuery={setSearch}
+            placeholder="Cari nama / pelapor / masalah"
+            filters={[
+              {
+                label: "Status",
+                value: statusFilter,
+                options: statusOptions,
+                onChange: setStatusFilter,
+              },
+              {
+                label: "Pelapor",
+                value: dateFilter,
+                onChange: setDateFilter,
+              },
+            ]}
+          />
+
+          {/* TABLE */}
+          <Table
+                      columns={columns}
+                      data={paginatedData}
                     />
-                    <svg 
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-
-                  {/* Filter Buttons */}
-                  <div className="flex gap-3">
-                    {/* Status Filter */}
-                    <div className="relative">
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="appearance-none px-6 py-3 pr-10 rounded-full bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer shadow-md"
-                      >
-                        <option value="">Status</option>
-                        {uniqueStatus.map(status => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <div className="w-6 h-6 rounded-full bg-orange-400 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Industri Filter */}
-                    <div className="relative">
-                      <select
-                        value={industriFilter}
-                        onChange={(e) => setIndustriFilter(e.target.value)}
-                        className="appearance-none px-6 py-3 pr-10 rounded-full bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer shadow-md"
-                      >
-                        <option value="">Industri</option>
-                      </select>
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <div className="w-6 h-6 rounded-full bg-orange-400 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Table Section */}
-              <div className="bg-white rounded-3xl overflow-hidden shadow-lg">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-white border-b-2 border-gray-200">
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Pelapor</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nama</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Tanggal</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Masalah</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white">
-                      {filteredPermasalahan.length > 0 ? (
-                        filteredPermasalahan.map((item, index) => (
-                          <tr 
-                            key={index} 
-                            className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.pelapor}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.nama}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.tanggal}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.masalah}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.status}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="5" className="px-6 py-12 text-center text-gray-500 text-base">
-                            Data tidak ditemukan
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
+          
+                    {totalPages > 1 && (
+                                <div className="flex justify-between items-center mt-4 text-white">
+                                  <span>
+                                    Halaman {currentPage} dari {totalPages}
+                                  </span>
+                                  <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                  />
+                                </div>
+                              )}
         </main>
       </div>
     </div>

@@ -24,7 +24,7 @@ export default function DataPeserta() {
   const navigate = useNavigate();
   const exportRef = useRef(null);
 
-  const [active, setActive] = useState("monitoring");
+  const [active, setActive] = useState("suratPenjemputan");
   const [query, setQuery] = useState("");
   const [peserta, setPeserta] = useState([]);
 
@@ -136,14 +136,14 @@ export default function DataPeserta() {
     if (!exportData.length) return;
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Surat Monitoring");
-    XLSX.writeFile(wb, "surat_monitoring.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Surat Penjemputan");
+    XLSX.writeFile(wb, "surat_penjemputan.xlsx");
   };
 
   const handleExportPDF = () => {
     if (!exportData.length) return;
     const doc = new jsPDF();
-    doc.text("Data Surat Monitoring", 14, 15);
+    doc.text("Data Surat Penjemputan", 14, 15);
     autoTable(doc, {
       startY: 20,
       head: [Object.keys(exportData[0])],
@@ -151,7 +151,7 @@ export default function DataPeserta() {
       styles: { fontSize: 10 },
       headStyles: { fillColor: [100, 30, 33] },
     });
-    doc.save("surat_monitoring.pdf");
+    doc.save("surat_penjemputan.pdf");
   };
 
   // ================= FORM FIELDS =================
@@ -237,7 +237,7 @@ export default function DataPeserta() {
         <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
                                         <h2 className="text-white font-bold text-base sm:text-lg">
-                                          Monitoring
+                                          Data Surat Penjemputan
                                         </h2>
                             
                                         <div className="relative" ref={exportRef}>

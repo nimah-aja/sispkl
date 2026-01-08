@@ -3,32 +3,34 @@ import { useNavigate } from "react-router-dom";
 import axios from "../utils/axiosInstance";
 
 // Components
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
+import Sidebar from "./components/SidebarDashboard";
+import Header from "./components/HeaderDashboard";
 import DashboardCard from "./components/DashboardCard";
 
 // Assets
 import userIcon  from "../assets/sidebarUsers.svg";
-import timeIcon  from "../assets/timewalkel.png";
+import timeIcon  from "../assets/permasalahanCard.svg";
 import surrelIcon from "../assets/envelope.png";
 import bellIcon from "../assets/bell-notification-social-media 1.png";
 
 export default function DashboardWaliKelas() {
-  const [active, setActive] = useState("sidebarDashboard");
+  const [active, setActive] = useState("dashboard");
   const [query, setQuery] = useState("");
   const [dataDisplay, setDataDisplay] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-  const user =
-    JSON.parse(localStorage.getItem("user")) || { name: "Wali Kelas", role: "Guru" };
+  const user = {
+    name: localStorage.getItem("nama_guru") || "Guru SMK",
+    role: "Wali Kelas",
+  };
 
   // Endpoint API untuk dashboard
   const endpoints = [
-    { title: "Jumlah Siswa PKL", icon: timeIcon, url: "/api/jurusan" },
-    { title: "Jumlah Permasalahan", icon: surrelIcon, url: "/api/kelas" },
-    { title: "Perizinan", icon: userIcon, url: "/api/siswa" },
+    { title: "Jumlah Siswa PKL", icon: userIcon, url : "/api/siswa" },
+    { title: "Jumlah Permasalahan", icon: timeIcon,  url : "/api/siswa" },
+    { title: "Perizinan", icon: surrelIcon,  url : "/api/siswa" },
   ];
 
   // Data dummy untuk notifikasi perizinan
@@ -127,18 +129,17 @@ export default function DashboardWaliKelas() {
   );
 
   return (
-    <div className="bg-white min-h-screen w-full">
-      {/* Header */}
-      <Header query={query} setQuery={setQuery} user={user} />
+    <div className="flex h-screen w-full bg-white">
+      {/* SIDEBAR FULL HEIGHT */}
+      <Sidebar active={active} setActive={setActive} />
 
-      <div className="flex flex-col md:flex-row">
-        {/* Sidebar */}
-        <div className="hidden md:block">
-          <Sidebar active={active} setActive={setActive} />
-        </div>
+      {/* AREA HEADER + MAIN */}
+      <div className="flex flex-col flex-1">
+        {/* HEADER */}
+        <Header query={query} setQuery={setQuery} user={user} />
 
         {/* Main content */}
-        <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#E1D6C4] shadow-inner">
+        <main className="flex-1 p-6 bg-white overflow-auto rounded-tl-3xl">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <p className="text-black font-semibold">Loading data...</p>
@@ -158,11 +159,11 @@ export default function DashboardWaliKelas() {
                       item={item}
                       onClick={() => {
                         if (item.title === "Jumlah Siswa PKL")
-                          navigate("/guru/walikelas");
+                          navigate("/guru/wali_kelas/siswa");
                         else if (item.title === "Jumlah Permasalahan")
-                          navigate("/guru/koordinator");
+                          navigate("/guru/wali_kelas/datapermasalahansiswa");
                         else if (item.title === "Perizinan")
-                          navigate("/guru/pembimbing");
+                          navigate("/guru/wali_kelas/dataperizinansiswa");
                       }}
                     />
                   ))

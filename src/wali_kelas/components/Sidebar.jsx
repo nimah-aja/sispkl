@@ -11,7 +11,7 @@ export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
 
   const items = [
-    { title: "Beranda", icon: sidebarDashboard, route: "/guru/wali_kelas/walikelas", key: "dashboard" },
+    { title: "Beranda", icon: sidebarDashboard, route: "/guru/wali_kelas/", key: "dashboard" },
     { title: "Peserta Didik", icon: sidebarUsers, route: "/guru/wali_kelas/siswa", key: "siswa" },
     { title: "Permasalahan Peserta Didik", icon: sidebarChalk, route: "/guru/wali_kelas/datapermasalahansiswa", key: "permasalahan" },
     { title: "Perizinan Peserta Didik", icon: sidebarCorporate, route: "/guru/wali_kelas/dataperizinansiswa", key: "perizinan" },

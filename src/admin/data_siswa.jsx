@@ -462,47 +462,46 @@ const handleExportExcel = () => {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-        <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white text-2xl font-bold">
-                Siswa
-              </h2>
-  
-              {/* EXPORT */}
-              <div className="relative -left-314" ref={exportRef}>
-                <button
-                  onClick={() => setOpenExport(!openExport)}
-                  className="flex items-center gap-2 px-4 py-2 !bg-transparent text-white rounded-full"
-                >
-                  <Download size={20} />
-                </button>
-  
-                {openExport && (
-                  <div className="absolute -right-25 -mt-5 p-2 !bg-white border border-[#E1D6C4] rounded-lg shadow-md z-50">
-                    <button
-                      onClick={() => {
-                        handleExportExcel();
-                        setOpenExport(false);
-                      }}
-                      className="flex items-center gap-2 px-3 !bg-transparent py-2 hover:!bg-gray-100 text-sm w-full"
-                    >
-                      <FileSpreadsheet size={16} className="text-green-500" />
-                      Excel
-                    </button>
-  
-                    <button
-                      onClick={() => {
-                        handleExportPdf();
-                        setOpenExport(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                    >
-                      <FileText size={16} className="text-red-500" />
-                      PDF
-                    </button>
+        <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                    <h2 className="text-white font-bold text-base sm:text-lg">
+                      Siswa
+                    </h2>
+        
+                    <div className="relative" ref={exportRef}>
+                      <button
+                        onClick={() => setOpenExport(!openExport)}
+                        className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                      >
+                        <Download size={18} />
+                      </button>
+        
+                      {openExport && (
+                        <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                          <button
+                            onClick={() => {
+                              handleExportExcel();
+                              setOpenExport(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                          >
+                            <FileSpreadsheet size={16} className="text-green-600" />
+                            Excel
+                          </button>
+        
+                          <button
+                            onClick={() => {
+                              handleExportPdf();
+                              setOpenExport(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                          >
+                            <FileText size={16} className="text-red-600" />
+                            PDF
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
 
           <SearchBar
             query={search}

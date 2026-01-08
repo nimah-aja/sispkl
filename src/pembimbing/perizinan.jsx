@@ -1,298 +1,349 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "../utils/axiosInstance";
+import React, { useEffect, useState, useRef } from "react";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
-// Components
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
+import Sidebar from "./components/SidebarBiasa";
+import Header from "./components/HeaderBiasa";
+import Table from "./components/Table";
+import SearchBar from "./components/Search";
+import Pagination from "./components/Pagination";
+import Add from "./components/Add";
+import DeleteConfirmation from "./components/Delete";
 
-export default function DataPerizinanSiswa() {
-  const [active, setActive] = useState("sidebarPerizinan");
+import deleteImg from "../assets/deleteGrafik.svg"; 
+
+export default function DataPerizinanKaprog() {
+  const exportRef = useRef(null);
+  const [filterStatus, setFilterStatus] = useState("Semua");
+  const [filterKelas, setFilterKelas] = useState("Semua");
+  const [mode, setMode] = useState("list");
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const [active, setActive] = useState("perizinan");
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [industriFilter, setIndustriFilter] = useState("");
-  const [dataPerizinan, setDataPerizinan] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [openExport, setOpenExport] = useState(false);
 
-  const navigate = useNavigate();
-  const user =
-    JSON.parse(localStorage.getItem("user")) || { name: "Wali Kelas", role: "Guru" };
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // Data dummy perizinan siswa
-  const dummyDataPerizinan = [
-    {
-      nama: "Firli Zulfa Azzahra",
-      kelas: "XII",
-      tanggal: "01/05/2025",
-      alasan: "SAKIT",
-      lampiran: "ada",
-      status: "Proses"
-    },
-    {
-      nama: "Andi Pratama",
-      kelas: "XI RPL 2",
-      tanggal: "15/11/2025",
-      alasan: "SAKIT",
-      lampiran: "ada",
-      status: "Proses"
-    },
-    {
-      nama: "Siti Nurhaliza",
-      kelas: "XII",
-      tanggal: "18/11/2025",
-      alasan: "SAKIT",
-      lampiran: "ada",
-      status: "Disetujui"
-    },
-    {
-      nama: "Budi Santoso",
-      kelas: "XI RPL 1",
-      tanggal: "20/11/2025",
-      alasan: "Keperluan Keluarga",
-      lampiran: "ada",
-      status: "Disetujui"
-    },
-    {
-      nama: "Dewi Lestari",
-      kelas: "XII",
-      tanggal: "22/11/2025",
-      alasan: "Urusan Pribadi",
-      lampiran: "ada",
-      status: "Ditolak"
-    },
-    {
-      nama: "Rizki Ramadhan",
-      kelas: "XI RPL 2",
-      tanggal: "25/11/2025",
-      alasan: "SAKIT",
-      lampiran: "ada",
-      status: "Ditolak"
-    },
-    {
-      nama: "Maya Anggraini",
-      kelas: "XII",
-      tanggal: "28/11/2025",
-      alasan: "Acara Keluarga",
-      lampiran: "ada",
-      status: "Proses"
-    },
-    {
-      nama: "Farhan Maulana",
-      kelas: "XI RPL 1",
-      tanggal: "01/12/2025",
-      alasan: "SAKIT",
-      lampiran: "ada",
-      status: "Disetujui"
-    },
-    {
-      nama: "Linda Wijaya",
-      kelas: "XII",
-      tanggal: "03/12/2025",
-      alasan: "Keperluan Mendesak",
-      lampiran: "ada",
-      status: "Proses"
-    },
-    {
-      nama: "Putri Maharani",
-      kelas: "XI RPL 2",
-      tanggal: "05/12/2025",
-      alasan: "SAKIT",
-      lampiran: "ada",
-      status: "Ditolak"
-    }
+  const user = {
+    name: localStorage.getItem("nama_guru") || "Guru SMK",
+    role: "Pembimbing",
+  };
+
+  // ================= COLUMNS =================
+  const columns = [
+    { label: "Nama", key: "nama" },
+    { label: "Kelas", key: "kelas" },
+    { label: "Tanggal", key: "tanggal" },
+    { label: "Alasan", key: "alasan" },
+    { label: "Status", key: "status" },
   ];
 
+  // ================= DUMMY DATA =================
+  const data = [
+    {
+      id: 1,
+      nama: "Firli Zulfa Azzahra",
+      kelas: "XI RPL 1",
+      tanggal: "17/08/2025",
+      alasan: "Sakit",
+      status: "Proses",
+    },
+    {
+      id: 2,
+      nama: "Firli Zulfa Azzahra",
+      kelas: "XI RPL 1",
+      tanggal: "17/08/2025",
+      alasan: "Dispen lomba",
+      status: "Proses",
+    },
+    {
+      id: 3,
+      nama: "Firli Zulfa Azzahra",
+      kelas: "XI RPL 1",
+      tanggal: "17/08/2025",
+      alasan: "Sakit",
+      status: "Disetujui",
+    },
+  ];
+
+  // ================= RESET PAGE ON SEARCH =================
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        // Ganti dengan endpoint API yang sesuai untuk data perizinan siswa
-        // const res = await axios.get("/api/perizinan-siswa");
-        // setDataPerizinan(res.data.data);
-        
-        // Sementara gunakan dummy data
-        setTimeout(() => {
-          setDataPerizinan(dummyDataPerizinan);
-          setLoading(false);
-        }, 500);
-      } catch (err) {
-        console.error("Fetch data error:", err);
-        setError("Gagal mengambil data dari server.");
-        setLoading(false);
+    setCurrentPage(1);
+  }, [query, filterKelas, filterStatus]);
+
+  // ================= CLICK OUTSIDE EXPORT =================
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (exportRef.current && !exportRef.current.contains(e.target)) {
+        setOpenExport(false);
       }
+    }
+
+    if (openExport) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, [openExport]);
 
-    fetchData();
-  }, []);
+  const kelasOptions = [
+    "Semua",
+    ...new Set(data.map((item) => item.kelas)),
+  ];
 
-  // Filter data perizinan
-  const filteredPerizinan = dataPerizinan.filter((item) => {
-    const matchQuery = item.nama.toLowerCase().includes(query.toLowerCase()) ||
-                       item.kelas.toLowerCase().includes(query.toLowerCase()) ||
-                       item.alasan.toLowerCase().includes(query.toLowerCase());
-    const matchStatus = !statusFilter || item.status === statusFilter;
-    
-    return matchQuery && matchStatus;
+  const statusOptions = [
+    "Semua",
+    ...new Set(data.map((item) => item.status)),
+  ];
+
+
+  // ================= FILTER + PAGINATION =================
+  const filteredData = data.filter((item) => {
+    const matchSearch = Object.values(item)
+      .join(" ")
+      .toLowerCase()
+      .includes(query.toLowerCase());
+
+    const matchStatus =
+      filterStatus === "Semua" || item.status === filterStatus;
+
+    const matchKelas =
+      filterKelas === "Semua" || item.kelas === filterKelas;
+
+    return matchSearch && matchStatus && matchKelas;
   });
 
-  // Get unique values for filters
-  const uniqueStatus = [...new Set(dataPerizinan.map(s => s.status))];
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // ================= EXPORT =================
+  const exportData = filteredData.map((item, i) => ({
+    No: i + 1,
+    Nama: item.nama,
+    Kelas: item.kelas,
+    Tanggal: item.tanggal,
+    Alasan: item.alasan,
+    Status: item.status,
+  }));
+
+  const handleExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Perizinan");
+    XLSX.writeFile(workbook, "data-perizinan.xlsx");
+  };
+
+  const handleExportPdf = () => {
+    const doc = new jsPDF();
+    doc.text("Data Perizinan PKL", 14, 15);
+
+    autoTable(doc, {
+      startY: 20,
+      head: [["No", "Nama", "Kelas", "Tanggal", "Alasan", "Status"]],
+      body: exportData.map((row) => [
+        row.No,
+        row.Nama,
+        row.Kelas,
+        row.Tanggal,
+        row.Alasan,
+        row.Status,
+      ]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [100, 30, 33] },
+    });
+
+    doc.save("data-perizinan.pdf");
+  };
+
+  const inputFieldsEdit = [
+    { label: "Nama", name: "nama", width: "half", disabled: true },
+    { label: "Kelas", name: "kelas", width: "half", disabled: true },
+    { label: "Tanggal", name: "tanggal", width: "half", disabled: true },
+    {
+      label: "Status",
+      name: "status",
+      type: "select",
+      width: "half",
+      options: [
+        { value: "Proses", label: "Proses" },
+        { value: "Disetujui", label: "Disetujui" },
+        { value: "Ditolak", label: "Ditolak" },
+      ],
+    },
+    {
+      label: "Alasan",
+      name: "alasan",
+      type: "textarea",
+      width: "full",
+      minLength: 3,
+    },
+  ];
+
+  if (mode === "edit" && selectedRow) {
+    return (
+      <Add
+        title="Edit Perizinan PKL"
+        fields={inputFieldsEdit}
+        existingData={[]} // tidak perlu validasi duplikat
+        initialData={{
+          nama: selectedRow.nama,
+          kelas: selectedRow.kelas,
+          tanggal: selectedRow.tanggal,
+          alasan: selectedRow.alasan,
+          status: selectedRow.status,
+        }}
+        onSubmit={async (formData) => {
+          const raw = Object.fromEntries(formData);
+
+          const updatedData = {
+            alasan: raw.alasan,
+            status: raw.status,
+          };
+
+          console.log("UPDATE PERIZINAN:", updatedData);
+
+          // 🔜 kalau pakai API
+          // await updatePerizinan(selectedRow.id, updatedData);
+
+          setMode("list");
+        }}
+        onCancel={() => setMode("list")}
+        containerStyle={{ maxHeight: "500px" }}
+        backgroundStyle={{ backgroundColor: "#641E21" }}
+      />
+    );
+  }
+
 
   return (
     <div className="bg-white min-h-screen w-full">
-      {/* Header */}
       <Header query={query} setQuery={setQuery} user={user} />
 
-      <div className="flex flex-col md:flex-row">
-        {/* Sidebar */}
+      <div className="flex">
         <div className="hidden md:block">
           <Sidebar active={active} setActive={setActive} />
         </div>
 
-        {/* Main content */}
-        <main className="flex-1 p-6 md:p-10 rounded-none bg-[#6B2E3E] min-h-screen">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-white font-semibold">Loading data...</p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center bg-red-100 rounded-xl p-6 shadow-md">
-              <p className="text-red-600 font-medium">{error}</p>
-            </div>
-          ) : (
-            <>
-              {/* Header Section */}
-              <div className="mb-8">
-                <h1 className="text-white text-3xl font-bold mb-8">Data Perizinan Siswa</h1>
-                
-                {/* Search and Filter Row */}
-                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mb-8">
-                  {/* Search Bar */}
-                  <div className="relative flex-1 max-w-2xl">
-                    <input
-                      type="text"
-                      placeholder="Pencarian"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      className="w-full px-5 py-3 pl-12 rounded-full bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 shadow-md"
-                    />
-                    <svg 
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-
-                  {/* Filter Buttons */}
-                  <div className="flex gap-3">
-                    {/* Status Filter */}
-                    <div className="relative">
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="appearance-none px-6 py-3 pr-10 rounded-full bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer shadow-md"
-                      >
-                        <option value="">Status</option>
-                        {uniqueStatus.map(status => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <div className="w-6 h-6 rounded-full bg-orange-400 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Industri Filter */}
-                    <div className="relative">
-                      <select
-                        value={industriFilter}
-                        onChange={(e) => setIndustriFilter(e.target.value)}
-                        className="appearance-none px-6 py-3 pr-10 rounded-full bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer shadow-md"
-                      >
-                        <option value="">Industri</option>
-                      </select>
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <div className="w-6 h-6 rounded-full bg-orange-400 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Add Button */}
-                    <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center hover:bg-gray-100 transition-colors shadow-md">
-                      <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Table Section */}
-              <div className="bg-white rounded-3xl overflow-hidden shadow-lg">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-white border-b-2 border-gray-200">
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nama</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Kelas</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Tanggal</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Alasan</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Lampiran</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white">
-                      {filteredPerizinan.length > 0 ? (
-                        filteredPerizinan.map((item, index) => (
-                          <tr 
-                            key={index} 
-                            className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.nama}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.kelas}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.tanggal}</td>
-                            <td className="px-6 py-4 text-sm">
-                              <span className={`font-semibold ${item.alasan === 'SAKIT' ? 'text-red-600' : 'text-gray-700'}`}>
-                                {item.alasan}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="flex items-center justify-center w-8 h-8">
-                                <svg className="w-6 h-6 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-                                  <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                                </svg>
+        <main className="flex-1 p-4 sm:p-6 md:p-10 bg-[#641E21] md:rounded-l-3xl">
+          <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                              <h2 className="text-white font-bold text-base sm:text-lg">
+                                Perizinan
+                              </h2>
+                  
+                              <div className="relative" ref={exportRef}>
+                                <button
+                                  onClick={() => setOpenExport(!openExport)}
+                                  className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                                >
+                                  <Download size={18} />
+                                </button>
+                  
+                                {openExport && (
+                                  <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                                    <button
+                                      onClick={() => {
+                                        handleExportExcel();
+                                        setOpenExport(false);
+                                      }}
+                                      className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                                    >
+                                      <FileSpreadsheet size={16} className="text-green-600" />
+                                      Excel
+                                    </button>
+                  
+                                    <button
+                                      onClick={() => {
+                                        handleExportPdf();
+                                        setOpenExport(false);
+                                      }}
+                                      className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                                    >
+                                      <FileText size={16} className="text-red-600" />
+                                      PDF
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{item.status}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="6" className="px-6 py-12 text-center text-gray-500 text-base">
-                            Data tidak ditemukan
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                            </div>
+
+          <SearchBar
+            query={query}
+            setQuery={setQuery}
+            placeholder="Cari perizinan"
+            filters={[
+              {
+                label: "Kelas",
+                value: filterKelas,
+                options: kelasOptions,
+                onChange: setFilterKelas,
+              },
+              {
+                label: "Status",
+                value: filterStatus,
+                options: statusOptions,
+                onChange: setFilterStatus,
+              },
+            ]}
+          />
+
+          <div className="rounded-2xl bg-white">
+            <Table 
+              columns={columns} 
+              data={paginatedData} 
+              showEdit 
+              showDelete
+              onEdit={(row) => {
+                setSelectedRow(row);
+                setMode("edit");
+              }}
+              onDelete={(row) => {
+                setSelectedRow(row);
+                setIsDeleteOpen(true);
+              }}/>
+
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-sm">
+                  Halaman {currentPage} dari {totalPages}
+                </p>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </div>
-            </>
-          )}
+            )}
+          </div>
         </main>
+        <DeleteConfirmation
+          isOpen={isDeleteOpen}
+          title="Hapus Data Perizinan"
+          message="Apakah kamu yakin ingin menghapus data perizinan ini?"
+          onClose={() => setIsDeleteOpen(false)}
+          onDelete={() => {
+            console.log("DELETE DATA:", selectedRow);
+
+            // ❌ belum pakai BE → simulasi aja
+            // nanti kalau ada API tinggal ganti isinya
+
+            setIsDeleteOpen(false);
+            setSelectedRow(null);
+          }}
+          imageSrc={deleteImg}
+        />
+
       </div>
     </div>
   );
