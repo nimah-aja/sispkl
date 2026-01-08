@@ -1,15 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import Pagination from "./components/Pagination";
+
 
 // import components
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
 import SearchBar from "./components/Search";
 import Table from "./components/Table";
-SearchBar
+
 // import assets
 import sidebarUsers from "../assets/sidebarUsers.svg";
-import pengajuanPKL from "../assets/pengajuan_pkl.svg";
+import pengajuanPKL from "../assets/pengajuan_PKL.svg";
 import Pembimbing from "../assets/pembimbing.svg";
 import suratPengantaran from "../assets/surat_pengantaran.svg";
 import monitoring from "../assets/monitoring.svg";
@@ -18,6 +24,12 @@ import perpindahanPKL from "../assets/perpindahan_pkl.svg";
 import pembekalan from "../assets/pembekalan.svg";
 
 export default function DataPeserta() {
+  const exportRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const [openExport, setOpenExport] = useState(false);
+
   const [active, setActive] = useState("sidebarUsers");
   const [query, setQuery] = useState("");
   const [dataDisplay, setDataDisplay] = useState([]);
@@ -63,6 +75,28 @@ export default function DataPeserta() {
       onChange: setStatus,
     },
   ];
+
+   // FILTERING PESERTA
+  const filteredPeserta = peserta.filter((item) => {
+    return (
+      item.nama.toLowerCase().includes(query.toLowerCase()) &&
+      (kelas ? item.kelas === kelas : true) &&
+      (industri ? item.industri === industri : true) &&
+      (status ? item.status === status : true)
+    );
+  });
+
+  useEffect(() => {
+      setCurrentPage(1);
+    }, [query, kelas, industri, status]);
+
+    const totalPages = Math.ceil(filteredPeserta.length / itemsPerPage);
+
+    const paginatedData = filteredPeserta.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+
 
   // DUMMY DATA
   useEffect(() => {
@@ -127,18 +161,44 @@ export default function DataPeserta() {
   ];
 
 
-  // FILTERING PESERTA
-  const filteredPeserta = peserta.filter((item) => {
-    return (
-      item.nama.toLowerCase().includes(query.toLowerCase()) &&
-      (kelas ? item.kelas === kelas : true) &&
-      (industri ? item.industri === industri : true) &&
-      (status ? item.status === status : true)
-    );
+  const exportData = filteredPeserta.map((item, i) => ({
+    No: i + 1,
+    NISN: item.nisn,
+    Nama: item.nama,
+    Industri: item.industri,
+    Kelas: item.kelas,
+    Guru: item.guru,
+    Status: item.status,
+  }));
+
+
+  const handleExportExcel = () => {
+  if (!exportData.length) return;
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Peserta PKL");
+  XLSX.writeFile(wb, "data_peserta_pkl.xlsx");
+};
+
+const handleExportPDF = () => {
+  if (!exportData.length) return;
+  const doc = new jsPDF();
+  doc.text("Data Peserta PKL", 14, 15);
+
+  autoTable(doc, {
+    startY: 20,
+    head: [Object.keys(exportData[0])],
+    body: exportData.map((d) => Object.values(d)),
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [100, 30, 33] },
   });
 
+  doc.save("data_peserta_pkl.pdf");
+};
+
+
   return (
-    <div className="flex h-screen w-full bg-white">
+    <div className="flex min-h-screen w-full bg-white">
       {/* SIDEBAR */}
       <Sidebar active={active} setActive={setActive} />
 
@@ -147,9 +207,47 @@ export default function DataPeserta() {
         <Header query={query} setQuery={setQuery} user={user} />
 
         <main className="flex-1 h-full min-h-screen p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-tl-3xl shadow-inner">
-          <h2 className="text-white font-bold text-lg mb-6">
-            Data Peserta PKL
-          </h2>
+          <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                                        <h2 className="text-white font-bold text-base sm:text-lg">
+                                          Data Peserta PKL
+                                        </h2>
+                            
+                                        <div className="relative" ref={exportRef}>
+                                          <button
+                                            onClick={() => setOpenExport(!openExport)}
+                                            className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                                          >
+                                            <Download size={18} />
+                                          </button>
+                            
+                                          {openExport && (
+                                            <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                                              <button
+                                                onClick={() => {
+                                                  handleExportExcel();
+                                                  setOpenExport(false);
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                                              >
+                                                <FileSpreadsheet size={16} className="text-green-600" />
+                                                Excel
+                                              </button>
+                            
+                                              <button
+                                                onClick={() => {
+                                                  handleExportPDF();
+                                                  setOpenExport(false);
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                                              >
+                                                <FileText size={16} className="text-red-600" />
+                                                PDF
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+
 
           <SearchBar
             query={query}
@@ -158,10 +256,21 @@ export default function DataPeserta() {
             placeholder="Cari siswa..."
           />
 
-          <Table
-            columns={columns}
-            data={filteredPeserta}          
-          />
+          <Table columns={columns} data={paginatedData} />
+
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-4 text-white">
+              <span>
+                Halaman {currentPage} dari {totalPages}
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+
           
         </main>
       </div>

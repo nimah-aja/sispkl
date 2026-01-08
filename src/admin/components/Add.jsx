@@ -538,6 +538,7 @@ export default function Add({
                       name={field.name}
                       rows={field.rows || 3}
                       ref={(el) => (inputRefs.current[idx] = el)}
+                      placeholder={field.placeholder || `Masukkan ${field.label}`}
                       defaultValue={initialData[field.name] || ""}
                       onKeyDown={(e) => handleKeyDown(e, idx)}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
@@ -551,6 +552,7 @@ export default function Add({
                       <input
                         name={field.name}
                         type={showPassword ? "text" : "password"}
+                         placeholder={field.placeholder || `Masukkan ${field.label}`}
                         ref={(el) => (inputRefs.current[idx] = el)}
                         defaultValue={initialData[field.name] || ""}
                         onKeyDown={(e) => handleKeyDown(e, idx)}
@@ -641,6 +643,7 @@ export default function Add({
                       type={field.type || "text"}
                       ref={(el) => (inputRefs.current[idx] = el)}
                       defaultValue={initialData[field.name] || ""}
+                      placeholder={field.placeholder || `Masukkan ${field.label}`}
                       onKeyDown={(e) => handleKeyDown(e, idx)}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                         fieldErrors[field.name]

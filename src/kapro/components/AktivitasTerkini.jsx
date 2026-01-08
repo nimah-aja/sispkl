@@ -128,7 +128,7 @@ export default function AktivitasTerkini({
       {/* FOOTER */}
       {showFooter && items.length > 0 && (
         <div
-          onClick={() => navigate("/aktivitas")}
+          onClick={() => navigate("/guru/kaprodi/pengajuanPKL")}
           className="
             mt-4
             py-3

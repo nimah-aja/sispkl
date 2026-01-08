@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 // import components
 import Header from "./components/Header";
@@ -28,6 +33,8 @@ import deleteImg from "../assets/deleteGrafik.svg";
 import saveImg from "../assets/save.svg";
 
 export default function IndustriPage() {
+  const [openExport, setOpenExport] = useState(false);
+  const exportRef = useRef(null);
   const [search, setSearch] = useState("");
   const [filterIndustri, setFilterIndustri] = useState("");
   const [active, setActive] = useState("sidebarCorporate");
@@ -42,7 +49,7 @@ export default function IndustriPage() {
   const [filterBidang, setFilterBidang] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
   const [pembimbingList, setPembimbingList] = useState([]);
   const [selectedPembimbing, setSelectedPembimbing] = useState("");
 
@@ -200,20 +207,16 @@ export default function IndustriPage() {
     { label: "Nama Industri", name: "nama", width: "full", minLength: 3 },
     { label: "Alamat", name: "alamat", width: "full", minLength: 10 },
     { label: "Bidang", name: "bidang", width: "half" },
-    { label: "Email", name: "email", width: "half" },
-    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10 },
+    { label: "Email", name: "email", width: "half", placeholder : "Contoh : PT@gmail.com" },
+    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
     {
       label: "Pembimbing",
       name: "pic",
       width: "half",
-      type: "select",
-      options: pembimbingList.map((p) => ({
-        value: p.nama,
-        label: p.nama,
-      })),
+      type: "text",
     },
 
-    { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10 },
+    { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
     {
       label: "Jurusan", 
       name: "jurusan_id", 
@@ -225,6 +228,47 @@ export default function IndustriPage() {
       })),
     },
   ];
+
+  // Export
+  const exportData = React.useMemo(
+  () =>
+    dataWithNo.map((item, i) => ({
+      No: i + 1,
+      "Nama Industri": item.nama,
+      Alamat: item.alamat,
+      Bidang: item.bidang,
+      Email: item.email,
+      "No. Telp": item.no_telp,
+      Pembimbing: item.pic,
+      "No. Telp Pembimbing": item.pic_telp,
+      Jurusan: item.jurusan_nama,
+    })),
+  [dataWithNo]
+);
+
+const handleExportPdf = () => {
+  const doc = new jsPDF();
+
+  doc.text("Data Industri", 14, 15);
+
+  autoTable(doc, {
+    startY: 20,
+    head: [Object.keys(exportData[0] || {})],
+    body: exportData.map((item) => Object.values(item)),
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [100, 30, 33] },
+  });
+
+  doc.save("data_industri.pdf");
+};
+
+// Excel
+const handleExportExcel = () => {
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data Industri");
+  XLSX.writeFile(workbook, "data_industri.xlsx");
+};
 
   // form add
   if (mode === "add") {
@@ -427,6 +471,9 @@ export default function IndustriPage() {
     );
   }
 
+  
+
+
   // main
   return (
     <div className="bg-white min-h-screen w-full">
@@ -437,9 +484,46 @@ export default function IndustriPage() {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-          <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
-            Industri
-          </h2>
+        <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                    <h2 className="text-white font-bold text-base sm:text-lg">
+                      Industri
+                    </h2>
+        
+                    <div className="relative" ref={exportRef}>
+                      <button
+                        onClick={() => setOpenExport(!openExport)}
+                        className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                      >
+                        <Download size={18} />
+                      </button>
+        
+                      {openExport && (
+                        <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                          <button
+                            onClick={() => {
+                              handleExportExcel();
+                              setOpenExport(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                          >
+                            <FileSpreadsheet size={16} className="text-green-600" />
+                            Excel
+                          </button>
+        
+                          <button
+                            onClick={() => {
+                              handleExportPdf();
+                              setOpenExport(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                          >
+                            <FileText size={16} className="text-red-600" />
+                            PDF
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
           <SearchBar
             query={search}

@@ -163,7 +163,17 @@ export default function Table({
 
                 {/* isi kolom */}
                 {columns.map((col, idx) => (
-                  <td key={idx} className="py-3 px-4 text-center">
+                  <td
+                    key={idx}
+                    className={`py-3 px-4 ${
+                      col.align === "left"
+                        ? "text-left"
+                        : col.align === "right"
+                        ? "text-right"
+                        : "text-center"
+                    }`}
+                  >
+
                     {Array.isArray(row[col.key]) ? (
                       <div
                         onClick={(e) => handleMultiClick(e, i, idx)}

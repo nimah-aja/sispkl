@@ -29,7 +29,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const allRoles = [
-    { key: "is_wali_kelas", name: "Wali Kelas", path: "/guru/wali_kelas/walikelas" },
+    { key: "is_wali_kelas", name: "Wali Kelas", path: "/guru/wali_kelas/" },
     { key: "is_kaprog", name: "Kepala Program Studi", path: "/guru/kaprodi" },
     { key: "is_pembimbing", name: "Pembimbing", path: "/guru/pembimbing/dashboard_pembimbing" },
     { key: "is_koordinator", name: "Koordinator", path: "/guru/koordinator" },
@@ -131,7 +131,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
       <div className="flex items-center gap-4">
 
         {/* Icons */}
-        <img src={addImage} alt="Addimg" className="w-9"/>
+        {/* <img src={addImage} alt="Addimg" className="w-9"/> */}
         <button
           onClick={() => {
             setIsNotificationOpen((v) => !v);

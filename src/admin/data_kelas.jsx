@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+
 
 // import components
 import Header from "./components/Header";
@@ -25,6 +30,8 @@ import deleteImg from "../assets/deleteGrafik.svg";
 import saveImg from "../assets/save.svg"
 
 export default function KelasPage() {
+  const exportRef = useRef(null);
+  const [openExport, setOpenExport] = useState(false);
   const [search, setSearch] = useState("");
   const [filterKelas, setFilterKelas] = useState("");
   const [active, setActive] = useState("sidebarBook");
@@ -39,7 +46,7 @@ export default function KelasPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10 ; 
 
-  const user =JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
 
   useEffect(() => {
     const fetchKelas = async () => {
@@ -153,6 +160,65 @@ export default function KelasPage() {
     },
     { label: "Nama Kelas", name: "nama", width: "full", minLength: 2 },
   ];
+
+   //  Export 
+  const exportData = filteredData.map((k, i) => {
+    const jurusan = jurusanList.find((j) => j.id === k.jurusan_id);
+
+    return {
+      No: i + 1,
+      Jurusan: jurusan ? jurusan.nama : "-",
+      "Nama Kelas": k.nama,
+    };
+  });
+
+  // PDF
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(14);
+    doc.text("Data Kelas", 14, 15);
+
+    autoTable(doc, {
+      startY: 20,
+      head: [["No", "Jurusan", "Nama Kelas"]],
+      body: exportData.map((row) => [
+        row.No,
+        row.Jurusan,
+        row["Nama Kelas"],
+      ]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [100, 30, 33] },
+    });
+
+    doc.save("data-kelas.pdf");
+  };
+
+  // Excel
+  const downloadExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Kelas");
+    XLSX.writeFile(workbook, "data-kelas.xlsx");
+  };
+
+  // Tutup dropdown export saat klik di luar
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (exportRef.current && !exportRef.current.contains(e.target)) {
+        setOpenExport(false);
+      }
+    }
+
+    if (openExport) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openExport]);
 
   // form add
   if (mode === "add") {
@@ -313,6 +379,11 @@ export default function KelasPage() {
     );
   }
 
+ 
+
+
+
+
   // main
   return (
     <div className="bg-white min-h-screen w-full">
@@ -323,9 +394,47 @@ export default function KelasPage() {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-          <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
-            Kelas
-          </h2>
+          <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                      <h2 className="text-white font-bold text-base sm:text-lg">
+                        Kelas
+                      </h2>
+          
+                      <div className="relative" ref={exportRef}>
+                        <button
+                          onClick={() => setOpenExport(!openExport)}
+                          className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                        >
+                          <Download size={18} />
+                        </button>
+          
+                        {openExport && (
+                          <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                            <button
+                              onClick={() => {
+                                downloadExcel();
+                                setOpenExport(false);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                            >
+                              <FileSpreadsheet size={16} className="text-green-600" />
+                              Excel
+                            </button>
+          
+                            <button
+                              onClick={() => {
+                                downloadPDF();
+                                setOpenExport(false);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                            >
+                              <FileText size={16} className="text-red-600" />
+                              PDF
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
 
           <SearchBar
             query={search}

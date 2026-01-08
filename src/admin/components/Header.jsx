@@ -10,17 +10,21 @@ import LogoutModal from "../components/Logout";
 
 // import asset
 import logo from "../../assets/logo.png";
-import profile from "../../assets/profile.svg";
 import logoutIcon from "../../assets/logout.svg";
 import logoutImage from "../../assets/keluar.svg";
+
 export default function Header({ query, setQuery, user: propUser }) {
   const navigate = useNavigate();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
 
   const user = propUser || JSON.parse(localStorage.getItem("user")) || {
-    name: "Guest",
+    name: "Pengguna",
     role: "Unknown",
   };
+
+  const getInitial = (name = "") => {
+      return name?.trim()?.[0]?.toUpperCase() || "U";
+    };
 
   const handleLogout = () => {
     removeTokens();
@@ -61,8 +65,19 @@ export default function Header({ query, setQuery, user: propUser }) {
           {/* profile */}
           <div className="flex items-center space-x-2">
             <div className="w-9 h-9 rounded-full flex items-center justify-center">
-              <img src={profile} alt="Profile" />
+              <div
+                className="
+                  w-9 h-9 rounded-full
+                  bg-[#641E21]
+                  flex items-center justify-center
+                  text-white font-bold text-sm
+                  cursor-pointer
+                "
+              >
+                {getInitial(user.name)}
+              </div>
             </div>
+
             <div className="text-sm">
               <div className="font-bold font-medium text-[#641E21]">
                 {user.name}
@@ -84,14 +99,13 @@ export default function Header({ query, setQuery, user: propUser }) {
             <img src={logoutIcon} alt="Logout" className="w-5 h-5 ml-3" />
             <span className="font-semibold">Keluar</span>
           </button>
-
-          <LogoutModal
+        </div>
+        <LogoutModal
             isOpen={isLogoutOpen}
             onClose={() => setIsLogoutOpen(false)}
             onConfirm={handleLogout}
             imageSrc={logoutImage}
           />
-        </div>
       </div>
     </header>
   );

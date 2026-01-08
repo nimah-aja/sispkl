@@ -24,6 +24,9 @@ export default function Add({
   initialData = {},
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
+  leftContent,
+  submitText = "Simpan",   // ⬅️ BARU
+  cancelText = "Batal",    // ⬅️ BARU
 }) {
   const [modalText, setModalText] = useState({
     title: "Apakah Anda yakin untuk kembali?",
@@ -327,13 +330,16 @@ export default function Add({
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
           {/* kiri */}
-          <div className="hidden md:flex w-1/2 items-center justify-center border-r p-4">
-            <img
-              src={image || addSidebar}
-              alt="addSidebar"
-              className="max-w-xs w-full h-auto object-contain"
-            />
+          <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-300">
+            {leftContent ? (
+              leftContent
+            ) : (
+              <div className="p-10 flex justify-center items-center">
+                <img src={image} alt="add" className="max-w-xs" />
+              </div>
+            )}
           </div>
+
 
           {/* kanan */}
           <div className="flex w-full md:w-1/2 p-15 overflow-hidden">
@@ -621,7 +627,7 @@ export default function Add({
         <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
           <button
             type="button"
-            onClick={handleCancelClick} // buka modal
+            onClick={handleCancelClick}
             className="button-radius"
             style={{
               "--btn-bg": "#3A3D3D",
@@ -629,7 +635,7 @@ export default function Add({
               "--btn-text": "white",
             }}
           >
-            Batal
+            {cancelText}
           </button>
 
           <button
@@ -642,8 +648,9 @@ export default function Add({
               "--btn-text": "white",
             }}
           >
-            Simpan
+            {submitText}
           </button>
+
         </div>
 
         <DeleteConfirmationModal

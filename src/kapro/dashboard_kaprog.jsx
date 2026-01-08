@@ -41,6 +41,8 @@ import PengajuanPKL from "../assets/pengajuan_PKL.svg";
 import Pembimbing from "../assets/pembimbing.svg";
 import profile from "../assets/profile.svg";
 import toast from "react-hot-toast";
+import pengajuanPKL from "../assets/pengajuan_PKL.svg";
+
 
 // utils
 import { getPKLApplications, approvePKLApplication, rejectPKLApplication, } from "../utils/services/kapro/pengajuanPKL";
@@ -48,13 +50,15 @@ import { getIndustriPreview } from "../utils/services/kapro/industri";
 import { getPembimbingPKL } from "../utils/services/kapro/pembimbing";
 import {getGuru} from "../utils/services/admin/get_guru"
 
+
 export default function KaprodiDashboard() {
+  const navigate = useNavigate();
   const [pembimbingOptions, setPembimbingOptions] = useState([]);
   const [detailMode, setDetailMode] = useState("view");// "view" | "approve" | "reject"
   const [openDetail, setOpenDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [aktivitas, setAktivitas] = useState([]);
-  const [active, setActive] = useState("dashboard");
+  const [active, setActive] = useState("beranda");
   const [query, setQuery] = useState("");
   const [applications, setApplications] = useState([]);
 
@@ -98,12 +102,24 @@ export default function KaprodiDashboard() {
       setDetailMode("view");
       setDetailData(null);
 
-      // 🔥 REFRESH DASHBOARD
+      // REFRESH DASHBOARD
       fetchDashboardData();
 
     } catch (err) {
       console.error(err);
-      toast.error("Gagal memproses pengajuan ❌");
+
+      const apiError = err?.response?.data?.error;
+
+      // ERROR KHUSUS: KUOTA INDUSTRI PENUH
+      if (apiError?.code === "PKL_QUOTA_EXCEEDED") {
+        toast.error("Kuota industri sudah penuh");
+        return;
+      }
+
+      // ERROR LAIN (fallback)
+      toast.error(
+        apiError?.message || "Gagal memproses pengajuan"
+      );
     }
   };
 
@@ -112,26 +128,25 @@ export default function KaprodiDashboard() {
 
 
   // Handler untuk Quick Actions
-  const handleQuickAction = (actionKey) => {
-    console.log("Action clicked:", actionKey);
-    
-    switch (actionKey) {
-      case "pengajuan_pkl":
-        setActive("pengajuan");
-        break;
-      case "pindah_pkl":
-        // Handle pindah PKL
-        break;
-      case "izin_pkl":
-        // Handle izin PKL
-        break;
-      case "bukti_diterima":
-        // Handle bukti diterima
-        break;
-      default:
-        break;
-    }
-  };
+ const handleQuickAction = (actionKey) => {
+  switch (actionKey) {
+    case "pengajuan_pkl":
+      navigate("/guru/kaprodi/pengajuanPKL");
+      break;
+
+    case "pindah_pkl":
+      navigate("/guru/kaprodi/pengajuan_pindah_pkl");
+      break;
+
+    case "izin_pkl":
+      navigate("/guru/kaprodi/perizinan");
+      break;
+
+    default:
+      break;
+  }
+};
+
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
     role: "KAPROG",
@@ -553,7 +568,9 @@ export default function KaprodiDashboard() {
           {/* CARD */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
             {cards.map((item, i) => (
-              <DashboardCard key={i} item={item} />
+              <DashboardCard key={i} item={item} onClick={() => {if (item.title.includes("Industri")) navigate("/guru/kaprodi/industri");
+                      else if (item.title.includes("Pengajuan PKL")) navigate("/guru/kaprodi/pengajuanPKL");
+                      else if (item.title.includes("Pembimbing")) navigate("/guru/kaprodi/pembimbing");}}/>
             ))}
           </div>
 

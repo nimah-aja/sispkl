@@ -22,6 +22,7 @@ import kelompok from "../assets/kelompok.png";
 import titik3 from "../assets/titik_3.png";
 import kelolaText from "../assets/teks.png";
 import norr from "../assets/norr.png";
+import inorasiellipse9 from "../assets/inorasiellipse9.png";
 
 export default function PKLManagementSystem() {
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
@@ -223,17 +224,75 @@ useEffect(() => {
       {/* Sebelah kiri */}
       <div className="flex-1 flex justify-center items-center bg-[#E1D6C4]">
         <div className="relative w-[600px] h-[600px]">
-          <img src={ellipse9} alt="Ellipse9" className="absolute w-[210px] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -mt-12 z-0" />
-          <img src={kelompok} alt="Kelompok" className="absolute w-[265px] left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-[65px] z-20" />
-          <img src={titik3} alt="Titik 3" className="absolute w-[460px] top-[15px] left-[130px] z-30" />
-          <img src={chatMerah} alt="Chat Merah" className="absolute w-[100px] top-[190px] left-[140px] z-30" />
-          <img src={chatBiru} alt="Chat Biru" className="absolute w-[100px] top-[190px] left-[325px] z-30" />
-          <img src={kelolaText} alt="Kelola Seluruh Proses" className="absolute w-[355px] top-[450px] left-1/2 transform -translate-x-1/2 z-40" />
-          <img src={ellipseMerah} alt="Ellipse Merah" className="absolute w-[130px] left-[-60px] bottom-[-80px] transform -translate-x-1/10 z-10" />
-          <img src={ellipseOren} alt="Ellipse Oren" className="absolute w-[20px] top-[140px] left-[300px] z-10" />
-          <img src={ellipseMerahPutih} alt="Ellipse Merah Putih" className="absolute w-[45px] top-[355px] left-[540px] z-20" />
-          <img src={ellipseUngu} alt="Ellipse Ungu" className="absolute w-[45px] top-[55px] left-[120px] z-10" />
-          <img src={vector} alt="Vector" className="absolute w-[45px] top-[40px] left-[130px] z-10" />
+
+          {/* Lingkaran background logo */}
+          <div
+            className="absolute w-[280px] h-[280px] rounded-full 
+                      top-70 left-1/2 
+                      -translate-x-1/2 -translate-y-1/2 
+                      z-10"
+            style={{ backgroundColor: "#CBC1AF" }}
+          />
+
+          {/* Logo Inorasi */}
+          <img
+            src={inorasiellipse9}
+            alt="Inorasi"
+            className="absolute w-[420px] 
+                      top-1/2 left-1/2 
+                      -translate-x-1/2 -translate-y-1/2 
+                      z-20"
+          />
+
+          {/* Teks */}
+          <img
+            src={kelolaText}
+            alt="Kelola Seluruh Proses"
+            className="absolute w-[355px] 
+                      top-[460px] left-1/2 
+                      -translate-x-1/2 
+                      z-30"
+          />
+
+          {/* Ornamen */}
+          <img
+            src={ellipseMerah}
+            alt="Ellipse Merah"
+            className="absolute w-[130px] left-[-68px] bottom-[-80px] z-10"
+          />
+
+          <img
+            src={vector}
+            alt="Vector"
+            className="absolute w-[45px] top-[55px] left-[90px] z-10"
+          />
+
+            {/* Border ellipse oren */}
+            <div
+              className="absolute w-[64px] h-[64px] rounded-full 
+                        border-2 border-white
+                        top-[95px] left-[395px] 
+                        z-11"
+            />
+
+            <img
+              src={ellipseOren}
+              alt="Ellipse Oren"
+              className="absolute w-[54px] top-[90px] left-[400px] z-10"
+            />
+
+
+          <img
+            src={ellipseMerahPutih}
+            alt="Ellipse Merah Putih"
+            className="absolute w-[45px] top-[355px] left-[540px] z-20"
+          />
+
+          <img
+            src={ellipseUngu}
+            alt="Ellipse Ungu"
+            className="absolute w-[45px] top-[65px] left-[99px] z-10"
+          />
         </div>
       </div>
 
@@ -246,7 +305,7 @@ useEffect(() => {
               <img src={norr} alt="norr" className="w-17 h-17 object-contain" />
             </div>
             <h4 className="text-white text-3xl font-bold mb-2 text-left">Sistem Pengelolaan PKL</h4>
-            <p className="text-red-200 text-left">Masuk untuk memulai</p>
+            <p className="text-red-200 text-left">SMKN 2 Singosari</p>
           </div>
 
           {/* Pilih role*/}

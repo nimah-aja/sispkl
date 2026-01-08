@@ -58,16 +58,20 @@ export const getPKLApplicationSummary = async () => {
 };
 
 export const approvePKLApplication = async (id, payload) => {
-  const res = await axios.put(
-    `/api/pkl/applications/${id}/approve`,
-    payload,
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
-  return res.data;
+  try{
+    const res = await axios.put(
+      `/api/pkl/applications/${id}/approve`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.data;
+  } catch (err) {
+    throw  err;
+  }
 };
 
 

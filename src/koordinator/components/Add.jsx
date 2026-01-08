@@ -8,10 +8,13 @@ import { format } from "date-fns";
 // import assets
 import addSidebar from "../../assets/addSidebar.svg";
 import arrow from "../../assets/arrow.svg"; 
-import cancelImg from "../../assets/cancel.svg"; 
+import cancelImg from "../../assets/cancel.svg";
+import confirmSave from "../../assets/cancel.svg"; 
+import silang from "../../assets/silang.svg"
 
 // import components
 import DeleteConfirmationModal from "../components/Cancel"; 
+import SaveConfirmationModal from "../components/Save";
 
 export default function Add({
   title,
@@ -30,6 +33,7 @@ export default function Add({
     subtitle: "Data yang sudah diisi akan terhapus."
   });
 
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isChanged, setIsChanged] = useState(false); 
   const isEditMode = Object.keys(initialData).length > 0; 
   const [fieldErrors, setFieldErrors] = useState({});
@@ -303,6 +307,26 @@ export default function Add({
     setIsModalOpen(true);
   };
 
+  const handleResetClick = () => {
+    const form = document.getElementById("addForm");
+    if (form) {
+      form.reset(); // reset semua input
+    }
+
+    // reset juga state-state pendukung seperti date, dropdown, dsb
+    setFieldErrors({});
+    setSelectedValues(initialData?.roles || []);
+    setSelectedLabels({});
+    setDateValues(
+      fields.reduce((acc, f) => {
+        if (f.type === "date") acc[f.name] = null;
+        return acc;
+      }, {})
+    );
+    setSwitchValues(initialSwitches);
+    setIsChanged(false);
+  };
+
   // main
   return (
     <div
@@ -316,7 +340,7 @@ export default function Add({
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleCancelClick}
             className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
           >
             <ArrowLeft size={20} />
@@ -441,26 +465,44 @@ export default function Add({
                           selectedValues.map((val, i) => (
                             <div
                               key={i}
-                              className="flex items-center bg-[#E1D6C4] font-bold text-[#641E20] px-1 rounded-full text-sm"
+                              className=" pl-2 pb-1 flex items-center bg-[#651C23] text-white px-1 rounded-full text-sm"
                             >
                               {val}
-                              <button
-                                type="button"
-                                className="circle text-white font-bold hover:text-gray-700"
+                              <div
+                                role="button"
+                                tabIndex={0}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleOption(field.name, val);
                                 }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.stopPropagation();
+                                    toggleOption(field.name, val);
+                                  }
+                                }}
+                                className="h-8 text-white font-bold hover:text-gray-700 flex items-center gap-2 cursor-pointer select-none pl-1 pr-1"
                               >
-                                ×
-                              </button>
+                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]"> 
+                                  <img  src={silang}/>
+                                </span>
+                              </div>
                             </div>
                           ))
                         ) : (
+                          
                           <span className="text-gray-400">
                             {field.placeholder || `Pilih ${field.label}`}
                           </span>
                         )}
+                        
+                        <img
+                          src={arrow}
+                          alt="arrow"
+                          className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-transform duration-200 ${
+                            focusedIdx === idx ? "rotate-180" : "rotate-0"
+                          }`}
+                        />
                       </div>
 
                       {selectedValues.map((val, i) => (
@@ -569,14 +611,14 @@ export default function Add({
                         renderCustomHeader={({ monthDate, decreaseMonth, increaseMonth }) => (
                           <div className="flex justify-between items-center px-4 py-2 bg-transparent border-b">
                             <button onClick={decreaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700">
+                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
                               ◀
                             </button>
                             <span className="font-bold text-black">
                               {format(monthDate, "MMMM yyyy", { locale: id })}
                             </span>
                             <button onClick={increaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700">
+                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
                               ▶
                             </button>
                           </div>
@@ -621,7 +663,7 @@ export default function Add({
         <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
           <button
             type="button"
-            onClick={handleCancelClick} // buka modal
+            onClick={handleResetClick} 
             className="button-radius"
             style={{
               "--btn-bg": "#3A3D3D",
@@ -629,12 +671,15 @@ export default function Add({
               "--btn-text": "white",
             }}
           >
-            Batal
+            Reset
           </button>
 
           <button
-            type="submit"
-            form="addForm"
+            type="button"
+            onClick={() => {
+              const form = document.getElementById("addForm");
+              if (form) form.requestSubmit(); 
+            }}
             className="button-radius"
             style={{
               "--btn-bg": "#EC933A",
@@ -644,6 +689,7 @@ export default function Add({
           >
             Simpan
           </button>
+
         </div>
 
         <DeleteConfirmationModal
@@ -657,6 +703,20 @@ export default function Add({
           title={modalText.title}
           subtitle={modalText.subtitle}
         />
+
+        <SaveConfirmationModal
+          isOpen={isSaveModalOpen}
+          onClose={() => setIsSaveModalOpen(false)}
+          onConfirm={() => {
+            setIsSaveModalOpen(false);
+            const form = document.getElementById("addForm");
+            if (form) form.requestSubmit(); 
+          }}
+          imageSrc={confirmSave}
+          title="Apakah Anda yakin ingin menyimpan data ini?"
+          subtitle="Pastikan semua data sudah benar sebelum disimpan."
+        />
+
 
       </div>
     </div>

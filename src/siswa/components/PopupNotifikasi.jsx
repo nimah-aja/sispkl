@@ -108,8 +108,13 @@ export default function PopupNotifikasi({
             filteredNotifications.map((notif, i) => (
               <div
                 key={i}
-                className="bg-white rounded-xl p-4 shadow-sm"
+                onClick={notif.onClick}
+                className={`
+                  bg-white rounded-xl p-4 shadow-sm
+                  ${notif.onClick ? "cursor-pointer hover:bg-gray-50" : ""}
+                `}
               >
+
                 <div className="flex gap-3">
                   {/* ICON */}
                   {notif.icon && (
@@ -144,12 +149,16 @@ export default function PopupNotifikasi({
                         {notif.actions.map((btn, idx) => (
                           <button
                             key={idx}
-                            onClick={btn.onClick}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              btn.onClick();
+                            }}
                             className="px-4 py-1.5 rounded-md text-xs font-medium text-white"
                             style={{ backgroundColor: btn.color }}
                           >
                             {btn.label}
                           </button>
+
                         ))}
                       </div>
                     )}
@@ -163,7 +172,7 @@ export default function PopupNotifikasi({
 
         {/* FOOTER */}
         <div className="border-t border-white/20">
-          <button onClick={() => navigate("/aktivitas")} className="w-full py-3 text-sm text-white !bg-transparent">
+          <button onClick={() => navigate("/siswa/riwayat_pengajuan")} className="w-full py-3 text-sm text-white !bg-transparent">
             Lihat Riwayat Notifikasi
           </button>
           

@@ -8,6 +8,7 @@ import sidebarBook from "../../assets/sidebarBook.svg";
 import sidebarUsers from "../../assets/sidebarUsers.svg";
 import sidebarChalk from "../../assets/sidebarChalk.svg";
 import sidebarCorporate from "../../assets/sidebarCorporate.svg";
+import pengajuan from "../../assets/pengajuan.svg";
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Sidebar({ active, setActive }) {
     { title: "Peserta Didik", icon: sidebarUsers, route: "/admin/siswa", key: "sidebarUsers" },
     { title: "Guru", icon: sidebarChalk, route: "/admin/guru", key: "sidebarChalk" },
     { title: "Industri", icon: sidebarCorporate, route: "/admin/industri", key: "sidebarCorporate" },
+    { title: "Pengajuan", icon: pengajuan, route: "/admin/pengajuan", key: "Pengajuan" },
   ];
 
   // main

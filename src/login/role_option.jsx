@@ -16,7 +16,7 @@ export default function RoleOption() {
     const storedName = localStorage.getItem("nama_guru") || "Guru SMK";
 
     const allRoles = [
-      { key: "is_wali_kelas", name: "Wali Kelas", image: waliKelasImg, path: "/guru/wali_kelas/walikelas" },
+      { key: "is_wali_kelas", name: "Wali Kelas", image: waliKelasImg, path: "/guru/wali_kelas/" },
       { key: "is_kaprog", name: "Kepala Program Studi", image: kaprodiImg, path: "/guru/kaprodi" },
       { key: "is_pembimbing", name: "Pembimbing", image: pembimbingImg, path: "/guru/pembimbing/dashboard_pembimbing" },
       { key: "is_koordinator", name: "Koordinator", image: koordinatorImg, path: "/guru/koordinator" },

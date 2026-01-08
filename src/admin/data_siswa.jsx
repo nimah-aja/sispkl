@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+
 
 // import components
 import Header from "./components/Header";
@@ -26,6 +31,8 @@ import deleteImg from "../assets/deleteGrafik.svg";
 import saveImg from "../assets/save.svg"
 
 export default function SiswaPage() {
+  const [openExport, setOpenExport] = useState(false);
+  const exportRef = useRef(null);
   const [search, setSearch] = useState("");
   const [filterSiswa, setFilterSiswa] = useState("");
   const [active, setActive] = useState("sidebarUsers");
@@ -36,7 +43,7 @@ export default function SiswaPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false); 
   const [pendingData, setPendingData] = useState(null); 
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
   const [kelasList, setKelasList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
@@ -154,7 +161,7 @@ export default function SiswaPage() {
   // kolom input
   const inputFields = [
     { label: "Nama Lengkap", name: "nama_lengkap", width: "half", minLength: 2, unique: true },
-    { label: "NISN", name: "nisn", width: "half", unique: true },
+    { label: "NISN", name: "nisn", width: "half", unique: true, placeholder: "Harus 10 digit"},
     { 
       label: "Kelas", 
       name: "kelas_id", 
@@ -163,7 +170,7 @@ export default function SiswaPage() {
       options: kelasList.map((k) => ({ value: k.id, label: k.nama })) 
     },
     { label: "Alamat", name: "alamat", width: "half" },
-    { label: "No. Telepon", name: "no_telp", width: "full", minLength:10 },
+    { label: "No. Telepon", name: "no_telp", width: "full", minLength:10, placeholder: "Min 10 digit" },
     { label: "Tanggal Lahir", name: "tanggal_lahir", width: "full", type: "date" },
   ];
 
@@ -178,6 +185,56 @@ export default function SiswaPage() {
       return "NISN harus 10 digit angka.";
     }
   };
+
+  // export
+const exportData = dataWithNo.map((item) => ({
+  Kelas: item.kelas_id,
+  "Nama Lengkap": item.nama_lengkap,
+  NISN: item.nisn,
+  Alamat: item.alamat,
+  "No. Telepon": item.no_telp,
+  "Tanggal Lahir": item.tanggal_lahir,
+}));
+
+// PDF
+const handleExportPdf = () => {
+  const doc = new jsPDF();
+
+  doc.setFontSize(14);
+  doc.text("Data Siswa", 14, 15);
+
+  autoTable(doc, {
+    startY: 20,
+    head: [[
+      "Kelas",
+      "Nama Lengkap",
+      "NISN",
+      "Alamat",
+      "No. Telepon",
+      "Tanggal Lahir",
+    ]],
+    body: exportData.map((item) => [
+      item.Kelas,
+      item["Nama Lengkap"],
+      item.NISN,
+      item.Alamat,
+      item["No. Telepon"],
+      item["Tanggal Lahir"],
+    ]),
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [100, 30, 33] },
+  });
+
+  doc.save("data-siswa.pdf");
+};
+
+// Excel
+const handleExportExcel = () => {
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data Siswa");
+  XLSX.writeFile(workbook, "data-siswa.xlsx");
+};
 
   // form add
   if (mode === "add") {
@@ -392,6 +449,9 @@ export default function SiswaPage() {
     );
   }
 
+  
+
+
   // main
   return (
     <div className="bg-white min-h-screen w-full">
@@ -402,9 +462,46 @@ export default function SiswaPage() {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-          <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
-            Siswa
-          </h2>
+        <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+                    <h2 className="text-white font-bold text-base sm:text-lg">
+                      Siswa
+                    </h2>
+        
+                    <div className="relative" ref={exportRef}>
+                      <button
+                        onClick={() => setOpenExport(!openExport)}
+                        className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                      >
+                        <Download size={18} />
+                      </button>
+        
+                      {openExport && (
+                        <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                          <button
+                            onClick={() => {
+                              handleExportExcel();
+                              setOpenExport(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                          >
+                            <FileSpreadsheet size={16} className="text-green-600" />
+                            Excel
+                          </button>
+        
+                          <button
+                            onClick={() => {
+                              handleExportPdf();
+                              setOpenExport(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                          >
+                            <FileText size={16} className="text-red-600" />
+                            PDF
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
           <SearchBar
             query={search}

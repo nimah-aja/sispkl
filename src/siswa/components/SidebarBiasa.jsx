@@ -20,7 +20,7 @@ export default function Sidebar({ active, setActive }) {
       title: "Riwayat Pengajuan",
       icon: pengajuan_PKL,
       route: "/siswa/riwayat_pengajuan",
-      key: "pengajuan_PKL",
+      key: "riwayat_pengajuan",
     },
   ];
 

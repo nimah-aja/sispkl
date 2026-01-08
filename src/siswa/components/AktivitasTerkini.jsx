@@ -59,8 +59,13 @@ export default function AktivitasTerkini({
           items.map((notif, idx) => (
             <div
               key={idx}
-              className="bg-white p-4 rounded-lg flex gap-4"
+              onClick={notif.onClick}
+              className={`
+                bg-white p-4 rounded-lg flex gap-4
+                ${notif.onClick ? "cursor-pointer hover:bg-gray-50" : ""}
+              `}
             >
+
               {/* ICON */}
               <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
                 {getIconByType(notif.type)}
@@ -91,12 +96,16 @@ export default function AktivitasTerkini({
                     {notif.actions.map((btn, i) => (
                       <button
                         key={i}
-                        onClick={btn.onClick}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          btn.onClick();
+                        }}
                         className="px-3 py-1.5 rounded-md text-xs font-semibold text-white"
                         style={{ backgroundColor: btn.color }}
                       >
                         {btn.label}
                       </button>
+
                     ))}
                   </div>
                 )}
@@ -113,7 +122,7 @@ export default function AktivitasTerkini({
       {/* FOOTER */}
       {showFooter && items.length > 0 && (
         <div
-          onClick={() => navigate("/aktivitas")}
+          onClick={() => navigate("/siswa/riwayat_pengajuan")}
           className="
             mt-4
             py-3
