@@ -4,6 +4,15 @@ import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { ChevronUp } from "lucide-react";
+import {
+  Users,
+  UserCheck,
+  Clock,
+  CheckCircle,
+  UserMinus,
+} from "lucide-react";
+
 
 
 // import components
@@ -23,6 +32,8 @@ import { deleteIndustri } from "../utils/services/admin/delete_industri";
 import { updateIndustri } from "../utils/services/admin/edit_industri"; 
 import { getJurusan } from "../utils/services/admin/get_jurusan";
 import { getGuru } from "../utils/services/admin/get_guru";
+import { getIndustriPreview } from "../utils/services/kapro/industri";
+
 
 
 
@@ -52,6 +63,27 @@ export default function IndustriPage() {
   const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
   const [pembimbingList, setPembimbingList] = useState([]);
   const [selectedPembimbing, setSelectedPembimbing] = useState("");
+  const [expandedRowId, setExpandedRowId] = useState(null);
+  const [modeView, setModeView] = useState("master"); 
+  // "master" | "statistik"
+  
+
+  const [industriStatistik, setIndustriStatistik] = useState([]);
+
+
+  const fetchIndustriStatistik = async () => {
+    try {
+      const res = await getIndustriPreview();
+      const normalized = (res || []).map((item) => ({
+        ...item,
+        kuota_siswa: item.kuota_siswa ?? "-",
+        remaining_slots: item.remaining_slots ?? "-",
+      }));
+      setIndustriStatistik(normalized);
+    } catch (err) {
+      console.error("Gagal ambil statistik industri:", err);
+    }
+  };
 
   const fetchPembimbing = async () => {
     try {
@@ -101,6 +133,19 @@ export default function IndustriPage() {
   // fetchData();
   // }, []);
 
+  const mergedIndustri = industri.map((item) => {
+    const stat = industriStatistik.find((s) => s.industri_id === item.id);
+
+    return {
+      ...item,
+      kuota_siswa: stat?.kuota_siswa ?? "-",
+      active_students: stat?.active_students ?? "-",
+      pending_applications: stat?.pending_applications ?? "-",
+      remaining_slots: stat?.remaining_slots ?? "-",
+    };
+  });
+
+
   // validasi karakter
   const validateIndustri = (data) => {
     const errors = {};
@@ -122,6 +167,7 @@ export default function IndustriPage() {
     setCurrentPage(1);
   }, [search, filterIndustri, filterBidang]);
 
+
   // filter
   const jurusanOptions = [
     ...new Set(
@@ -139,7 +185,7 @@ export default function IndustriPage() {
   ];
 
   // Filter data berdasarkan jurusan (nama), bukan id
-  const filteredData = industri.filter((b) => {
+  const filteredData = mergedIndustri.filter((b) => {
     const s = search.toLowerCase();
 
     const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
@@ -165,6 +211,13 @@ export default function IndustriPage() {
     return matchSearch && matchFilterJurusan && matchFilterBidang;
   });
 
+  useEffect(() => {
+    fetchData();
+    fetchPembimbing();
+    fetchIndustriStatistik();
+  }, []);
+
+
   // Nomor urut 
   const dataWithNo = filteredData.map((item, i) => {
       const jurusan = jurusanList.find((j) => j.id === item.jurusan_id);
@@ -183,7 +236,26 @@ export default function IndustriPage() {
   );
 
   // kolom tabel
-  const columns = [
+    const columns = [
+    {
+      label: "",
+      key: "expand",
+      render: (_, row) => (
+        <button
+          onClick={() =>
+            setExpandedRowId(expandedRowId === row.id ? null : row.id)
+          }
+          className="-ml-4 -mr-12 text-black text-lg !bg-transparent"
+        >
+          <ChevronUp
+            size={18}
+            className={`transition-transform duration-200 ${
+              expandedRowId === row.id ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
+      ),
+    },
     { label: "Nama Industri", key: "nama" },
     { label: "Alamat", key: "alamat" },
     { label: "Bidang", key: "bidang" },
@@ -193,14 +265,10 @@ export default function IndustriPage() {
     { label: "No. Telp Pembimbing", key: "pic_telp", sortable: false },
     {
       label: "Jurusan",
-      key: "jurusan_nama", 
-      render: (_, row) => {
-        const jurusan = jurusanList.find((j) => j.id === row.jurusan_id);
-        return jurusan ? jurusan.nama : "-";
-      },
+      key: "jurusan_nama",
     },
-
   ];
+
 
   // kolom input
   const inputFields = [
@@ -565,6 +633,51 @@ const handleExportExcel = () => {
                     setSelectedRow(row);
                     setIsDeleteOpen(true);
                   }}
+                  expandedRowId={expandedRowId}
+                  renderExpandedRow={(row) => (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+  <div className="flex flex-col items-center text-center">
+    <div className="flex items-center gap-1 font-semibold">
+      <Users size={16} />
+      <span>Kuota</span>
+    </div>
+    <p className="mt-1 font-semibold">{row.kuota_siswa || "-" }</p>
+  </div>
+
+  <div className="flex flex-col items-center text-center">
+    <div className="flex items-center gap-1 font-semibold">
+      <UserCheck size={16} />
+      <span>Siswa Aktif</span>
+    </div>
+    <p className="mt-1 font-semibold">{row.active_students || "-"}</p>
+  </div>
+
+  <div className="flex flex-col items-center text-center">
+    <div className="flex items-center gap-1 font-semibold">
+      <Clock size={16} />
+      <span>Pending</span>
+    </div>
+    <p className="mt-1 font-semibold">{row.pending_applications || "-"}</p>
+  </div>
+
+  <div className="flex flex-col items-center text-center">
+    <div className="flex items-center gap-1 font-semibold">
+      <CheckCircle size={16} />
+      <span>Disetujui</span>
+    </div>
+    <p className="mt-1 font-semibold">{row.approved_applications || "-"}</p>
+  </div>
+
+  <div className="flex flex-col items-center text-center">
+    <div className="flex items-center gap-1 font-semibold">
+      <UserMinus size={16} />
+      <span>Sisa</span>
+    </div>
+    <p className="mt-1 font-semibold">{row.remaining_slots || "-"}</p>
+  </div>
+</div>
+
+                  )}
                 />
 
                 {totalPages > 1 && (

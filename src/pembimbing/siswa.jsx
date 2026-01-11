@@ -26,7 +26,7 @@ import pembekalan from "../assets/pembekalan.svg";
 export default function DataPeserta() {
   const exportRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const [openExport, setOpenExport] = useState(false);
 

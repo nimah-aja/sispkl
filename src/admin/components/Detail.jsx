@@ -161,7 +161,7 @@ export default function Detail({
         </div>
 
         {/* PENDING VIEW */}
-        {mode === "view" && isPending && (
+        {/* {mode === "view" && isPending && (
           <div className="px-6 py-4 flex justify-end gap-3">
             <button 
                type="button"
@@ -178,7 +178,7 @@ export default function Detail({
               Tolak
             </button>
           </div>
-        )}
+        )} */}
 
         {/* APPROVE */}
         {mode === "approve" && (

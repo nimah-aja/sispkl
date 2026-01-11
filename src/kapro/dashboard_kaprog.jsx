@@ -49,6 +49,8 @@ import { getPKLApplications, approvePKLApplication, rejectPKLApplication, } from
 import { getIndustriPreview } from "../utils/services/kapro/industri";
 import { getPembimbingPKL } from "../utils/services/kapro/pembimbing";
 import {getGuru} from "../utils/services/admin/get_guru"
+import { getJurusanKaprodi } from "../utils/services/kapro/jurusan";
+
 
 
 export default function KaprodiDashboard() {
@@ -61,6 +63,15 @@ export default function KaprodiDashboard() {
   const [active, setActive] = useState("beranda");
   const [query, setQuery] = useState("");
   const [applications, setApplications] = useState([]);
+  const [jurusanList, setJurusanList] = useState([]);
+  const [openJurusanDetail, setOpenJurusanDetail] = useState(false);
+  const [selectedJurusan, setSelectedJurusan] = useState(null);
+  const [jurusanStudents, setJurusanStudents] = useState([]);
+  const [openJurusanPopup, setOpenJurusanPopup] = useState(null);
+  const [jurusanPopupPos, setJurusanPopupPos] = useState({ top: 0, left: 0 });
+
+
+
 
   const [summary, setSummary] = useState({
     totalIndustri: 0,
@@ -184,14 +195,22 @@ export default function KaprodiDashboard() {
           applicationsRes,
           industriList,
           pembimbingList,
+          jurusanRes,
         ] = await Promise.all([
           getPKLApplications(),
           getIndustriPreview(),
           getPembimbingPKL(),
+          getJurusanKaprodi(),
         ]);
 
-        const pembimbingOptions = await getPembimbingPKL();
-          setPembimbingOptions(pembimbingOptions);
+        setJurusanList(jurusanRes?.data.data || []);
+        setPembimbingOptions(pembimbingList || []);
+
+
+
+
+        // const pembimbingOptions = await getPembimbingPKL();
+        //   setPembimbingOptions(pembimbingOptions);
 
 
         const applications = applicationsRes?.data || [];
@@ -553,6 +572,42 @@ export default function KaprodiDashboard() {
     },
   ];
 
+  const openJurusanPopupHandler = (jurusan, e) => {
+  const students = applications
+    .filter(
+      (item) =>
+        item.jurusan_nama?.toLowerCase() === jurusan.nama.toLowerCase()
+    )
+    .map((item) => ({
+      name: item.siswa_username,
+      nisn: item.siswa_nisn,
+    }));
+
+  if (students.length === 0) return;
+
+  const rect = e.currentTarget.getBoundingClientRect();
+
+  const popupHeight = 180;
+  const spaceBelow = window.innerHeight - rect.bottom;
+
+  const top =
+    spaceBelow < popupHeight
+      ? rect.top + window.scrollY - popupHeight - 8
+      : rect.bottom + window.scrollY + 8;
+
+  setJurusanPopupPos({
+    top,
+    left: rect.left + window.scrollX,
+  });
+
+  setOpenJurusanPopup({
+    jurusan,
+    students,
+  });
+};
+
+
+
 
 
   return (
@@ -587,7 +642,45 @@ export default function KaprodiDashboard() {
           
                       {/* KOLOM KANAN: Quick Actions + Status (1/3 width) */}
                       <div className="lg:col-span-1 space-y-6">
-                        <QuickActions onAction={handleQuickAction} />
+                        <div className="max-w-6xl mx-auto mb-10">
+                          <div className="bg-white border rounded-xl shadow-sm">
+                            <div className="flex items-center gap-2 px-6 py-4 border-b">
+                              <School size={20} className="text-[#641E21]" />
+                              <h2 className="text-lg font-semibold text-gray-800">
+                                Daftar Jurusan
+                              </h2>
+                            </div>
+
+                            <ul className="divide-y">
+                              {jurusanList.length === 0 && (
+                                <li className="px-6 py-4 text-sm text-gray-500">
+                                  Tidak ada jurusan yang di-assign ke kaprodi
+                                </li>
+                              )}
+
+                              {jurusanList.map((j) => (
+                                <li
+                                  key={j.id}
+                                  className="px-6 py-4 flex justify-between items-center cursor-pointer"
+                                  onClick={(e) => openJurusanPopupHandler(j, e)}
+                                >
+                                  <div>
+                                    <p className="font-semibold text-gray-800">
+                                      {j.kode}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {j.nama}
+                                    </p>
+
+                                  </div>
+
+                                  <ArrowUpRight size={18} className="text-gray-400" />
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+
                         <StatusPengajuan_PKL data={statusData} />
                       </div>
                     </div>
@@ -629,6 +722,69 @@ export default function KaprodiDashboard() {
           document.body
         )
       }
+
+      {openJurusanPopup && (
+        <div
+          className="fixed inset-0 z-[9999]"
+          onClick={() => setOpenJurusanPopup(null)}
+        >
+          <div
+            className="
+              absolute
+              bg-white
+              w-[360px]
+              border border-gray-300
+              rounded-xl
+              shadow-sm
+              p-4
+            "
+            style={{
+              top: jurusanPopupPos.top,
+              left: jurusanPopupPos.left,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-2">
+              <h3 className="font-semibold text-gray-800 text-sm">
+                {openJurusanPopup.jurusan.nama}
+              </h3>
+              <p className="text-xs text-gray-500">
+                Daftar Siswa PKL •{" "}
+                <span className="font-semibold text-gray-700">
+                  {openJurusanPopup.students.length}
+                </span>{" "}
+                siswa
+              </p>
+
+            </div>
+
+            <div className="space-y-3 max-h-[168px] overflow-y-auto">
+              {openJurusanPopup.students.map((siswa, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 hover:!bg-gray-200 p-3 rounded-lg"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#641E21] text-white flex items-center justify-center font-bold text-sm">
+                    {siswa.name?.[0]?.toUpperCase()}
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">
+                      {siswa.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      NISN: {siswa.nisn || "-"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      
 
 
           </div>

@@ -38,7 +38,7 @@ export default function DataPeserta() {
   const [selectedRow, setSelectedRow] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
@@ -113,14 +113,52 @@ export default function DataPeserta() {
     currentPage * itemsPerPage
   );
 
+  const handleDownloadSurat = (row) => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(14);
+    doc.text("SURAT PENGANTARAN PKL", 105, 20, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.text(`No Surat   : ${row.noSurat}`, 20, 40);
+    doc.text(`Penerima   : ${row.penerima}`, 20, 50);
+    doc.text(`Perihal    : ${row.perihal}`, 20, 60);
+    doc.text(`Tanggal    : ${row.tanggal}`, 20, 70);
+    doc.text(`Pengirim   : ${row.pengirim}`, 20, 80);
+
+    doc.text(
+      "Demikian surat pengantaran ini dibuat untuk digunakan sebagaimana mestinya.",
+      20,
+      100
+    );
+
+    doc.text(row.pengirim, 140, 130);
+
+    doc.save(`Surat_${row.noSurat}.pdf`);
+  };
+
+
   // ================= TABLE COLUMNS =================
   const columns = [
-    { label: "No Surat", key: "noSurat" },
-    { label: "Penerima", key: "penerima" },
-    { label: "Perihal", key: "perihal" },
-    { label: "Tanggal", key: "tanggal" },
-    { label: "Pengirim", key: "pengirim" },
-  ];
+  { label: "No Surat", key: "noSurat" },
+  { label: "Penerima", key: "penerima" },
+  { label: "Perihal", key: "perihal" },
+  { label: "Tanggal", key: "tanggal" },
+  { label: "Pengirim", key: "pengirim" },
+  {
+    label: "Unduh",
+    render: (_, row) => (
+      <button
+        onClick={() => handleDownloadSurat(row)}
+        className="!bg-transparent w-18 hover:scale-110 transition"
+        title="Unduh Surat"
+      >
+        <Download size={18} className="text-[#641E21]" />
+      </button>
+    ),
+  },
+];
+
 
   // ================= EXPORT =================
   const exportData = filteredPeserta.map((item, i) => ({

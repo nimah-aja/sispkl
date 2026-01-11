@@ -426,7 +426,7 @@ useEffect(() => {
               className="w-full text-white font-semibold py-3 px-4 rounded-lg mt-6 disabled:opacity-60"
               style={{ backgroundColor: "#EC933A", border: "none", outline: "none" }} 
             >
-              {loading ? "Memproses..." : `Masuk sebagai ${activeRole}`}
+              {loading ? "Memproses..." : `Masuk`}
             </MouseRippleButton>
 
 

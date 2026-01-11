@@ -11,6 +11,8 @@ import Header from "./components/Header";
 import Detail from "./components/Detail"; 
 import SearchBar from "./components/Search";
 import toast from "react-hot-toast";
+import Pagination from "./components/Pagination";
+
 
 import { getPKLApplications, approvePKLApplication, rejectPKLApplication } from "../utils/services/kapro/pengajuanPKL";
 import { getGuru } from "../utils/services/admin/get_guru";
@@ -28,6 +30,10 @@ const DataPengajuanPKL = () => {
   const exportRef = useRef(null);
   const [guruOptions, setGuruOptions] = useState([]);
   const [pembimbingOptions, setPembimbingOptions] = useState([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
+
 
 
 
@@ -93,10 +99,16 @@ const DataPengajuanPKL = () => {
 
   const filteredSubmissions = sortedSubmissions.filter(sub => {
     const lowerQuery = query.toLowerCase();
+
     const matchesQuery =
       sub.name.toLowerCase().includes(lowerQuery) ||
       sub.description.toLowerCase().includes(lowerQuery) ||
-      dayjs(sub.time).format('YYYY-MM-DD HH:mm').toLowerCase().includes(lowerQuery);
+      String(sub.raw?.kelas_nama || "").toLowerCase().includes(lowerQuery) ||
+      dayjs(sub.time)
+        .format('YYYY-MM-DD HH:mm')
+        .toLowerCase()
+        .includes(lowerQuery);
+
 
     let matchesStatus = true;
     if (statusFilter === "Menunggu") matchesStatus = sub.type === "submit";
@@ -105,6 +117,14 @@ const DataPengajuanPKL = () => {
 
     return matchesQuery && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+
+  const paginatedSubmissions = filteredSubmissions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
 
   const exportData = filteredSubmissions.map((sub, i) => ({
     No: i + 1,
@@ -214,13 +234,18 @@ const DataPengajuanPKL = () => {
     };
 
     useEffect(() => {
-  const fetchPembimbing = async () => {
-    const res = await getPembimbingPKL();
-    setPembimbingOptions(res); // sudah format dropdown
-  };
+      const fetchPembimbing = async () => {
+        const res = await getPembimbingPKL();
+        setPembimbingOptions(res); // sudah format dropdown
+      };
 
-  fetchPembimbing();
-}, []);
+      fetchPembimbing();
+    }, []);
+
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [query, statusFilter]);
+
 
   const baseFields = [
     { name: "nama_industri", label: "Industri", full: true },
@@ -293,7 +318,7 @@ const DataPengajuanPKL = () => {
 
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header query={query} setQuery={setQuery} user={user} />
+      <Header  user={user} />
       <div className="flex">
         <div className="hidden md:block">
           <Sidebar active={active} setActive={setActive} />
@@ -354,7 +379,7 @@ const DataPengajuanPKL = () => {
           />
 
           <div className="mt-6 space-y-3">
-            {filteredSubmissions.map((sub, index) => (
+            {paginatedSubmissions.map((sub, index) => (
               <div key={sub.id}>
                 {renderDayLabel(sub, index) && (
                   <div className="text-white font-semibold mb-2">{renderDayLabel(sub, index)}</div>
@@ -366,7 +391,13 @@ const DataPengajuanPKL = () => {
                         {getSubmissionIcon(sub.type)}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-900 text-base">{sub.name}</h3>
+                        <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                          {sub.name}
+                          <span className="text-sm font-medium text-gray-500">
+                            • {sub.raw.kelas_nama}
+                          </span>
+                        </h3>
+
                         <p className="text-sm text-gray-600 mt-0.5">{sub.description}</p>
                       </div>
                     </div>
@@ -376,6 +407,20 @@ const DataPengajuanPKL = () => {
                 </div>
               </div>
             ))}
+
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center mt-4 text-white">
+                <p className="text-sm sm:text-base">
+                  Halaman {currentPage} dari {totalPages} halaman
+                </p>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+
           </div>
 
         </main>

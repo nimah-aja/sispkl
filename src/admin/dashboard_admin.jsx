@@ -8,6 +8,8 @@ import DashboardCard from "./components/DashboardCard";
 
 // import request
 import axios from "../utils/axiosInstance";
+import { getPKLApplications } from "../utils/services/kapro/pengajuanPKL";
+
 
 // import assets
 import gradIcon from "../assets/grad.svg";
@@ -15,6 +17,8 @@ import bookIcon from "../assets/book.svg";
 import usersIcon from "../assets/users.svg";
 import chalkIcon from "../assets/chalk.svg";
 import corporateIcon from "../assets/corporate.svg";
+import pengajuanPKLIcon from "../assets/pengajuan_PKL.svg";
+
 
 // import charts
 import {
@@ -35,6 +39,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/id";
 
 export default function PKLDashboard() {
+  const [pengajuanPerKelas, setPengajuanPerKelas] = useState([]);
   const [active, setActive] = useState("sidebarDashboard");
   const [query, setQuery] = useState("");
   const [dataDisplay, setDataDisplay] = useState([]);
@@ -46,6 +51,7 @@ export default function PKLDashboard() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "admin" };
+
 
   // warna grafik utama
   const COLORS = [
@@ -90,12 +96,12 @@ export default function PKLDashboard() {
   const COLORS_MURID = shuffleColors(COLORS, 8);
 
   // waktu realtime
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWaktu(dayjs().locale("id").format("dddd, DD MMMM YYYY HH:mm:ss"));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setWaktu(dayjs().locale("id").format("dddd, DD MMMM YYYY HH:mm:ss"));
+  //   }, 1000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // === FetchData dengan caching ===
   const fetchData = useCallback(async () => {
@@ -118,26 +124,71 @@ export default function PKLDashboard() {
         return;
       }
 
-      const [jurusanRes, kelasRes, siswaRes, guruRes, industriRes] = await Promise.all([
+      const [
+        jurusanRes,
+        kelasRes,
+        siswaRes,
+        guruRes,
+        industriRes,
+        pengajuanRes,
+      ] = await Promise.all([
         axios.get("/api/jurusan"),
         axios.get("/api/kelas"),
         axios.get("/api/siswa"),
         axios.get("/api/guru"),
         axios.get("/api/industri"),
+        getPKLApplications(), // 🔥 sama persis kayak kaprog
       ]);
 
+
       const jurusanData = jurusanRes.data?.data?.data || jurusanRes.data?.data || [];
-      const kelasData = kelasRes.data?.data?.data || kelasRes.data?.data || [];
-      const siswaData = siswaRes.data?.data?.data || siswaRes.data?.data || [];
-      const guruData = guruRes.data?.data?.data || guruRes.data?.data || [];
+      const kelasData   = kelasRes.data?.data?.data || kelasRes.data?.data || [];
+      const siswaData   = siswaRes.data?.data?.data || siswaRes.data?.data || [];
+      const guruData    = guruRes.data?.data?.data || guruRes.data?.data || [];
+      const industriData =
+        industriRes.data?.data?.data || industriRes.data?.data || [];
+
+      const pengajuanData = pengajuanRes?.data || [];
+
+      // === PENGAJUAN PKL PER KELAS ===
+      const pengajuanKelasGrouped = {};
+
+      pengajuanData.forEach((p) => {
+        const kelas =
+          p.kelas_nama ||
+          p.siswa?.kelas_nama ||
+          p.siswa?.kelas?.nama ||
+          "Tidak diketahui";
+
+        pengajuanKelasGrouped[kelas] =
+          (pengajuanKelasGrouped[kelas] || 0) + 1;
+      });
+
+      const pengajuanPerKelasTemp = Object.keys(pengajuanKelasGrouped).map(
+        (k) => ({
+          name: k,
+          value: pengajuanKelasGrouped[k],
+        })
+      );
+
+      setPengajuanPerKelas(pengajuanPerKelasTemp);
+
+
 
       const dataDisplayTemp = [
         { title: "Jumlah Jurusan", icon: gradIcon, value: jurusanData.length },
         { title: "Jumlah Kelas", icon: bookIcon, value: kelasData.length },
         { title: "Peserta Didik", icon: usersIcon, value: siswaData.length },
         { title: "Jumlah Guru", icon: chalkIcon, value: guruData.length },
-        { title: "Jumlah Industri", icon: corporateIcon, value: (industriRes.data?.data?.data || industriRes.data?.data || []).length },
+        {
+          title: "Pengajuan PKL",
+          icon: pengajuanPKLIcon, 
+          value: pengajuanData.length,
+        },
+        { title: "Jumlah Industri", icon: corporateIcon, value: industriData.length },
       ];
+
+
 
       // === KELAS PER JURUSAN ===
       const jurusanMap = {};
@@ -194,6 +245,7 @@ export default function PKLDashboard() {
           kelasPerJurusan: kelasPerJurusanTemp,
           guruPerRole: guruPerRoleTemp,
           muridPerKelas: muridPerKelasTemp,
+          pengajuanPerKelas: pengajuanPerKelasTemp,
         })
       );
       sessionStorage.setItem("dashboardTimestamp", now);
@@ -240,6 +292,8 @@ export default function PKLDashboard() {
                       else if (item.title.includes("Peserta")) navigate("/admin/siswa");
                       else if (item.title.includes("Guru")) navigate("/admin/guru");
                       else if (item.title.includes("Industri")) navigate("/admin/industri");
+                      else if (item.title.includes("Pengajuan")) navigate("/admin/pengajuan");
+
                     }}
                   />
                 ))}
@@ -247,16 +301,24 @@ export default function PKLDashboard() {
 
               {/* BAR CHART UTAMA */}
               <div className="mt-10 bg-white rounded-2xl p-6 shadow-lg max-w-6xl mx-auto">
-                <div className="text-right text-gray-700 font-semibold mb-2">{waktu}</div>
-                <h2 className="font-semibold text-gray-800 mb-4">Statistik Data PKL</h2>
+                {/* <div className="text-right text-gray-700 font-semibold mb-2">{waktu}</div> */}
+                <h2 className="font-semibold text-gray-800 mb-4">
+                  Statistik Pengajuan PKL Berdasarkan Kelas
+                </h2>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dataDisplay}>
+                  <BarChart data={pengajuanPerKelas}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="title" />
-                    <YAxis label={{ value: "Jumlah", angle: -90, position: "insideLeft" }} />
-                    <Tooltip formatter={(value) => [`${value}`, "Jumlah"]} />
+                    <XAxis
+                      dataKey="name"
+                      angle={-30}
+                      textAnchor="end"
+                      interval={0}
+                      height={70}
+                    />
+                    <YAxis />
+                    <Tooltip formatter={(v) => [`${v}`, "Pengajuan"]} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                      {dataDisplay.map((_, i) => (
+                      {pengajuanPerKelas.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Bar>

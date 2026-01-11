@@ -38,7 +38,7 @@ export default function DataPeserta() {
   const [selectedRow, setSelectedRow] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
@@ -113,14 +113,56 @@ export default function DataPeserta() {
     currentPage * itemsPerPage
   );
 
+  const handleDownloadSurat = (row) => {
+  const doc = new jsPDF();
+
+  // Judul
+  doc.setFontSize(14);
+  doc.text("SURAT MONITORING PKL", 105, 20, { align: "center" });
+
+  doc.setFontSize(11);
+  doc.text(`No Surat   : ${row.noSurat}`, 20, 40);
+  doc.text(`Penerima   : ${row.penerima}`, 20, 50);
+  doc.text(`Perihal    : ${row.perihal}`, 20, 60);
+  doc.text(`Tanggal    : ${row.tanggal}`, 20, 70);
+  doc.text(`Pengirim   : ${row.pengirim}`, 20, 80);
+
+  doc.text(
+    "Surat ini digunakan sebagai dokumen monitoring pelaksanaan Praktik Kerja Lapangan (PKL) peserta didik.",
+    20,
+    100,
+    { maxWidth: 170 }
+  );
+
+  doc.text("Hormat kami,", 140, 125);
+  doc.text(row.pengirim, 140, 140);
+
+  doc.save(`Surat_Monitoring_${row.noSurat}.pdf`);
+};
+
+
   // ================= TABLE COLUMNS =================
   const columns = [
-    { label: "No Surat", key: "noSurat" },
-    { label: "Penerima", key: "penerima" },
-    { label: "Perihal", key: "perihal" },
-    { label: "Tanggal", key: "tanggal" },
-    { label: "Pengirim", key: "pengirim" },
-  ];
+  { label: "No Surat", key: "noSurat" },
+  { label: "Penerima", key: "penerima" },
+  { label: "Perihal", key: "perihal" },
+  { label: "Tanggal", key: "tanggal" },
+  { label: "Pengirim", key: "pengirim" },
+  {
+    label: "Unduh",
+    sortable: false,
+    render: (_, row) => (
+      <button
+        onClick={() => handleDownloadSurat(row)}
+        className="!bg-transparent hover:scale-110 transition"
+        title="Unduh Surat"
+      >
+        <Download size={18} className="text-[#641E21]" />
+      </button>
+    ),
+  },
+];
+
 
   // ================= EXPORT =================
   const exportData = filteredPeserta.map((item, i) => ({
@@ -237,7 +279,7 @@ export default function DataPeserta() {
         <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
                                         <h2 className="text-white font-bold text-base sm:text-lg">
-                                          Monitoring
+                                          Surat Monitoring
                                         </h2>
                             
                                         <div className="relative" ref={exportRef}>

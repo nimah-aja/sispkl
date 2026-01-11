@@ -21,6 +21,7 @@ export default function Sidebar({ active, setActive }) {
     { title: "Guru", icon: sidebarChalk, route: "/admin/guru", key: "sidebarChalk" },
     { title: "Industri", icon: sidebarCorporate, route: "/admin/industri", key: "sidebarCorporate" },
     { title: "Pengajuan", icon: pengajuan, route: "/admin/pengajuan", key: "Pengajuan" },
+    { title: "Tahun Ajaran", icon: pengajuan, route: "/admin/tahunajaran", key: "Tahunajaran" },
   ];
 
   // main

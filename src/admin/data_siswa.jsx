@@ -114,12 +114,13 @@ export default function SiswaPage() {
     const kelasNama = kelas ? kelas.nama.toLowerCase() : "";
 
     const matchSearch =
-      k.nama_lengkap.toLowerCase().includes(s) ||
-      k.nisn.toLowerCase().includes(s) ||
-      k.alamat.toLowerCase().includes(s) ||
-      k.no_telp.toLowerCase().includes(s) ||
-      k.tanggal_lahir.toString().includes(s) ||
+      String(k.nama_lengkap || "").toLowerCase().includes(s) ||
+      String(k.nisn || "").includes(s) ||
+      String(k.alamat || "").toLowerCase().includes(s) ||
+      String(k.no_telp || "").includes(s) ||
+      String(k.tanggal_lahir || "").includes(s) ||
       kelasNama.includes(s);
+
 
     const matchFilter = filterSiswa
       ? kelasNama === filterSiswa.toLowerCase()

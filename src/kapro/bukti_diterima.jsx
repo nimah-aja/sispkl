@@ -16,14 +16,6 @@ import SaveConfirmationModal from "./components/Save";
 import DeleteConfirmation from "./components/Delete";
 
 // assets
-import sidebarUsers from "../assets/sidebarUsers.svg";
-import pengajuanPKL from "../assets/pengajuan_PKL.svg";
-import Pembimbing from "../assets/pembimbing.svg";
-import suratPengantaran from "../assets/surat_pengantaran.svg";
-import monitoring from "../assets/monitoring.svg";
-import suratPenjemputan from "../assets/surat_penjemputan.svg";
-import perpindahanPKL from "../assets/perpindahan_pkl.svg";
-import pembekalan from "../assets/pembekalan.svg";
 import addImg from "../assets/addSidebar.svg";
 import saveImg from "../assets/save.svg";
 import deleteImg from "../assets/deleteGrafik.svg";
@@ -36,10 +28,10 @@ export default function DataPeserta() {
 
   const [openExport, setOpenExport] = useState(false);
 
-  const [active, setActive] = useState("sidebarUsers");
+  const [active, setActive] = useState("bukti_diterima");
   const [query, setQuery] = useState("");
   const [kelas, setKelas] = useState("");
-  const [industri, setIndustri] = useState("");
+  const [jurusan, setJurusan] = useState("");
   const [status, setStatus] = useState("");
   const [peserta, setPeserta] = useState([]);
 
@@ -65,10 +57,10 @@ export default function DataPeserta() {
       onChange: setKelas,
     },
     {
-      label: "Industri",
-      value: industri,
-      options: ["Emran Digital", "Telkom Indonesia", "UBIG", "Dinas Kominfo"],
-      onChange: setIndustri,
+      label: "Jurusan",
+      value: jurusan,
+      options: ["RPL", "TKJ", "MM", "AKL"],
+      onChange: setJurusan,
     },
     {
       label: "Status",
@@ -82,36 +74,28 @@ export default function DataPeserta() {
   useEffect(() => {
     const dummyPeserta = [
       {
-        nisn: "1234567890",
         nama: "Firli Zulfa Azzahra",
-        industri: "Emran Digital",
         kelas: "X RPL 1",
-        guru: "Nimah Hidayah S.Pd",
+        jurusan: "RPL",
+        nomorIndustri: "IND-001",
+        namaIndustri: "Emran Digital",
+        alamatIndustri: "Jl. Sudirman No.10",
+        fotoBukti: "https://via.placeholder.com/50",
+        tanggalMulai: "2026-01-15",
+        tanggalSelesai: "2026-03-15",
         status: "Aktif",
       },
       {
-        nisn: "1234567891",
         nama: "Rama Yuda Pratama",
-        industri: "Telkom Indonesia",
         kelas: "X RPL 2",
-        guru: "Nimah Hidayah S.Pd",
+        jurusan: "RPL",
+        nomorIndustri: "IND-002",
+        namaIndustri: "Telkom Indonesia",
+        alamatIndustri: "Jl. Gatot Subroto No.25",
+        fotoBukti: "https://via.placeholder.com/50",
+        tanggalMulai: "2026-01-20",
+        tanggalSelesai: "2026-03-20",
         status: "Aktif",
-      },
-      {
-        nisn: "1234567892",
-        nama: "Aulia Rahmawati",
-        industri: "UBIG",
-        kelas: "XI TKJ 1",
-        guru: "Nimah Hidayah S.Pd",
-        status: "Selesai",
-      },
-      {
-        nisn: "1234567893",
-        nama: "Fajar Wicaksono",
-        industri: "Dinas Kominfo",
-        kelas: "XI TKJ 2",
-        guru: "Nimah Hidayah S.Pd",
-        status: "Pending",
       },
     ];
     setPeserta(dummyPeserta);
@@ -122,12 +106,12 @@ export default function DataPeserta() {
     return (
       item.nama.toLowerCase().includes(query.toLowerCase()) &&
       (kelas ? item.kelas === kelas : true) &&
-      (industri ? item.industri === industri : true) &&
+      (jurusan ? item.jurusan === jurusan : true) &&
       (status ? item.status === status : true)
     );
   });
 
-  useEffect(() => setCurrentPage(1), [query, kelas, industri, status]);
+  useEffect(() => setCurrentPage(1), [query, kelas, jurusan, status]);
 
   const totalPages = Math.ceil(filteredPeserta.length / itemsPerPage);
   const paginatedData = filteredPeserta.slice(
@@ -137,21 +121,28 @@ export default function DataPeserta() {
 
   // TABLE COLUMNS
   const columns = [
-    { label: "NISN", key: "nisn" },
-    { label: "Nama", key: "nama" },
-    { label: "Industri", key: "industri" },
+    { label: "Nama Siswa", key: "nama" },
     { label: "Kelas", key: "kelas" },
-    { label: "Guru", key: "guru" },
+    { label: "Jurusan", key: "jurusan" },
+    { label: "Nomor Industri", key: "nomorIndustri" },
+    { label: "Nama Industri", key: "namaIndustri" },
+    { label: "Alamat Industri", key: "alamatIndustri" },
+    { label: "Foto Bukti", key: "fotoBukti", type: "image" },
+    { label: "Tanggal Mulai", key: "tanggalMulai" },
+    { label: "Tanggal Selesai", key: "tanggalSelesai" },
     { label: "Status", key: "status" },
   ];
 
   const exportData = filteredPeserta.map((item, i) => ({
     No: i + 1,
-    NISN: item.nisn,
-    Nama: item.nama,
-    Industri: item.industri,
+    "Nama Siswa": item.nama,
     Kelas: item.kelas,
-    Guru: item.guru,
+    Jurusan: item.jurusan,
+    "Nomor Industri": item.nomorIndustri,
+    "Nama Industri": item.namaIndustri,
+    "Alamat Industri": item.alamatIndustri,
+    "Tanggal Mulai": item.tanggalMulai,
+    "Tanggal Selesai": item.tanggalSelesai,
     Status: item.status,
   }));
 
@@ -171,7 +162,7 @@ export default function DataPeserta() {
       startY: 20,
       head: [Object.keys(exportData[0])],
       body: exportData.map((d) => Object.values(d)),
-      styles: { fontSize: 10 },
+      styles: { fontSize: 8 },
       headStyles: { fillColor: [100, 30, 33] },
     });
     doc.save("data_peserta_pkl.pdf");
@@ -179,11 +170,15 @@ export default function DataPeserta() {
 
   // INPUT FIELDS FOR ADD/EDIT
   const inputFields = [
-    { label: "NISN", name: "nisn", width: "half" },
-    { label: "Nama", name: "nama", width: "full" },
-    { label: "Industri", name: "industri", width: "half" },
+    { label: "Nama Siswa", name: "nama", width: "full" },
     { label: "Kelas", name: "kelas", width: "half" },
-    { label: "Guru", name: "guru", width: "full" },
+    { label: "Jurusan", name: "jurusan", width: "half" },
+    { label: "Nomor Industri", name: "nomorIndustri", width: "half" },
+    { label: "Nama Industri", name: "namaIndustri", width: "full" },
+    { label: "Alamat Industri", name: "alamatIndustri", width: "full" },
+    { label: "Foto Bukti (URL)", name: "fotoBukti", width: "full" },
+    { label: "Tanggal Mulai", name: "tanggalMulai", type: "date", width: "half" },
+    { label: "Tanggal Selesai", name: "tanggalSelesai", type: "date", width: "half" },
     {
       label: "Status",
       name: "status",
@@ -195,13 +190,13 @@ export default function DataPeserta() {
 
   const validate = (data) => {
     const errors = {};
-    if (!data.nisn) errors.nisn = "NISN wajib diisi";
     if (!data.nama) errors.nama = "Nama wajib diisi";
+    if (!data.kelas) errors.kelas = "Kelas wajib diisi";
     return errors;
   };
 
   // ADD / EDIT MODE
-  if ((mode === "edit" && editData)) {
+  if (mode === "edit" && editData) {
     return (
       <>
         <Add
@@ -236,7 +231,7 @@ export default function DataPeserta() {
               setPeserta((prev) => [...prev, pendingData]);
             } else {
               setPeserta((prev) =>
-                prev.map((p) => (p.nisn === editData.nisn ? pendingData : p))
+                prev.map((p) => (p.nama === editData.nama ? pendingData : p))
               );
             }
             setMode("list");
@@ -249,15 +244,20 @@ export default function DataPeserta() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <Sidebar active={active} setActive={setActive} />
-      <div className="flex flex-col flex-1">
-        <Header query={query} setQuery={setQuery} user={user} />
+    <div className="bg-white min-h-screen w-full">
+          {/* HEADER */}
+          <Header query={query} setQuery={setQuery} user={user} />
+    
+          <div className="flex">
+            {/* SIDEBAR */}
+            <div className="hidden md:block">
+              <Sidebar active={active} setActive={setActive} />
+            </div>
 
         <main className="flex-1 h-full min-h-screen p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-tl-3xl shadow-inner">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-base sm:text-lg">
-              Data Peserta PKL
+              Data Bukti Diterima PKL
             </h2>
 
             <div className="relative" ref={exportRef}>
@@ -306,16 +306,6 @@ export default function DataPeserta() {
           <Table
             columns={columns}
             data={paginatedData}
-            showEdit
-            showDelete
-            onEdit={(row) => {
-              setEditData(row);
-              setMode("edit");
-            }}
-            onDelete={(row) => {
-              setSelectedRow(row);
-              setIsDeleteOpen(true);
-            }}
           />
 
           {totalPages > 1 && (
@@ -338,7 +328,7 @@ export default function DataPeserta() {
             onClose={() => setIsDeleteOpen(false)}
             onDelete={() => {
               setPeserta((prev) =>
-                prev.filter((p) => p.nisn !== selectedRow.nisn)
+                prev.filter((p) => p.nama !== selectedRow.nama)
               );
               setIsDeleteOpen(false);
               setSelectedRow(null);

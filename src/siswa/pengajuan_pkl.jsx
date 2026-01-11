@@ -3,8 +3,8 @@ import Add from "./components/Add";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-// Import API
-import { getIndustri } from "../utils/services/admin/get_industri";
+// API baru
+import { getAvailableIndustri } from "../utils/services/siswa/industri";
 import { submitPengajuanPKL } from "../utils/services/siswa/pengajuan_pkl";
 
 export default function PengajuanPKL() {
@@ -15,11 +15,15 @@ export default function PengajuanPKL() {
   useEffect(() => {
     const fetchIndustri = async () => {
       try {
-        const data = await getIndustri();
+        const response = await getAvailableIndustri();
+        const data = response.data; // ambil array data
+
+        // format untuk dropdown: label = name, value = id
         const formatted = data.map((item) => ({
-          label: item.nama,
-          value: item.id,
+          label: item.name, // tampil di dropdown
+          value: item.id,   // dikirim saat submit
         }));
+
         setListIndustri(formatted);
       } catch (error) {
         console.error("Gagal mengambil data industri:", error);
@@ -29,7 +33,6 @@ export default function PengajuanPKL() {
     fetchIndustri();
   }, []);
 
-  // config form
   const fields = [
     {
       name: "industri_id",
@@ -48,10 +51,9 @@ export default function PengajuanPKL() {
     },
   ];
 
-  // ✅ SATU-SATUNYA handleSubmit
   const handleSubmit = async (formData) => {
     const payload = {
-      industri_id: parseInt(formData.get("industri_id")),
+      industri_id: parseInt(formData.get("industri_id")), // tetap pakai id
       catatan: formData.get("catatan"),
     };
 
@@ -64,11 +66,9 @@ export default function PengajuanPKL() {
       navigate(-1);
     } catch (error) {
       console.error(error);
-
       const message =
         error.response?.data?.message ||
         "Gagal mengirim pengajuan PKL";
-
       toast.error(message);
     }
   };

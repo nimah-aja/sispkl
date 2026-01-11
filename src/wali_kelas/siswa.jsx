@@ -23,7 +23,7 @@ export default function SiswaPage() {
   const [siswa, setSiswa] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const itemsPerPage = 2;
+  const itemsPerPage = 10;
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
     role: "Wali Kelas",

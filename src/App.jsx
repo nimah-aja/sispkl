@@ -14,6 +14,7 @@ import DashboardAdminSiswa from "./admin/data_siswa";
 import DashboardAdminGuru from "./admin/data_guru"; 
 import DashboardAdminIndustri from "./admin/data_industri"; 
 import AdminPengajuan from "./admin/data_pengajuan";
+import TahunAjaran from "./admin/data_tahunajar";
 
   // WALI KELAS
   import DashboardWaliKelas from  "./wali_kelas/dashboard_walikelas";
@@ -31,6 +32,7 @@ import Monitoring from "./koordinator/monitoring";
 import DataPenjemputan from "./koordinator/data_penjemputan"
 import PindahPKL from "./koordinator/data_pindah_pkl"
 import Pembekalan from "./koordinator/jadwal_pembekalan"
+import PreviewPengajuan from "./koordinator/components/editPengajuan"; 
 
 // kapro
 import KaprodiDashboard from "./kapro/dashboard_kaprog";
@@ -39,6 +41,7 @@ import DataPembimbing from "./kapro/data_pembimbing";
 import DataPengajuanPindahPKL from "./kapro/pengajuan_pindah_pkl";
 import DataPengajuanPKL from "./kapro/pengajuan_pkl";
 import DataPerizinan from "./kapro/data_perizinan";
+import BuktiDiterima from "./kapro/bukti_diterima";
  
 // pembimbing
 import DashboardPembimbing from "./pembimbing/dashboard_pembimbing";
@@ -94,6 +97,7 @@ function AppContent() {
         <Route path="/admin/industri" element={<DashboardAdminIndustri />} />
         <Route path="/role" element={<RoleOption />} />
         <Route path="/admin/pengajuan" element={<AdminPengajuan />} />
+        <Route path="/admin/tahunajaran" element={<TahunAjaran/>}/>
 
         {/* WALI KELAS */}
         <Route path="/guru/wali_kelas/" element={<DashboardWaliKelas />} />
@@ -121,6 +125,7 @@ function AppContent() {
         <Route path = "/guru/koordinator/suratPenjemputan" element = {<DataPenjemputan/>}/>
         <Route path = "/guru/koordinator/perpindahanPKL" element = {<PindahPKL/>}/>
         <Route path = "/guru/koordinator/pembekalan" element = {<Pembekalan/>}/>
+        <Route path = "/guru/koordinator/editPengajuan" element = {<PreviewPengajuan/>}/>
 
         {/* Kapro */}
         <Route path="/guru/kaprodi" element={<KaprodiDashboard/>}/>
@@ -129,6 +134,8 @@ function AppContent() {
         <Route path="/guru/kaprodi/pengajuan_pindah_pkl" element={<DataPengajuanPindahPKL />} />
         <Route path="/guru/kaprodi/pengajuanPKL" element={<DataPengajuanPKL />} />
         <Route path="/guru/kaprodi/perizinan" element={<DataPerizinan />} />
+        <Route path="/guru/kaprodi/bukti_diterima" element={<BuktiDiterima />} />
+        
 
 
         {/* Siswa */}
