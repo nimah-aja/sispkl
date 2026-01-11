@@ -40,7 +40,7 @@ export default function DataPeserta() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",

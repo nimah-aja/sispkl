@@ -38,7 +38,7 @@ export default function DataPeserta() {
   const [selectedRow, setSelectedRow] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
@@ -113,14 +113,56 @@ export default function DataPeserta() {
     currentPage * itemsPerPage
   );
 
+  const handleDownloadSurat = (row) => {
+  const doc = new jsPDF();
+
+  // Judul
+  doc.setFontSize(14);
+  doc.text("SURAT PENJEMPUTAN PKL", 105, 20, { align: "center" });
+
+  doc.setFontSize(11);
+  doc.text(`No Surat   : ${row.noSurat}`, 20, 40);
+  doc.text(`Penerima   : ${row.penerima}`, 20, 50);
+  doc.text(`Perihal    : ${row.perihal}`, 20, 60);
+  doc.text(`Tanggal    : ${row.tanggal}`, 20, 70);
+  doc.text(`Pengirim   : ${row.pengirim}`, 20, 80);
+
+  doc.text(
+    "Dengan ini kami menjemput siswa untuk melaksanakan kegiatan Praktik Kerja Lapangan (PKL) sesuai ketentuan yang berlaku.",
+    20,
+    100,
+    { maxWidth: 170 }
+  );
+
+  doc.text("Hormat kami,", 140, 125);
+  doc.text(row.pengirim, 140, 140);
+
+  doc.save(`Surat_Penjemputan_${row.noSurat}.pdf`);
+};
+
+
   // ================= TABLE COLUMNS =================
   const columns = [
-    { label: "No Surat", key: "noSurat" },
-    { label: "Penerima", key: "penerima" },
-    { label: "Perihal", key: "perihal" },
-    { label: "Tanggal", key: "tanggal" },
-    { label: "Pengirim", key: "pengirim" },
-  ];
+  { label: "No Surat", key: "noSurat" },
+  { label: "Penerima", key: "penerima" },
+  { label: "Perihal", key: "perihal" },
+  { label: "Tanggal", key: "tanggal" },
+  { label: "Pengirim", key: "pengirim" },
+  {
+    label: "Unduh",
+    sortable: false,
+    render: (_, row) => (
+      <button
+        onClick={() => handleDownloadSurat(row)}
+        className="!bg-transparent hover:scale-110 transition"
+        title="Unduh Surat"
+      >
+        <Download size={18} className="text-[#641E21]" />
+      </button>
+    ),
+  },
+];
+
 
   // ================= EXPORT =================
   const exportData = filteredPeserta.map((item, i) => ({

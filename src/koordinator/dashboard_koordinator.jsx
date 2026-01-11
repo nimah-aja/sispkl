@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import Detail from "./components/Detail";
+import CalendarPanel from "./components/Calender";
 
 
 // import components
@@ -45,7 +46,7 @@ export default function KoordinatorDashboard() {
       { title: "Pengajuan PKL", icon: pengajuanPKL, value: 2 },
       { title: "Pembimbing", icon: Pembimbing, value: 2 },
       { title: "Surat Pengantaran", icon: suratPengantaran, value: 8 },
-      { title: "Monitoring", icon: monitoring, value: 12 },
+      { title: "Surat Monitoring", icon: monitoring, value: 12 },
       { title: "Surat Penjemputan", icon: suratPenjemputan, value: 6 },
       { title: "Perpindahan PKL", icon: perpindahanPKL, value: 3 },
       { title: "Pembekalan", icon: pembekalan, value: 7 },
@@ -125,6 +126,12 @@ export default function KoordinatorDashboard() {
             <p className="text-gray-600 font-medium">Data tidak ditemukan</p>
           </div>
         )}
+
+        {/* KALENDER */}
+        <div className="mt-10 max-w-6xl mx-auto">
+          <CalendarPanel />
+        </div>
+
 
         {/* NOTIFICATION SECTION */}
         <div className="mt-10 max-w-6xl mx-auto">

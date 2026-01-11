@@ -23,18 +23,18 @@ export default function DataPermasalahanSiswa() {
   const [dataPermasalahan, setDataPermasalahan] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const itemsPerPage = 2;
+  const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "Pembimbing",
+    role: "Wali Kelas",
   };
 
 
   // ================= DUMMY DATA =================
   const dummyDataPermasalahan = [
     {
-      pelapor: "Siswa",
+      pelapor: "Pembimbing",
       nama: "Firli Zulfa Azzahra",
       tanggal: "01/05/2025",
       masalah: "Kesulitan memahami materi Matematika",
@@ -48,7 +48,7 @@ export default function DataPermasalahanSiswa() {
       status: "Selesai",
     },
     {
-      pelapor: "Siswa",
+      pelapor: "Pembimbing",
       nama: "Maya Anggraini",
       tanggal: "28/11/2025",
       masalah: "Kesulitan adaptasi di sekolah baru",
@@ -62,13 +62,38 @@ export default function DataPermasalahanSiswa() {
       status: "Selesai",
     },
     {
-      pelapor: "Siswa",
+      pelapor: "Pembimbing",
       nama: "Andi Pratama",
       tanggal: "15/11/2025",
       masalah: "Konflik dengan teman sekelas",
       status: "Proses",
     },
   ];
+
+  const getInitials = (name = "") =>
+    name
+      .split(" ")
+      .map(w => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
+  const avatarColors = [
+    "bg-orange-500",
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-purple-500",
+    "bg-pink-500",
+  ];
+
+  const handleProcess = (index) => {
+    setDataPermasalahan(prev =>
+      prev.map((item, i) =>
+        i === index ? { ...item, status: "Selesai" } : item
+      )
+    );
+  };
+
 
   // ================= LOAD DATA =================
   useEffect(() => {
@@ -173,7 +198,7 @@ export default function DataPermasalahanSiswa() {
         <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
           <div className="flex items-center mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-lg">
-              Permasalahan
+              Data Permasalahan Peserta Didik
             </h2>
 
             <div className="relative" ref={exportRef}>
@@ -226,7 +251,8 @@ export default function DataPermasalahanSiswa() {
                 onChange: setStatusFilter,
               },
               {
-                label: "Pelapor",
+                label: "Tanggal",
+                type: "date",
                 value: dateFilter,
                 onChange: setDateFilter,
               },
@@ -234,10 +260,70 @@ export default function DataPermasalahanSiswa() {
           />
 
           {/* TABLE */}
-          <Table
-                      columns={columns}
-                      data={paginatedData}
-                    />
+          <div className="mt-6 space-y-4">
+            {filteredData.map((item, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl p-4 hover:shadow-md transition-all"
+              >
+                {/* HEADER */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-4">
+                    {/* AVATAR ORANGE FIX */}
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500 text-white font-bold text-sm"
+                    >
+                      {getInitials(item.nama)}
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-sm">
+                        {item.nama}
+                      </h3>
+                      <p className="text-xs text-gray-600">
+                        Pelapor: {item.pelapor}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {item.masalah}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tanggal di kanan atas */}
+                  <span className="text-xs text-gray-500">
+                    {item.tanggal}
+                  </span>
+                </div>
+
+                {/* ACTION */}
+                <div className="flex justify-between items-center mt-3 ml-15">
+                  {/* Tombol Proses di kiri */}
+                  {item.status === "Proses" && (
+                    <button
+                      onClick={() => handleProcess(index)}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                      style={{ backgroundColor: "#EC933A" }}
+                    >
+                      Proses
+                    </button>
+                  )}
+
+                  {/* Status di kanan */}
+                  <span
+                    className={`text-xs font-semibold ${
+                      item.status === "Selesai"
+                        ? "text-green-600"
+                        : "text-orange-500"
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+            
+
           
                     {totalPages > 1 && (
                                 <div className="flex justify-between items-center mt-4 text-white">

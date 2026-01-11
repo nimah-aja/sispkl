@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRef } from "react";
+import { CheckCircle, XCircle, Clock } from "lucide-react";
 
 
 // Components
@@ -24,11 +25,19 @@ export default function DataPerizinanSiswa() {
   const [dataPerizinan, setDataPerizinan] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
     role: "Wali Kelas",
+  };
+
+  const getStatusIcon = (status) => {
+    if (status === "Disetujui")
+      return <CheckCircle className="w-6 h-6 text-green-600" />;
+    if (status === "Ditolak")
+      return <XCircle className="w-6 h-6 text-red-600" />;
+    return <Clock className="w-6 h-6 text-orange-500" />;
   };
 
   // ================= DUMMY DATA =================
@@ -241,10 +250,56 @@ export default function DataPerizinanSiswa() {
             ]}
           />
 
-          <Table
-                      columns={columns}
-                      data={paginatedData}
-                    />
+          <div className="mt-6 space-y-3">
+            {filteredData.map((item, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg p-4 hover:shadow-md transition-all"
+              >
+                {/* HEADER */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100">
+                      {getStatusIcon(item.status)}
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-base">
+                        {item.nama} | {item.kelas}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {item.alasan} • Lampiran: {item.lampiran}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-sm text-gray-500">
+                    {item.tanggal}
+                  </span>
+                </div>
+
+                {/* ACTION BUTTON */}
+                {item.status === "Proses" && (
+                  <div className="flex gap-2 ml-14">
+                    {/* <button
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                      style={{ backgroundColor: "#BC2424" }}
+                    >
+                      Tolak
+                    </button>
+
+                    <button
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                      style={{ backgroundColor: "#EC933A" }}
+                    >
+                      Terima
+                    </button> */}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
           
                     {totalPages > 1 && (
                                 <div className="flex justify-between items-center mt-4 text-white">

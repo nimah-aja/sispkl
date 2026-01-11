@@ -1,345 +1,589 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
+import { getPKLApplications } from "../utils/services/kapro/pengajuanPKL";
+import logo from "../assets/logo.png";
+import { X, Edit } from "lucide-react";
+import { fetchGuruById, getGuru as getAllGuru } from "../utils/services/admin/get_guru";
 
-
-// import components
+// components
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
-import DashboardCard from "./components/DashboardCard";
-import Notification from "./components/Notification";
 import SearchBar from "./components/Search";
-
-// import request
-import axios from "../utils/axiosInstance";
-
-// import assets
-import sidebarUsers from "../assets/sidebarUsers.svg";
-import pengajuanPKL from "../assets/pengajuan_PKL.svg";
-import Pembimbing from "../assets/pembimbing.svg";
-import suratPengantaran from "../assets/surat_pengantaran.svg";
-import monitoring from "../assets/monitoring.svg";
-import suratPenjemputan from "../assets/surat_penjemputan.svg";
-import perpindahanPKL from "../assets/perpindahan_pkl.svg";
-import pembekalan from "../assets/pembekalan.svg";
-import  profile from "../assets/profile.svg";
+import EditPengajuan from "./components/editPengajuan";
 
 export default function DataPengajuan() {
   const [showPreview, setShowPreview] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSurat, setSelectedSurat] = useState(null);
-
   const [active, setActive] = useState("pengajuanPKL");
   const [query, setQuery] = useState("");
-  const [dataDisplay, setDataDisplay] = useState([]);
+  const [pengajuanList, setPengajuanList] = useState([]);
+  const [kelas, setKelas] = useState("");
+  const [guruList, setGuruList] = useState([]);
+  const [guruDetail, setGuruDetail] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [pdfGuruDetail, setPdfGuruDetail] = useState(null);
+
   const navigate = useNavigate();
-  // const user = JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "admin" };
   const namaGuru = localStorage.getItem("nama_guru") || "Guru SMK";
 
-  const user = { 
+  const user = {
     name: namaGuru,
-    role: "Koordinator" 
+    role: "Koordinator",
   };
 
-  const [kelas, setKelas] = useState("");
+  const kelasOptions = Array.from(
+    new Set(pengajuanList.map(item => item.class))
+  );
 
   const filters = [
     {
-        label: "Kelas",
-        value: kelas,
-        options: ["XII RPL 1", "XII RPL 2", "XII TKJ 1", "XII DKV 1"],
-        onChange: setKelas,
-    }
- ];
+      label: "Kelas",
+      value: kelas,
+      options: kelasOptions,
+      onChange: setKelas,
+    },
+  ];
 
 
-  // Data dummy
   useEffect(() => {
-    const dummyData = [
-      { title: "Peserta PKL", icon: sidebarUsers, value: 25 },
-      { title: "Pengajuan PKL", icon: pengajuanPKL, value: 10 },
-      { title: "Pembimbing", icon: Pembimbing, value: 5 },
-      { title: "Surat Pengantaran", icon: suratPengantaran, value: 8 },
-      { title: "Monitoring", icon: monitoring, value: 12 },
-      { title: "Surat Penjemputan", icon: suratPenjemputan, value: 6 },
-      { title: "Perpindahan PKL", icon: perpindahanPKL, value: 3 },
-      { title: "Pembekalan", icon: pembekalan, value: 7 },
-    ];
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [pklRes, guruRes] = await Promise.all([
+          getPKLApplications(),
+          getAllGuru(),
+        ]);
 
-    setDataDisplay(dummyData);
+        setGuruList(guruRes || []);
+
+        const approvedList = (pklRes?.data || [])
+          .filter((item) => item.application?.status === "Approved")
+          .map((item) => ({
+            id: item.application.id,
+            name: item.siswa_username,
+            class: item.kelas_nama,
+            nisn: item.siswa_nisn,
+            industri: item.industri_nama,
+            jurusan: item.jurusan_nama,
+            tanggal_mulai: item.application.tanggal_mulai,
+            tanggal_selesai: item.application.tanggal_selesai,
+            processed_by: item.application.processed_by,
+            description: `PKL di ${item.industri_nama} telah disetujui`,
+            siswa_id: item.application.siswa_id,
+          }));
+
+        setPengajuanList(approvedList);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const filteredDisplay = dataDisplay.filter((item) =>
-    item.title.toLowerCase().includes(query.toLowerCase())
-  );
+  useEffect(() => {
+    if (!selectedSurat?.processed_by) return;
 
-    const notifications = [
-        {
-            profile: "https://via.placeholder.com/60",
-            name: "Mirza Kholila",
-            class: "XII RPL 1",
-            description: "Mengajukan PKL di UBIG",
-            time: "2 jam yang lalu",
-            acceptText: "Terima",
-            rejectText: "Tolak",
-            onAccept: () => alert("Mirza diterima"),
-            onReject: () => alert("Mirza ditolak"),
-        },
-        {
-            profile: "https://via.placeholder.com/60",
-            name: "Erin Malik",
-            class: "XII TKJ 2",
-            description: "Mengajukan PKL di Telkom",
-            time: "1 jam yang lalu",
-        },
-    ];
+    const getGuruDetail = async () => {
+      try {
+        const data = await fetchGuruById(selectedSurat.processed_by);
+        setGuruDetail(data);
+        setPdfGuruDetail(data);
+      } catch (err) {
+        console.error("Error fetching guru detail:", err);
+        setGuruDetail(null);
+        setPdfGuruDetail(null);
+      }
+    };
 
+    getGuruDetail();
+  }, [selectedSurat]);
+
+  const formatTanggal = (isoString) => {
+    if (!isoString) return "-";
+    try {
+      const [year, month, day] = isoString.split('-');
+      return `${day}-${month}-${year}`;
+    } catch (err) {
+      return isoString;
+    }
+  };
 
   const getInitials = (name) => {
     if (!name) return "";
     const words = name.trim().split(" ");
-    if (words.length === 1) return words[0][0].toUpperCase();
-    return (words[0][0] + words[1][0]).toUpperCase();
+    return words.length === 1
+      ? words[0][0].toUpperCase()
+      : (words[0][0] + words[1][0]).toUpperCase();
   };
 
-  const handleOpenPreview = (item) => {
+  const fetchGuruForPDF = async (processedById) => {
+    if (!processedById) return { nama: "-", nip: "-" };
+    
+    try {
+      const data = await fetchGuruById(processedById);
+      return data || { nama: "-", nip: "-" };
+    } catch (err) {
+      console.error("Error fetching guru for PDF:", err);
+      return { nama: "-", nip: "-" };
+    }
+  };
+
+  const handleEditClick = (item) => {
     setSelectedSurat(item);
-    setShowPreview(true);
+    setShowEditModal(true);
+    setShowPreview(false);
   };
 
-  const handleExportPDF = (surat) => {
+  const handleSaveEdit = (updatedData) => {
+    // Update pengajuanList dengan data yang sudah diedit
+    setPengajuanList(prev => 
+      prev.map(item => 
+        item.id === updatedData.id ? updatedData : item
+      )
+    );
+    
+    // Update selectedSurat jika sedang dipreview
+    if (selectedSurat?.id === updatedData.id) {
+      setSelectedSurat(updatedData);
+    }
+    
+    setShowEditModal(false);
+    alert("Perubahan berhasil disimpan!");
+  };
+
+  const handleExportPDF = async (surat, isGroupMode = false, selectedStudents = []) => {
   if (!surat) return;
+  
+  const guruForPdf = surat.processed_by 
+    ? await fetchGuruForPDF(surat.processed_by)
+    : { nama: "-", nip: "-" };
 
-  const doc = new jsPDF();
+  const periode = surat.tanggal_mulai && surat.tanggal_selesai
+    ? `${formatTanggal(surat.tanggal_mulai)} - ${formatTanggal(surat.tanggal_selesai)}`
+    : "-";
 
+  const doc = new jsPDF("p", "mm", "a4");
+  const left = 20;
+  const right = 190;
+  let y = 20;
+  
+  // ===== LOGO & KOP =====
+  doc.addImage(logo, "PNG", left, 18, 15, 15);
+  y = 37;
+  doc.line(left, y, 190, y);
+  
+  // ===== JUDUL SEKOLAH =====
   doc.setFont("times", "bold");
   doc.setFontSize(14);
-  doc.text("SURAT PENGAJUAN PKL", 105, 20, { align: "center" });
+  doc.text("SMK NEGERI 2 SINGOSARI", 105, 26, { align: "center" });
+  
+  y = 30;
+  doc.setFontSize(10);
+  doc.setFont("times", "normal");
+  doc.text(
+    "Jl. Perusahaan No.20 Tunjungtirto – Singosari",
+    105,
+    y,
+    { align: "center" }
+  );
+  y += 4;
+  doc.text(
+    "Kabupaten Malang, Jawa Timur",
+    105,
+    y,
+    { align: "center" }
+  );
+
+  y = 50;
+
+  // ===== TANGGAL =====
+  doc.text(
+    `Singosari, ${new Date().toLocaleDateString("id-ID")}`,
+    right,
+    y,
+    { align: "right" }
+  );
+
+  y += 0;
+
+  // ===== TUJUAN =====
+  doc.text("Kepada Yth.", left, y);
+  y += 5;
+  doc.setFont("times", "bold");
+  doc.text(surat.industri || "Pimpinan Industri", left, y);
+  doc.setFont("times", "normal");
+  y += 5;
+  doc.text("Di Tempat", left, y);
+
+  y += 15;
+
+  // ===== JUDUL SURAT =====
+  doc.setFont("times", "bold");
+  doc.text(
+    "SURAT PERMOHONAN PRAKTIK KERJA LAPANGAN",
+    105,
+    y,
+    { align: "center" }
+  );
+  y += 5;
 
   doc.setFontSize(10);
   doc.setFont("times", "normal");
-  doc.text("SMK Negeri 2 Singosari", 105, 26, { align: "center" });
+  doc.text("Nomor: 001/SMK-N2/PKL/I/2026", 105, y, {
+    align: "center",
+  });
 
-  doc.line(20, 30, 190, 30);
+  y += 15;
 
+  // ===== ISI SURAT =====
   doc.setFontSize(11);
-  doc.text("Yth. Pimpinan Industri", 20, 40);
+  doc.text("Dengan hormat,", left, y);
+  y += 10;
 
   doc.text(
-    "Dengan hormat,\n\n" +
-      "Bersama ini kami mengajukan permohonan Praktik Kerja Lapangan (PKL)\n" +
-      "atas nama siswa berikut:",
-    20,
-    50
+    "Sehubungan dengan program Praktik Kerja Lapangan (PKL), bersama ini kami mengajukan permohonan untuk siswa berikut:",
+    left,
+    y,
+    { maxWidth: 170 }
   );
 
-  doc.text(`Nama   : ${surat.name}`, 20, 80);
-  doc.text(`Kelas  : ${surat.class}`, 20, 88);
+  y += 15;
 
+  // ===== DATA SISWA =====
+  const startX = left;
+  const col1Width = 30;
+  const col2Start = startX + col1Width + 5;
+  
+  // Periksa apakah ini mode kelompok dan ada data siswa kelompok
+  if (isGroupMode && selectedStudents && selectedStudents.length > 0) {
+    // Mode kelompok
+    doc.text("Daftar Siswa:", startX, y);
+    y += 7;
+    
+    // Cetak daftar siswa
+    selectedStudents.forEach((siswa, index) => {
+      doc.text(`${index + 1}. ${siswa.name} - ${siswa.class} - NISN: ${siswa.nisn}`, startX + 5, y);
+      y += 7;
+    });
+    
+    y += 3;
+    doc.text("Jurusan:", startX, y);
+    doc.text(":", startX + col1Width, y);
+    doc.text(surat.jurusan || "-", col2Start, y);
+    y += 7;
+    
+    doc.text("Periode:", startX, y);
+    doc.text(":", startX + col1Width, y);
+    doc.text(periode, col2Start, y);
+    y += 7;
+  } else {
+    // Mode individu (default)
+    doc.text("Nama", startX, y);
+    doc.text(":", startX + col1Width, y);
+    doc.text(surat.name || "-", col2Start, y);
+    y += 7;
+    
+    doc.text("Kelas", startX, y);
+    doc.text(":", startX + col1Width, y);
+    doc.text(surat.class || "-", col2Start, y);
+    y += 7;
+    
+    doc.text("Jurusan", startX, y);
+    doc.text(":", startX + col1Width, y);
+    doc.text(surat.jurusan || "-", col2Start, y);
+    y += 7;
+    
+    doc.text("NISN", startX, y);
+    doc.text(":", startX + col1Width, y);
+    doc.text(surat.nisn || "-", col2Start, y);
+    y += 7;
+    
+    doc.text("Periode", startX, y);
+    doc.text(":", startX + col1Width, y);
+    doc.text(periode, col2Start, y);
+    y += 7;
+  }
+
+  y += 8;
+
+  // ===== PARAGRAF PENUTUP =====
   doc.text(
-    `${surat.description}.\n\n` +
-      "Demikian surat ini kami sampaikan. Atas perhatian Bapak/Ibu,\n" +
-      "kami ucapkan terima kasih.",
-    20,
-    100
+    "Demikian surat permohonan ini kami sampaikan. Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.",
+    left,
+    y,
+    { maxWidth: 170 }
   );
 
-  doc.text("Hormat kami,", 140, 140);
-  doc.text("Koordinator PKL", 140, 160);
+  y += 40;
 
-  doc.save(`Surat_PKL_${surat.name}.pdf`);
+  // ===== TTD =====
+  const ttdX = 130;
+  doc.text("Kepala Program Keahlian,", ttdX, y);
+  y += 25;
+  doc.setFont("times", "bold");
+  doc.text(guruForPdf?.nama || "-", ttdX, y);
+  y += 5;
+  doc.setFontSize(10);
+  doc.setFont("times", "normal");
+  doc.text(`NIP. ${guruForPdf?.nip || "-"}`, ttdX, y);
+
+  // Nama file berdasarkan mode
+  const fileName = isGroupMode && selectedStudents.length > 0
+    ? `Surat_PKL_Kelompok_${selectedStudents.length}_siswa`
+    : `Surat_PKL_${surat.name?.replace(/\s+/g, '_') || 'Individu'}`;
+  
+  doc.save(`${fileName}.pdf`);
 };
 
+  const handleCardClick = async (item) => {
+    setSelectedSurat(item);
+    setShowPreview(true);
+    setShowEditModal(false);
+  };
 
-const pengajuanList = [
-  {
-    name: "Mirza Kholila",
-    class: "XII RPL 1",
-    description: "Telah mengajukan tempat PKL di UBIG",
-  },
-  {
-    name: "ZEZE",
-    class: "XII RPL 2",
-    description: "Telah mengajukan tempat PKL di UBIG",
-  },
-  {
-    name: "Anas",
-    class: "XII TKJ 1",
-    description: "Telah mengajukan tempat PKL di UBIG",
-  },
-  {
-    name: "Anis",
-    class: "XII DKV 1",
-    description: "Telah mengajukan tempat PKL di UBIG",
-  },
-  {
-    name: "Mirza Kholila",
-    class: "XII RPL 1",
-    description: "Telah mengajukan tempat PKL di UBIG",
-  },
-];
+  const filteredPengajuan = pengajuanList.filter((item) => {
+    const searchText = query.toLowerCase();
 
-const filteredPengajuan = pengajuanList.filter((item) => {
-  const searchText = query.toLowerCase();
+    const matchSearch =
+      item.name.toLowerCase().includes(searchText) ||
+      item.class.toLowerCase().includes(searchText) ||
+      item.description.toLowerCase().includes(searchText);
 
-  const matchSearch =
-    item.name.toLowerCase().includes(searchText) ||
-    item.class.toLowerCase().includes(searchText) ||
-    item.description.toLowerCase().includes(searchText);
+    const matchKelas = kelas === "" || item.class === kelas;
 
-  const matchKelas =
-    kelas === "" || item.class === kelas;
-
-  return matchSearch && matchKelas;
-});
-
-
-
-
-
-
+    return matchSearch && matchKelas;
+  });
 
   return (
-  <div className="flex min-h-screen w-full bg-white">
-    {/* SIDEBAR FULL HEIGHT */}
-    <Sidebar active={active} setActive={setActive} />
+    <div className="flex min-h-screen w-full bg-white">
+      <Sidebar active={active} setActive={setActive} />
 
-    {/* AREA HEADER + MAIN */}
-    <div className="flex flex-col flex-1">
-      <Header user={user} />
+      <div className="flex flex-col flex-1">
+        <Header user={user} />
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 h-full min-h-screen p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-tl-3xl shadow-inner">
+        <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
+          <h2 className="text-white font-bold mb-4">Data Pengajuan PKL</h2>
 
-        <h2 className="text-white font-bold text-base sm:text-lg mb-4 sm:mb-6">
-            Data Pengajuan PKL
-        </h2>
-
-        <SearchBar
+          <SearchBar
             query={query}
             setQuery={setQuery}
             filters={filters}
             placeholder="Cari siswa..."
-        />
+          />
 
-                {/* LIST DATA PENGAJUAN PKL */}
-        <div className="mt-6 space-y-4">
+          {loading ? (
+            <div className="text-white mt-4">Memuat data...</div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              {filteredPengajuan.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleCardClick(item)}
+                  className="bg-white rounded-xl p-4 flex justify-between items-center shadow cursor-pointer hover:bg-gray-50 transition"
+                >
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 mr-4 rounded-full bg-[#641E21] text-white flex items-center justify-center font-bold">
+                      {getInitials(item.name)}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#641E21]">
+                        {item.name} | {item.class} 
+                      </h3>
+                      <p className="text-sm text-gray-600">{item.description}</p>
+                    </div>
+                  </div>
 
-        {filteredPengajuan.map((item, index) => (
-            <div
-  key={index}
-  onClick={() => handleOpenPreview(item)}
-  className="bg-white rounded-xl w-full py-4 px-4 flex items-center justify-between shadow-md cursor-pointer"
->
-
-            {/* LEFT SIDE */}
-            <div className="flex items-center">
-                {/* ICON / PROFILE */}
-                <div className="w-10 h-10 mr-4 rounded-full bg-[#641E21] text-white flex items-center justify-center font-bold text-sm">
-  {getInitials(item.name)}
-</div>
-
-
-                {/* TEXT */}
-                <div>
-                    <h3 className="font-semibold text-[#641E21] text-base">
-                    {item.name} | {item.class}
-                    </h3>
-                    <p className="text-gray-600 text-sm">{item.description}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(item);
+                      }}
+                      className="!bg-red-800 text-white px-4 py-1 rounded-md hover:bg-blue-600 transition flex items-center gap-2"
+                    >
+                      Edit Surat
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await handleExportPDF(item, false, []); // false untuk mode individu
+                      }}
+                      className="!bg-[#EC933A] text-white px-4 py-1 rounded-md hover:bg-orange-500 transition"
+                    >
+                      Cetak Surat
+                    </button>
+                  </div>
                 </div>
+              ))}
             </div>
+          )}
+        </main>
+      </div>
 
+      {/* ================= MODAL EDIT ================= */}
+      {showEditModal && selectedSurat && (
+        <EditPengajuan
+          selectedSurat={selectedSurat}
+          guruDetail={guruDetail}
+          allSiswa={pengajuanList}
+          onSave={handleSaveEdit}
+          onClose={() => setShowEditModal(false)}
+          onExportPDF={handleExportPDF} // function yang sudah diperbaiki
+        />
+      )}
 
-            {/* BUTTON CETAK */}
-            <button
-  onClick={(e) => {
-    e.stopPropagation();
-    handleExportPDF(item);
-  }}
-  className="!bg-[#EC933A] text-white text-sm font-semibold px-5 !py-1 rounded-md hover:bg-[#e0911f] transition"
->
-  Cetak
-</button>
+      {/* ================= SIDE PANEL PREVIEW SAJA ================= */}
+      {showPreview && selectedSurat && !showEditModal && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* OVERLAY */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              setShowPreview(false);
+              setGuruDetail(null);
+              setPdfGuruDetail(null);
+            }}
+          />
 
+          {/* CLOSE BUTTON */}
+          <div
+            onClick={() => {
+              setShowPreview(false);
+              setGuruDetail(null);
+              setPdfGuruDetail(null);
+            }}
+            className="absolute top-4 right-[789px] z-50 w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-lg transition hover:bg-gray-100 cursor-pointer"
+          >
+            <X className="text-black w-5 h-5" />
+          </div>
 
+          {/* SIDE PANEL */}
+          <div className="relative bg-white h-full w-full max-w-3xl rounded-2xl shadow-2xl animate-slide-in-right overflow-y-auto">
+            {/* ================= SURAT ================= */}
+            <div className="p-12 text-black text-[12px] leading-relaxed">
+              {/* KOP */}
+              <div className="flex items-center border-b-2 border-black pb-4 mb-6">
+                <img
+                  src={logo}
+                  alt="Logo Sekolah"
+                  className="w-16 h-16 object-contain mr-4"
+                />
+                <div className="flex-1 text-center">
+                  <h2 className="text-lg font-bold uppercase">
+                    SMK NEGERI 2 SINGOSARI
+                  </h2>
+                  <p className="text-[10px]">
+                    Jl. Perusahaan No.20 Tunjungtirto – Singosari<br />
+                    Kabupaten Malang, Jawa Timur
+                  </p>
+                </div>
+              </div>
 
+              {/* TANGGAL */}
+              <div className="text-right mb-6">
+                Singosari, {new Date().toLocaleDateString("id-ID")}
+              </div>
+
+              {/* TUJUAN */}
+              <p className="-mt-10">
+                Kepada Yth.<br />
+                <b>{selectedSurat.industri || "Pimpinan Industri"}</b><br />
+                Di Tempat
+              </p>
+
+              {/* JUDUL */}
+              <div className="text-center my-6">
+                <p className="font-bold underline">
+                  SURAT PERMOHONAN PRAKTIK KERJA LAPANGAN
+                </p>
+                <p className="text-[11px]">
+                  Nomor: 001/SMK-N2/PKL/I/2026
+                </p>
+              </div>
+
+              {/* ISI */}
+              <p>Dengan hormat,</p>
+
+              <p className="text-justify">
+                Sehubungan dengan program Praktik Kerja Lapangan (PKL),
+                bersama ini kami mengajukan permohonan untuk siswa berikut:
+              </p>
+
+              <table className="my-4">
+                <tbody>
+                  <tr>
+                    <td className="w-32">Nama</td>
+                    <td>: {selectedSurat.name}</td>
+                  </tr>
+                  <tr>
+                    <td>Kelas</td>
+                    <td>: {selectedSurat.class}</td>
+                  </tr>
+                  <tr>
+                    <td>Jurusan</td>
+                    <td>: {selectedSurat.jurusan}</td>
+                  </tr>
+                  <tr>
+                    <td>NISN</td>
+                    <td>: {selectedSurat.nisn}</td>
+                  </tr>
+                  <tr>
+                    <td>Periode</td>
+                    <td>
+                      : {selectedSurat.tanggal_mulai && selectedSurat.tanggal_selesai
+                          ? `${formatTanggal(selectedSurat.tanggal_mulai)} - ${formatTanggal(selectedSurat.tanggal_selesai)}`
+                          : "-"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p className="text-justify">
+                Demikian surat permohonan ini kami sampaikan.
+                Atas perhatian dan kerja sama Bapak/Ibu,
+                kami ucapkan terima kasih.
+              </p>
+
+              {/* TTD */}
+              <div className="mt-16 w-64 ml-auto text-left">
+                <p>Kepala Program Keahlian,</p>
+                <div className="h-16" />
+                {guruDetail ? (
+                  <>
+                    <p className="font-bold">{guruDetail.nama || "-"}</p>
+                    <p className="text-[11px]">NIP. {guruDetail.nip || "-"}</p>
+                  </>
+                ) : (
+                  <p className="text-gray-500">Memuat data guru...</p>
+                )}
+              </div>
+
+              {/* BUTTONS */}
+              <div className="mt-12 flex justify-start gap-4">
+                <button
+                  onClick={() => handleEditClick(selectedSurat)}
+                  className="!bg-red-800 text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-blue-600 transition flex items-center gap-2"
+                >
+                  Edit Surat
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleExportPDF(selectedSurat, false, []); // false untuk mode individu
+                  }}
+                  className="!bg-[#EC933A] text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-orange-500 transition"
+                >
+                  Cetak Surat
+                </button>
+              </div>
             </div>
-        ))}
-
+          </div>        
         </div>
-
-        {showPreview && selectedSurat && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div className="bg-white w-[90%] max-w-2xl rounded-xl p-6 relative shadow-xl">
-
-      {/* CLOSE */}
-      <button
-        onClick={() => setShowPreview(false)}
-        className="absolute top-3 right-4 text-gray-500 text-xl font-bold hover:text-black !bg-transparent"
-      >
-        ×
-      </button>
-
-      {/* HEADER SURAT */}
-      <div className="text-center mb-6">
-        <h2 className="text-lg font-bold uppercase">
-          Surat Pengajuan PKL
-        </h2>
-        <p className="text-sm text-gray-500">
-          SMK Negeri 2 Singosari
-        </p>
-      </div>
-
-      {/* ISI SURAT */}
-      <div className="text-sm text-gray-700 space-y-4 leading-relaxed">
-        <p>Yth. Pimpinan Industri</p>
-
-        <p>
-          Dengan hormat, <br />
-          Bersama ini kami mengajukan permohonan Praktik Kerja Lapangan (PKL)
-          atas nama:
-        </p>
-
-        <ul className="pl-4">
-          <li><strong>Nama:</strong> {selectedSurat.name}</li>
-          <li><strong>Kelas:</strong> {selectedSurat.class}</li>
-        </ul>
-
-        <p>
-          {selectedSurat.description}
-        </p>
-
-        <p>
-          Demikian surat ini kami sampaikan. Atas perhatian Bapak/Ibu,
-          kami ucapkan terima kasih.
-        </p>
-      </div>
-
-      {/* FOOTER */}
-      {/* FOOTER */}
-      <div className="mt-8 flex justify-between items-end">
-        <div className="text-sm">
-          <p>Hormat kami,</p>
-          <p className="font-semibold mt-4">Koordinator PKL</p>
-        </div>
-
-        <button
-  onClick={() => handleExportPDF(selectedSurat)}
-  className="!bg-[#641E21] text-white px-4 py-2 rounded-md text-sm hover:bg-[#4d1518] transition"
->
-  Cetak
-</button>
-
-      </div>
-
+      )}
     </div>
-  </div>
-)}
-
-
-
-      </main>
-    </div>
-  </div>
-);
-
+  );
 }

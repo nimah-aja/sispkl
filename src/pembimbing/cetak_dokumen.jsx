@@ -28,118 +28,105 @@ export default function CetakDokumenPKL() {
 
   /* ===================== PDF SYSTEM ===================== */
   const handlePrint = (docTitle) => {
-    const doc = new jsPDF();
+  const doc = new jsPDF("p", "mm", "a4");
 
-    // HEADER
-    doc.setFont("times", "bold");
-    doc.setFontSize(14);
-    doc.text("SMK NEGERI 2 SINGOSARI", 105, 18, { align: "center" });
+  /* ================= KOP SURAT ================= */
+  doc.setFont("times", "bold");
+  doc.setFontSize(14);
+  doc.text("SMK NEGERI 2 SINGOSARI", 105, 18, { align: "center" });
 
-    doc.setFontSize(11);
-    doc.setFont("times", "normal");
-    doc.text("PROGRAM PRAKTIK KERJA LAPANGAN (PKL)", 105, 26, {
-      align: "center",
-    });
+  doc.setFont("times", "normal");
+  doc.setFontSize(10);
+  doc.text(
+    "JL. PERUSAHAAN NO. 20 TUNJUNGTIRTO-SINGOSARI\nKab. Malang, Jawa Timur",
+    105,
+    24,
+    { align: "center" }
+  );
 
-    doc.line(20, 30, 190, 30);
+  doc.setLineWidth(0.8);
+  doc.line(20, 32, 190, 32);
 
-    // JUDUL SURAT
-    doc.setFont("times", "bold");
-    doc.setFontSize(12);
-    doc.text(docTitle.toUpperCase(), 105, 42, { align: "center" });
+  /* ================= TANGGAL ================= */
+  doc.setFontSize(11);
+  doc.text("Singosari, ", 190, 42, { align: "right" });
 
-    doc.setFont("times", "normal");
-    doc.setFontSize(11);
+  /* ================= TUJUAN ================= */
+  doc.text("Kepada Yth.", 20, 55);
+  doc.setFont("times", "bold");
+  doc.text("", 20, 61);
+  doc.setFont("times", "normal");
+  doc.text("Di Tempat", 20, 67);
 
-    let isiSurat = "";
+  /* ================= JUDUL SURAT ================= */
+  doc.setFont("times", "bold");
+  doc.setFontSize(12);
+  doc.text("SURAT PERMOHONAN", 105, 80, { align: "center" });
 
-    switch (docTitle) {
-      case "Surat Pengantar":
-        isiSurat = `
-Yth. Pimpinan Industri
-di Tempat
+  doc.setFont("times", "normal");
+  doc.setFontSize(10);
+  doc.text("Nomor: 001/SMK-N2/PKL/I/2026", 105, 86, {
+    align: "center",
+  });
 
-Dengan hormat,
+  /* ================= ISI SURAT ================= */
+  doc.setFontSize(11);
+  doc.text("Dengan hormat,", 20, 100);
 
-Bersama ini kami mengantarkan siswa SMK Negeri 2 Singosari
-untuk melaksanakan Praktik Kerja Lapangan (PKL)
-di perusahaan Bapak/Ibu pimpin.
+  doc.text(
+    "Sehubungan dengan program Praktik Kerja Lapangan (PKL), kami mengajukan\n" +
+      "permohonan kepada Bapak/Ibu untuk memberikan kesempatan kepada siswa\n" +
+      "kami berikut:",
+    20,
+    108,
+    { lineHeightFactor: 1.6 }
+  );
 
-Identitas siswa akan diisi secara manual setelah dicetak.
+  /* ================= DATA SISWA ================= */
+  let y = 135;
 
-Demikian surat pengantar ini kami sampaikan.
-Atas perhatian Bapak/Ibu, kami ucapkan terima kasih.
-        `;
-        break;
+  doc.text("Nama", 20, y);
+  doc.text(": Ahmad Rizki Pratama", 60, y);
 
-      case "Surat Monitoring 1":
-        isiSurat = `
-Yth. Pimpinan Industri
-di Tempat
+  y += 8;
+  doc.text("NIS", 20, y);
+  doc.text(": 8329849289482", 60, y);
 
-Dengan hormat,
+  y += 8;
+  doc.text("Kelas", 20, y);
+  doc.text(": XII RPL 1", 60, y);
 
-Sehubungan dengan pelaksanaan Praktik Kerja Lapangan (PKL),
-bersama ini kami sampaikan surat monitoring
-untuk keperluan penilaian dan evaluasi siswa.
+  y += 8;
+  doc.text("Jurusan", 20, y);
+  doc.text(": Rekayasa Perangkat Lunak", 60, y);
 
-Data siswa dan penilaian diisi oleh pihak industri.
+  y += 8;
+  doc.text("Periode PKL", 20, y);
+  doc.text(": 1 November – 31 Desember 2026", 60, y);
 
-Atas kerja sama Bapak/Ibu, kami ucapkan terima kasih.
-        `;
-        break;
+  /* ================= PENUTUP ================= */
+  doc.text(
+    "Demikian surat permohonan ini kami sampaikan.\n" +
+      "Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.",
+    20,
+    y + 20,
+    { lineHeightFactor: 1.6 }
+  );
 
-      case "Surat Monitoring 2":
-        isiSurat = `
-Yth. Pimpinan Industri
-di Tempat
+  /* ================= TANDA TANGAN ================= */
+  doc.text("Kepala Sekolah,", 130, 220);
+  doc.text("SMK Negeri 2 Singosari", 130, 226);
 
-Dengan hormat,
+  doc.setFont("times", "bold");
+  doc.text("Sumijah, S.Pd., M.Si", 130, 250);
 
-Bersama surat ini kami mohon kesediaan Bapak/Ibu
-untuk memberikan evaluasi akhir atau sertifikat PKL
-kepada siswa yang telah menyelesaikan kegiatan PKL.
+  doc.setFont("times", "normal");
+  doc.text("NIP. 196505121990031004", 130, 256);
 
-Dokumen ini digunakan sebagai bukti resmi PKL siswa.
+  /* ================= SAVE ================= */
+  doc.save(`${docTitle.replaceAll(" ", "_")}.pdf`);
+};
 
-Atas perhatian Bapak/Ibu, kami ucapkan terima kasih.
-        `;
-        break;
-
-      case "Surat Penjemputan":
-        isiSurat = `
-Yth. Pimpinan Industri
-di Tempat
-
-Dengan hormat,
-
-Sehubungan dengan berakhirnya kegiatan Praktik Kerja Lapangan (PKL),
-bersama ini kami bermaksud menjemput siswa
-yang telah melaksanakan PKL di perusahaan Bapak/Ibu.
-
-Identitas siswa akan dicocokkan saat penjemputan.
-
-Kami mengucapkan terima kasih atas bimbingan
-dan kerja sama yang telah diberikan.
-        `;
-        break;
-
-      default:
-        return;
-    }
-
-    doc.text(isiSurat.trim(), 20, 55, {
-      maxWidth: 170,
-      lineHeightFactor: 1.6,
-    });
-
-    // FOOTER
-    doc.text("Singosari, ............................", 130, 160);
-    doc.text("Hormat kami,", 130, 170);
-    doc.text("Koordinator PKL", 130, 185);
-
-    doc.save(`${docTitle.replaceAll(" ", "_")}.pdf`);
-  };
   /* ===================== END PDF ===================== */
 
   const handleBack = () => {

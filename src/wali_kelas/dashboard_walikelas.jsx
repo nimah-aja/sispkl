@@ -65,7 +65,7 @@ export default function DashboardWaliKelas() {
       judul: "Konflik dengan BK",
       keterangan: "Dilaporkan oleh: Mirza",
       waktu: "2 jam yang lalu",
-      status: "Tindak",
+      status: "Proses",
       type: "critical"
     },
     {
@@ -73,7 +73,7 @@ export default function DashboardWaliKelas() {
       judul: "Keterlambatan Berulang",
       keterangan: "Dilaporkan oleh: Fifii",
       waktu: "4 jam yang lalu",
-      status: "Tindak",
+      status: "Proses",
       type: "critical"
     },
     {
@@ -81,7 +81,7 @@ export default function DashboardWaliKelas() {
       judul: "Kesulitan Adaptasi",
       keterangan: "Dilaporkan oleh: Nimah",
       waktu: "30 menit yang lalu",
-      status: "Konseling",
+      status: "Selesai",
       type: "warning"
     }
   ];
@@ -127,6 +127,18 @@ export default function DashboardWaliKelas() {
   const filteredDisplay = dataDisplay.filter((item) =>
     item.title.toLowerCase().includes(query.toLowerCase())
   );
+
+  const getInitials = (name = "") => {
+    return name
+      .split("|")[0]        // ambil nama sebelum "|"
+      .trim()
+      .split(" ")
+      .map(word => word[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  };
+
 
   return (
     <div className="flex h-screen w-full bg-white">
@@ -191,66 +203,124 @@ export default function DashboardWaliKelas() {
                   </div>
 
                   <div className="space-y-4">
-                    {notifikasiPerizinan.map((notif) => (
-                      <div key={notif.id} className="bg-white rounded-xl p-4 flex items-center gap-4">
-                        <div className="w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-gray-900 font-semibold text-sm mb-1">{notif.nama}</h3>
-                          <p className="text-gray-600 text-xs mb-1">{notif.keterangan}</p>
-                          <p className="text-gray-500 text-xs">{notif.waktu}</p>
-                        </div>
-                        <button 
-                          className="px-5 py-2 rounded-lg font-medium text-sm flex-shrink-0 text-white"
-                          style={{ backgroundColor: '#EC933A' }}
+                    <div className="space-y-4">
+                      {notifikasiPerizinan.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className="bg-white rounded-xl p-4 hover:shadow-md transition-all"
                         >
-                          {notif.status}
-                        </button>
-                      </div>
-                    ))}
+                          {/* HEADER */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center flex-shrink-0">
+                                <span className="text-white font-bold text-sm">
+                                  {getInitials(notif.nama)}
+                                </span>
+                              </div>
+
+
+                              <div>
+                                <h3 className="font-bold text-gray-900 text-sm">
+                                  {notif.nama}
+                                </h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {notif.keterangan}
+                                </p>
+                              </div>
+                            </div>
+
+                            <span className="text-xs text-gray-500">
+                              {notif.waktu}
+                            </span>
+                          </div>
+
+                          {/* ACTION */}
+                          {/* <div className="flex gap-2 ml-14">
+                            <button
+                              className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                              style={{ backgroundColor: "#BC2424" }}
+                            >
+                              Tolak
+                            </button>
+
+                            <button
+                              className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                              style={{ backgroundColor: "#EC933A" }}
+                            >
+                              Terima
+                            </button>
+                          </div> */}
+                        </div>
+                      ))}
+                    </div>
+
                   </div>
                 </div>
 
+                {/* Notifikasi Permasalahan */}
                 {/* Notifikasi Permasalahan */}
                 <div className="bg-[#641E21] rounded-2xl p-6 shadow-lg">
                   <div className="flex items-center gap-3 mb-4">
                     <img src={bellIcon} alt="Bell" className="w-6 h-6" />
                     <h2 className="text-white text-xl font-semibold">Notifikasi Permasalahan</h2>
                   </div>
-                  
+
                   {/* Garis pembatas putih full width */}
                   <div className="-mx-6 mb-6">
                     <div className="w-full h-0.5" style={{ backgroundColor: 'white' }}></div>
                   </div>
 
                   <div className="space-y-4">
-                    {notifikasiPermasalahan.map((notif) => (
-                      <div key={notif.id} className="bg-white rounded-xl p-4 flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${
-                          notif.type === 'critical' ? 'bg-red-500' : 'bg-yellow-500'
-                        }`}>
-                          <img src={timeIcon} alt="Time" className="w-7 h-7 object-contain" />
+                    {notifikasiPermasalahan.map((notif, index) => (
+                      <div key={notif.id} className="bg-white rounded-xl p-4 hover:shadow-md transition-all">
+                        {/* HEADER */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-4">
+                            {/* Avatar oranye dengan inisial nama */}
+                            <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center flex-shrink-0">
+                              <span className="text-white font-bold text-sm">
+                                {getInitials(notif.keterangan)}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h3 className="font-bold text-gray-900 text-sm">{notif.judul}</h3>
+                              <p className="text-sm text-gray-600 mt-1">{notif.keterangan}</p>
+                            </div>
+                          </div>
+
+                          <span className="text-xs text-gray-500">{notif.waktu}</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-gray-900 font-semibold text-sm mb-1">{notif.judul}</h3>
-                          <p className="text-gray-600 text-xs mb-1">{notif.keterangan}</p>
-                          <p className="text-gray-500 text-xs">{notif.waktu}</p>
+
+                        {/* ACTION */}
+                        <div className="flex justify-between items-center mt-3 ml-14">
+                          {notif.status !== "Selesai" && (
+                            <button
+                              onClick={() => {
+                                const updated = [...notifikasiPermasalahan];
+                                updated[index].status = "Selesai";
+                                setNotifikasiPermasalahan(updated);
+                              }}
+                              className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                              style={{ backgroundColor: "#EC933A" }}
+                            >
+                              Proses
+                            </button>
+                          )}
+
+                          <span
+                            className={`text-xs font-semibold ${
+                              notif.status === "Selesai" ? "text-green-600" : "text-orange-500"
+                            }`}
+                          >
+                            {notif.status}
+                          </span>
                         </div>
-                        <button 
-                          className="px-5 py-2 rounded-lg font-medium text-sm flex-shrink-0 text-white"
-                          style={{ 
-                            backgroundColor: notif.status === 'Tindak' ? '#BC2424' : '#C9B42C'
-                          }}
-                        >
-                          {notif.status}
-                        </button>
                       </div>
                     ))}
                   </div>
                 </div>
+
               </div>
             </>
           )}
