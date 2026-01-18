@@ -13,7 +13,7 @@ export default function Sidebar({ active, setActive }) {
 
   const items = [
     { title: "Beranda", icon: sidebarDashboard, route: "/guru/pembimbing/dashboard_pembimbing", key: "sidebarDashboard" },
-    { title: "Peserta Didik", icon: sidebarUsers, route: "/guru/pembimbing/siswa", key: "sidebarUsers" },
+    { title: "Siswa", icon: sidebarUsers, route: "/guru/pembimbing/siswa", key: "sidebarUsers" },
     { title: "Guru", icon: sidebarChalk, route: "/guru/pembimbing/permasalahan", key: "sidebarChalk" },
     { title: "Industri", icon: sidebarCorporate, route: "/guru/pembimbing/perizinan", key: "sidebarCorporate" },
   ];

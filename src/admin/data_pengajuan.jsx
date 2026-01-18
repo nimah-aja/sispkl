@@ -32,7 +32,7 @@ const DataPengajuanPKL = () => {
   const [pembimbingOptions, setPembimbingOptions] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 2;
+  const itemsPerPage = 6;
 
 
 

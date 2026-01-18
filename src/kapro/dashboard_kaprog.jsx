@@ -647,7 +647,7 @@ export default function KaprodiDashboard() {
                             <div className="flex items-center gap-2 px-6 py-4 border-b">
                               <School size={20} className="text-[#641E21]" />
                               <h2 className="text-lg font-semibold text-gray-800">
-                                Daftar Jurusan
+                                Daftar Kompetensi Keahlian
                               </h2>
                             </div>
 

@@ -257,7 +257,7 @@ export default function DataPeserta() {
         <main className="flex-1 h-full min-h-screen p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-tl-3xl shadow-inner">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-base sm:text-lg">
-              Data Peserta PKL
+              Data Siswa PKL
             </h2>
 
             <div className="relative" ref={exportRef}>

@@ -286,7 +286,7 @@ export default function IndustriPage() {
 
     { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
     {
-      label: "Jurusan", 
+      label: "Kompetensi Keahlian", 
       name: "jurusan_id", 
       width: "half", 
       type: "select",
@@ -554,7 +554,7 @@ const handleExportExcel = () => {
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
         <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
                     <h2 className="text-white font-bold text-base sm:text-lg">
-                      Industri
+                      Data Industri
                     </h2>
         
                     <div className="relative" ref={exportRef}>

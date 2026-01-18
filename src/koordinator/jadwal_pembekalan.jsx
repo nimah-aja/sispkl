@@ -298,7 +298,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
           {/* ================= TITLE ================= */}
           <div className="flex items-center mb-4 gap-1 w-full relative">
             <h2 className="text-white font-bold text-lg">
-                Jadwal Pembekalan
+                Data Jadwal Pembekalan
             </h2>
 
             <div className="relative" ref={exportRef}>

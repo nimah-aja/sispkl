@@ -26,6 +26,7 @@ export default function Detail({
   const isApproveMode = mode === "approve";
   const isRejectMode  = mode === "reject";
   const isViewMode    = mode === "view";
+  const [previewImage, setPreviewImage] = useState(null);
 
 
 
@@ -68,7 +69,7 @@ export default function Detail({
 
 
   return (
-    <div className="fixed inset-0  flex items-center justify-end">
+    <div className="fixed inset-0  flex items-center justify-end z-[11]">
       
       {/* BACKDROP / PORTAL */}
       <div
@@ -76,7 +77,7 @@ export default function Detail({
         onClick={onClose}
       />
       <div
-        onClick={onClose}
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
         className="
           absolute
           top-[10px]
@@ -98,6 +99,7 @@ export default function Detail({
 
       {/* SIDE PANEL */}
       <div
+        onClick={(e) => e.stopPropagation()} 
         className={`
           relative bg-white shadow-2xl
           rounded-2xl
@@ -120,24 +122,47 @@ export default function Detail({
             }`}
           >
             {fields.map((field) => (
-             <div
+              <div
                 key={field.name}
-                className={`mb-5  border border-gray-200 rounded-xl p-4
-                 ${fieldErrors[field.name]  ? "border-red-500" : "border-gray-200"}
+                className={`mb-5 border border-gray-200 rounded-xl p-4
+                  ${fieldErrors[field.name] ? "border-red-500" : "border-gray-200"}
                   ${field.full && !isFull ? "md:col-span-2" : ""}`}
               >
-                  {/* VIEW MODE */}
+                {/* VIEW MODE */}
                 {isViewMode && (
                   <>
                     <div className="flex items-center gap-2 text-sm text-gray-800 mb-1">
                       {field.icon && <span className="text-gray-400">{field.icon}</span>}
                       <span>{field.label}</span>
                     </div>
-                    <p className="font-semibold text-gray-800">
-                      {initialData[field.name] || "-"}
-                    </p>
+
+                    {/* ✨ TAMPILKAN IMAGE JIKA ARRAY URL */}
+                    {Array.isArray(initialData[field.name]) && initialData[field.name].every(val => typeof val === "string" && val.startsWith("http")) ? (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {initialData[field.name].map((url, idx) => (
+                          <img
+                              key={idx}
+                              src={url}
+                              alt={`${field.label} ${idx + 1}`}
+                              onClick={() => setPreviewImage(url)}
+                              className="
+                                w-32 h-32 object-cover rounded shadow
+                                cursor-pointer
+                                hover:opacity-80
+                                transition
+                              "
+                            />
+
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="font-semibold text-gray-800">
+                        {initialData[field.name] || "-"}
+                      </p>
+                    )}
                   </>
                 )}
+
                 {(isApproveMode || isRejectMode) && (
                   <FloatingField
                     label={field.label}
@@ -153,10 +178,10 @@ export default function Detail({
                       }))
                     }
                   />
-
                 )}
               </div>
             ))}
+
           </div>
         </div>
 
@@ -216,6 +241,44 @@ export default function Detail({
         )}
 
       </div>
+      {previewImage && (
+        <div
+          className="
+            fixed inset-0
+            bg-black/80
+            z-[9999]
+            flex items-center justify-center
+          "
+          onClick={() => setPreviewImage(null)}
+        >
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="
+              max-w-[90vw]
+              max-h-[90vh]
+              rounded-xl
+              shadow-2xl
+            "
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="
+              absolute top-6 right-6
+              !bg-white/20
+              hover:bg-white/30
+              text-white
+              rounded-full
+              p-2
+            "
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

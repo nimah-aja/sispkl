@@ -22,6 +22,8 @@ import { createKelas } from "../utils/services/admin/add_kelas";
 import { deleteKelas } from "../utils/services/admin/delete_kelas";
 import { updateKelas } from "../utils/services/admin/edit_kelas";
 import { getJurusan } from "../utils/services/admin/get_jurusan";
+import { getGuru } from "../utils/services/admin/get_guru";
+
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -45,6 +47,8 @@ export default function KelasPage() {
   const [jurusanList, setJurusanList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10 ; 
+  const [guruWaliList, setGuruWaliList] = useState([]);
+
 
   const user = JSON.parse(localStorage.getItem("user")) || { name: "Pengguna", role: "Admin" };
 
@@ -101,6 +105,43 @@ export default function KelasPage() {
         .filter(Boolean)
     ),
   ];
+
+  // guru wali kelas
+  useEffect(() => {
+    const fetchKelas = async () => {
+      try {
+        const data = await getKelas();
+        setKelas(data);
+      } catch (err) {
+        console.error("Gagal ambil data kelas:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchJurusan = async () => {
+      try {
+        const data = await getJurusan();
+        setJurusanList(data);
+      } catch (err) {
+        console.error("Gagal ambil data jurusan:", err);
+      }
+    };
+
+    const fetchGuru = async () => {
+      try {
+        const data = await getGuru();
+        setGuruWaliList(data.filter((g) => g.is_wali_kelas));
+      } catch (err) {
+        console.error("Gagal ambil data guru:", err);
+      }
+    };
+
+    fetchKelas();
+    fetchJurusan();
+    fetchGuru();
+  }, []);
+
   
   // Filter data
   const filteredData = kelas.filter((k) => {
@@ -139,7 +180,7 @@ export default function KelasPage() {
   // kolom tabel
   const columns = [
     {
-      label: "Jurusan",
+      label: "Kompetensi Keahlian",
       key: "jurusan_nama",
       render: (_, row) => {
         const jurusan = jurusanList.find((j) => j.id === row.jurusan_id);
@@ -147,19 +188,81 @@ export default function KelasPage() {
       },
     },
     { label: "Nama Kelas", key: "nama" },
+    {
+      label: "Wali Kelas",
+      key: "wali_kelas_guru_id",
+      render: (_, row) =>
+        guruWaliList.find((g) => g.id === row.wali_kelas_guru_id)?.nama || "-",
+    },
   ];
 
-  // kolom input
-    const inputFields = [
+  // cek guru udah jadi wakel di kelas lain?
+  const isGuruDipakai = (guruId, currentKelasId = null) => {
+    return kelas.some(
+      (k) =>
+        k.wali_kelas_guru_id === guruId &&
+        (currentKelasId ? k.id !== currentKelasId : true)
+    );
+  };
+
+  // mode add
+  const waliKelasOptionsAdd = guruWaliList.map((g) => ({
+    value: g.id,
+    label: g.nama,
+    disabled: isGuruDipakai(g.id),
+  }));
+
+  // mode edit
+  const waliKelasOptionsEdit = [
     {
-      label: "Jurusan",
-      name: "jurusan_id",
-      width: "full",
-      type: "select",
-      options: jurusanList.map((j) => ({ value: j.id, label: j.nama })),
+      value: "REMOVE_WALI",
+      label: "— Hapus Wali Kelas —",
     },
-    { label: "Nama Kelas", name: "nama", width: "full", minLength: 2 },
+    ...guruWaliList.map((g) => ({
+      value: g.id,
+      label: g.nama,
+      disabled: isGuruDipakai(g.id, selectedRow?.id),
+    })),
   ];
+
+
+  // kolom input
+    const inputFieldsAdd = [
+      {
+        label: "Jurusan",
+        name: "jurusan_id",
+        width: "full",
+        type: "select",
+        options: jurusanList.map((j) => ({ value: j.id, label: j.nama })),
+      },
+      { label: "Nama Kelas", name: "nama", width: "full", minLength: 2 },
+      {
+        label: "Wali Kelas",
+        name: "wali_kelas_guru_id",
+        type: "select",
+        width: "full",
+        options: waliKelasOptionsAdd, 
+      },
+    ];
+
+    const inputFieldsEdit = [
+      {
+        label: "Jurusan",
+        name: "jurusan_id",
+        width: "full",
+        type: "select",
+        options: jurusanList.map((j) => ({ value: j.id, label: j.nama })),
+      },
+      { label: "Nama Kelas", name: "nama", width: "full", minLength: 2 },
+      {
+        label: "Wali Kelas",
+        name: "wali_kelas_guru_id",
+        type: "select",
+        width: "full",
+        options: waliKelasOptionsEdit, // ✅ EDIT
+      },
+    ];
+
 
    //  Export 
   const exportData = filteredData.map((k, i) => {
@@ -220,17 +323,25 @@ export default function KelasPage() {
     };
   }, [openExport]);
 
+
   // form add
   if (mode === "add") {
     return (
       <>
         <Add
           title="Tambah Data Kelas"
-          fields={inputFields}
+          fields={inputFieldsAdd}
           image={guruImg}
           existingData={kelas}
           onSubmit={async (formData, setFieldErrors) => {
-            const newKelas = Object.fromEntries(formData);
+           const newKelas = Object.fromEntries(formData);
+
+            newKelas.jurusan_id = parseInt(newKelas.jurusan_id, 10);
+            newKelas.wali_kelas_guru_id = parseInt(
+              newKelas.wali_kelas_guru_id,
+              10
+            );
+
             
             // validasi karakter
             if (!newKelas.nama || newKelas.nama.length < 2) {
@@ -312,14 +423,15 @@ export default function KelasPage() {
       <>
         <Add
           title="Ubah Data Kelas"
-          fields={inputFields}
+          fields={inputFieldsEdit}
           image={editGrafik}
           existingData={kelas.filter((k) => k.id !== selectedRow.id)}
           initialData={selectedRow}
           onSubmit={async (formData, setFieldErrors) => {
             const formObj = Object.fromEntries(formData);
 
-            // Ambil nama dan jurusan, tapi biarkan jurusan pakai data lama kalau kosong
+            const isRemoveWali = formObj.wali_kelas_guru_id === "REMOVE_WALI";
+
             const updatedKelas = {
               nama: formObj.nama,
               jurusan_id: parseInt(
@@ -327,6 +439,17 @@ export default function KelasPage() {
                 10
               ),
             };
+
+            if (isRemoveWali) {
+              updatedKelas.remove_wali_kelas = true;
+            } else if (formObj.wali_kelas_guru_id) {
+              updatedKelas.wali_kelas_guru_id = parseInt(
+                formObj.wali_kelas_guru_id,
+                10
+              );
+            }
+
+
 
             // validasi nama aja (biar tetap aman)
             if (!updatedKelas.nama || updatedKelas.nama.length < 2) {
@@ -396,7 +519,7 @@ export default function KelasPage() {
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
                       <h2 className="text-white font-bold text-base sm:text-lg">
-                        Kelas
+                        Data Kelas
                       </h2>
           
                       <div className="relative" ref={exportRef}>

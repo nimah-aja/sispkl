@@ -279,7 +279,7 @@ export default function DataPeserta() {
         <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
                                         <h2 className="text-white font-bold text-base sm:text-lg">
-                                          Surat Monitoring
+                                          Data Surat Monitoring
                                         </h2>
                             
                                         <div className="relative" ref={exportRef}>

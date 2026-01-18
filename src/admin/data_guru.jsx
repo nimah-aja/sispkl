@@ -415,7 +415,7 @@ const handleExportExcel = () => {
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
         <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
                     <h2 className="text-white font-bold text-base sm:text-lg">
-                      Guru
+                      Data Guru
                     </h2>
         
                     <div className="relative" ref={exportRef}>
@@ -470,9 +470,12 @@ const handleExportExcel = () => {
             className="mb-4 w-[100%]"
           />
 
-          <div className="mt-4">
+          <div className="mt-10">
             {loading ? (
-              <p className="text-center text-white font-semibold">Memuat data...</p>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mx-auto"></div>
+                <p className="mt-4 text-white">Memuat data guru...</p>
+              </div>
             ) : (
               <>
                 <Table

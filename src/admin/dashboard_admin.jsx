@@ -176,9 +176,9 @@ export default function PKLDashboard() {
 
 
       const dataDisplayTemp = [
-        { title: "Jumlah Jurusan", icon: gradIcon, value: jurusanData.length },
+        { title: "Kompetensi Keahlian", icon: gradIcon, value: jurusanData.length },
         { title: "Jumlah Kelas", icon: bookIcon, value: kelasData.length },
-        { title: "Peserta Didik", icon: usersIcon, value: siswaData.length },
+        { title: "Jumlah Siswa", icon: usersIcon, value: siswaData.length },
         { title: "Jumlah Guru", icon: chalkIcon, value: guruData.length },
         {
           title: "Pengajuan PKL",
@@ -289,7 +289,7 @@ export default function PKLDashboard() {
                     onClick={() => {
                       if (item.title.includes("Jurusan")) navigate("/admin/jurusan");
                       else if (item.title.includes("Kelas")) navigate("/admin/kelas");
-                      else if (item.title.includes("Peserta")) navigate("/admin/siswa");
+                      else if (item.title.includes("Siswa")) navigate("/admin/siswa");
                       else if (item.title.includes("Guru")) navigate("/admin/guru");
                       else if (item.title.includes("Industri")) navigate("/admin/industri");
                       else if (item.title.includes("Pengajuan")) navigate("/admin/pengajuan");
@@ -329,7 +329,7 @@ export default function PKLDashboard() {
               {/* PIE CHART */}
               <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                 <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <h2 className="font-semibold text-gray-800 mb-4">Kelas per Jurusan</h2>
+                  <h2 className="font-semibold text-gray-800 mb-4">Kelas per Kompetensi Keahlian</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
@@ -371,7 +371,7 @@ export default function PKLDashboard() {
 
               {/* MURID PER KELAS */}
               <div className="mt-10 bg-white rounded-2xl p-6 shadow-lg max-w-6xl mx-auto">
-                <h2 className="font-semibold text-gray-800 mb-4">Murid per Kelas</h2>
+                <h2 className="font-semibold text-gray-800 mb-4">Siswa per Kelas</h2>
                 <div className="h-96 overflow-x-auto">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
