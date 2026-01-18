@@ -18,7 +18,7 @@ export default function Sidebar({ active, setActive }) {
 
   const items = [
     { title: "Beranda", icon: sidebarDashboard, route: "/guru/koordinator", key: "sidebarDashboard" },
-    { title: "Peserta PKL", icon: sidebarUsers, route: "/guru/koordinator/pesertaPKL", key: "sidebarUsers" },
+    { title: "Siswa", icon: sidebarUsers, route: "/guru/koordinator/pesertaPKL", key: "sidebarUsers" },
     { title: "Pengajuan PKL", icon: pengajuanPKL, route: "/guru/koordinator/pengajuanPKL", key: "pengajuanPKL" },
     { title: "Pembimbing", icon: Pembimbing, route: "/guru/koordinator/pembimbing", key: "Pembimbing" },
     { title: "Surat pengantaran", icon: suratPengantaran, route: "/guru/koordinator/suratPengantaran", key: "suratPengantaran" },

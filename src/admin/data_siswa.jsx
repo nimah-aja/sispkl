@@ -22,6 +22,11 @@ import { createSiswa } from "../utils/services/admin/add_siswa";
 import { deleteSiswa } from "../utils/services/admin/delete_siswa";
 import { updateSiswa } from "../utils/services/admin/edit_siswa"; 
 import { getKelas } from "../utils/services/admin/get_kelas";
+import {
+  previewSiswaBulk,
+  importSiswaBulk,
+} from "../utils/services/admin/import_siswa";
+
 
 
 // import assets
@@ -47,6 +52,10 @@ export default function SiswaPage() {
   const [kelasList, setKelasList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
+  const fileInputRef = useRef(null);
+  const [bulkSessionId, setBulkSessionId] = useState(null);
+  const [previewResult, setPreviewResult] = useState(null);
+
 
   useEffect(() => {
     const fetchKelas = async () => {
@@ -236,6 +245,27 @@ const handleExportExcel = () => {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Data Siswa");
   XLSX.writeFile(workbook, "data-siswa.xlsx");
 };
+
+// import excel
+const handleImportExcel = async (file) => {
+  try {
+    const res = await previewSiswaBulk(file);
+
+    setPreviewResult(res);
+    setBulkSessionId(res.session_id);
+
+    toast.success(
+      `Preview berhasil. Valid: ${res.summary.valid_count}, Invalid: ${res.summary.error_count}`
+    );
+
+
+    // konfirmasi import
+    setIsConfirmSaveOpen(true);
+  } catch (err) {
+    toast.error("Gagal preview file Excel");
+  }
+};
+
 
   // form add
   if (mode === "add") {
@@ -465,7 +495,7 @@ const handleExportExcel = () => {
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
         <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
                     <h2 className="text-white font-bold text-base sm:text-lg">
-                      Siswa
+                      Data Siswa
                     </h2>
         
                     <div className="relative" ref={exportRef}>
@@ -477,7 +507,7 @@ const handleExportExcel = () => {
                       </button>
         
                       {openExport && (
-                        <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
+                        <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md w-max p-2 z-50">
                           <button
                             onClick={() => {
                               handleExportExcel();
@@ -486,7 +516,7 @@ const handleExportExcel = () => {
                             className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                           >
                             <FileSpreadsheet size={16} className="text-green-600" />
-                            Excel
+                            Export Excel
                           </button>
         
                           <button
@@ -497,8 +527,20 @@ const handleExportExcel = () => {
                             className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                           >
                             <FileText size={16} className="text-red-600" />
-                            PDF
+                            Export PDF
                           </button>
+
+                          <button
+                            onClick={() => {
+                              fileInputRef.current.click();
+                              setOpenExport(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                          >
+                            <FileSpreadsheet size={16} className="text-blue-600" />
+                            Import Excel
+                          </button>
+
                         </div>
                       )}
                     </div>
@@ -573,6 +615,48 @@ const handleExportExcel = () => {
             }
           }}
           imageSrc={deleteImg}
+        />
+
+        {/* MODAL KONFIRMASI IMPORT */}
+        <SaveConfirmationModal
+          isOpen={isConfirmSaveOpen && !!bulkSessionId}
+          title="Konfirmasi Import Data Siswa"
+          message={`Import ${previewResult?.valid_count || 0} data siswa ke sistem?`}
+          onClose={() => {
+            setIsConfirmSaveOpen(false);
+            setBulkSessionId(null);
+            setPreviewResult(null);
+          }}
+          onSave={async () => {
+            try {
+              await importSiswaBulk(bulkSessionId);
+              await fetchData();
+
+              toast.success("Import data siswa berhasil");
+              setIsConfirmSaveOpen(false);
+              setBulkSessionId(null);
+              setPreviewResult(null);
+            } catch (err) {
+              toast.error("Gagal import data siswa");
+            }
+          }}
+          imageSrc={saveImg}
+        />
+
+
+        {/* import */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".xls,.xlsx"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              handleImportExcel(file);
+              e.target.value = ""; // reset biar bisa upload file sama lagi
+            }
+          }}
         />
       </div>
     </div>

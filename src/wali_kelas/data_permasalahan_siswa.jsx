@@ -198,7 +198,7 @@ export default function DataPermasalahanSiswa() {
         <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
           <div className="flex items-center mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-lg">
-              Data Permasalahan Peserta Didik
+              Data Permasalahan
             </h2>
 
             <div className="relative" ref={exportRef}>

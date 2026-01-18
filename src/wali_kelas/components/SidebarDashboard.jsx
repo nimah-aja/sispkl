@@ -15,7 +15,7 @@ export default function Sidebar({ active, setActive }) {
 
   const items = [
     { title: "Beranda", icon: sidebarDashboard, route: "/guru/wali_kelas/", key: "dashboard" },
-    { title: "Peserta Didik", icon: sidebarUsers, route: "/guru/wali_kelas/siswa", key: "siswa" },
+    { title: "Siswa", icon: sidebarUsers, route: "/guru/wali_kelas/siswa", key: "siswa" },
     { title: "Permasalahan", icon: permasalahan, route: "/guru/wali_kelas/datapermasalahansiswa", key: "permasalahan" },
     { title: "Perizinan", icon: surrelIcon, route: "/guru/wali_kelas/dataperizinansiswa", key: "perizinan" },
   ];

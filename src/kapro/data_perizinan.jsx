@@ -29,7 +29,7 @@ export default function DataPerizinanSiswa() {
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "Wali Kelas",
+    role: "KAPROG",
   };
 
   const getStatusIcon = (status) => {
@@ -189,7 +189,7 @@ export default function DataPerizinanSiswa() {
         <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
           <div className="flex items-center mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-lg">
-              Data Perizinan Peserta Didik
+              Data Perizinan 
             </h2>
 
             <div className="relative" ref={exportRef}>

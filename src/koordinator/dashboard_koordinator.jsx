@@ -42,7 +42,7 @@ export default function KoordinatorDashboard() {
   // Data dummy
   useEffect(() => {
     const dummyData = [
-      { title: "Data Peserta PKL", icon: sidebarUsers, value: 20 },
+      { title: "Data Siswa", icon: sidebarUsers, value: 20 },
       { title: "Pengajuan PKL", icon: pengajuanPKL, value: 2 },
       { title: "Pembimbing", icon: Pembimbing, value: 2 },
       { title: "Surat Pengantaran", icon: suratPengantaran, value: 8 },

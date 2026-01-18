@@ -15,6 +15,7 @@ import DashboardAdminGuru from "./admin/data_guru";
 import DashboardAdminIndustri from "./admin/data_industri"; 
 import AdminPengajuan from "./admin/data_pengajuan";
 import TahunAjaran from "./admin/data_tahunajar";
+import Setting from "./admin/setting";
 
   // WALI KELAS
   import DashboardWaliKelas from  "./wali_kelas/dashboard_walikelas";
@@ -46,6 +47,9 @@ import BuktiDiterima from "./kapro/bukti_diterima";
 // pembimbing
 import DashboardPembimbing from "./pembimbing/dashboard_pembimbing";
 import PembimbingSiswa from "./pembimbing/siswa";
+import PembimbingIndustri from "./pembimbing/industri";
+import PembimbingKegiatan from "./pembimbing/kegiatan";
+import PembimbingRealisasi from "./pembimbing/bukti_kegiatan";
 import PembimbingPermasalahan from "./pembimbing/permasalahan";
 import PembimbingPerizinan from "./pembimbing/perizinan";
 import PindahPKLPembimbing from "./pembimbing/perpindahan";
@@ -59,6 +63,7 @@ import FormPengajuanPindah from "./siswa/pengajuan_perpindahan_pkl";
 import FormPerizinan from "./siswa/perizinan_pkl";
 import FormDiterima from "./siswa/bukti_terima";
 import RiwayatPengajuan from "./siswa/data_pengajuan";
+import Industri from "./siswa/industri";
 
 
 function AppContent() {
@@ -98,6 +103,7 @@ function AppContent() {
         <Route path="/role" element={<RoleOption />} />
         <Route path="/admin/pengajuan" element={<AdminPengajuan />} />
         <Route path="/admin/tahunajaran" element={<TahunAjaran/>}/>
+        <Route path="/admin/setting" element={<Setting/>}/>
 
         {/* WALI KELAS */}
         <Route path="/guru/wali_kelas/" element={<DashboardWaliKelas />} />
@@ -108,6 +114,9 @@ function AppContent() {
          {/* PEMBIMBING */}
           <Route path="/guru/pembimbing/dashboard_pembimbing" element={<DashboardPembimbing />} />
           <Route path="/guru/pembimbing/siswa" element={<PembimbingSiswa />} />
+          <Route path="/guru/pembimbing/industri" element={<PembimbingIndustri />} />
+          <Route path="/guru/pembimbing/kegiatan" element={<PembimbingKegiatan/>} />
+          <Route path="/guru/pembimbing/bukti_kegiatan" element={<PembimbingRealisasi/>} />
           <Route path="/guru/pembimbing/permasalahan" element={<PembimbingPermasalahan />} />
           <Route path="/guru/pembimbing/perizinan" element={<PembimbingPerizinan />} />
           <Route path="/guru/pembimbing/perpindahan" element={<PindahPKLPembimbing />} />
@@ -145,6 +154,7 @@ function AppContent() {
         <Route path="/siswa/perizinan_pkl" element={<FormPerizinan />} />
         <Route path="/siswa/bukti_terima" element={<FormDiterima />} />
         <Route path="/siswa/riwayat_pengajuan" element={<RiwayatPengajuan />} />
+        <Route path="/siswa/industri" element={<Industri />} />
       </Routes>
     </>
   );

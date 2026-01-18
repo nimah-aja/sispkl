@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff, Calendar, X } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 // import assets
 import addSidebar from "../../assets/addSidebar.svg";
@@ -12,7 +13,6 @@ import cancelImg from "../../assets/cancel.svg";
 
 // import components
 import DeleteConfirmationModal from "../components/Cancel"; 
-
 export default function Add({
   title,
   fields = [],
@@ -27,7 +27,9 @@ export default function Add({
   leftContent,
   submitText = "Simpan",   // ⬅️ BARU
   cancelText = "Batal",    // ⬅️ BARU
+  submitButtonProps = {},
 }) {
+  const navigate = useNavigate();
   const [modalText, setModalText] = useState({
     title: "Apakah Anda yakin untuk kembali?",
     subtitle: "Data yang sudah diisi akan terhapus."
@@ -319,7 +321,13 @@ export default function Add({
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              if (isChanged) {
+                setIsModalOpen(true); // tampilkan modal kalau ada perubahan
+              } else {
+                navigate(-1); // langsung kembali
+              }
+            }}
             className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
           >
             <ArrowLeft size={20} />
@@ -330,7 +338,7 @@ export default function Add({
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
           {/* kiri */}
-          <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-300">
+          <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-300 ">
             {leftContent ? (
               leftContent
             ) : (
@@ -348,7 +356,8 @@ export default function Add({
               onSubmit={handleSubmit}
               className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 p-1 gap-4 overflow-y-auto"
               style={{ maxHeight: "100%" }}
-            >
+            > 
+              
               {fields.map((field, idx) => (
                 <div
                   key={field.name}
@@ -647,6 +656,8 @@ export default function Add({
               "--btn-active": "#f4d0adff",
               "--btn-text": "white",
             }}
+            disabled={submitButtonProps.disabled} 
+            {...submitButtonProps} 
           >
             {submitText}
           </button>

@@ -22,6 +22,12 @@ export default function Sidebar({ active, setActive }) {
       route: "/siswa/riwayat_pengajuan",
       key: "riwayat_pengajuan",
     },
+    {
+      title: "Industri",
+      icon: pengajuan_PKL,
+      route: "/siswa/industri",
+      key: "industri",
+    },
   ];
 
   // main

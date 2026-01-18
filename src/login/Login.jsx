@@ -8,6 +8,8 @@ import MouseRippleButton from "./components/MouseRippleButton";
 //import request
 import axios from "../utils/axiosInstance";
 import { refreshAccessToken, removeTokens, setTokens, getAccessToken } from "../utils/authHelper";
+import { getSekolah } from "../utils/services/admin/sekolah";
+
 
 // Import asset
 import chatMerah from "../assets/chatmerah.png";
@@ -34,6 +36,9 @@ export default function PKLManagementSystem() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const isSiswa = activeRole === "Siswa";
+  const [sekolah, setSekolah] = useState(null);
+  const [loadingSekolah, setLoadingSekolah] = useState(true);
+
 
 
   // Auto cek access token / refresh
@@ -65,6 +70,24 @@ export default function PKLManagementSystem() {
     checkToken();
   }, []);
 
+  // logo dan nama sekolah
+  useEffect(() => {
+    const fetchSekolah = async () => {
+      try {
+        const res = await getSekolah();
+        // asumsi API kamu return { success, data }
+        setSekolah(res.data);
+      } catch (err) {
+        console.error("Gagal ambil data sekolah", err);
+      } finally {
+        setLoadingSekolah(false);
+      }
+    };
+
+    fetchSekolah();
+  }, []);
+
+
   // notifikasi toast saat timeout
   const showToast = (msg, type = "success", dur = 4000) => {
     setToast({ show: true, message: msg, type });
@@ -75,8 +98,8 @@ export default function PKLManagementSystem() {
   const roles = ["Admin","Guru","Siswa"];
   const getInputConfig = () => {
     switch (activeRole) {
-      case "Admin": return { firstField: { label: "Username", placeholder: "Masukkan username admin", type: "text" }, secondField: { label: "Password", placeholder: "Masukkan password", type: "password" } };
-      case "Guru": return { firstField: { label: "Kode Guru", placeholder: "Masukkan kode guru", type: "text" }, secondField: { label: "Password", placeholder: "Masukkan password", type: "password" } };
+      case "Admin": return { firstField: { label: "Username", placeholder: "Masukkan username admin", type: "text" }, secondField: { label: "Kata Sandi", placeholder: "Masukkan kata sandi", type: "password" } };
+      case "Guru": return { firstField: { label: "Kode Guru", placeholder: "Masukkan kode guru", type: "text" }, secondField: { label: "Kata Sandi", placeholder: "Masukkan kata sandi", type: "password" } };
       case "Siswa": return { firstField: { label: "Nama Lengkap", placeholder: "Masukkan nama lengkap", type: "text" }, secondField: { label: "NISN", placeholder: "Masukkan NISN", type: "text" } };
       default: return { firstField: { label: "Username", placeholder: "Masukkan username", type: "text" }, secondField: { label: "Password", placeholder: "Masukkan password", type: "password" } };
     }
@@ -302,10 +325,16 @@ useEffect(() => {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center mb-4">
-              <img src={norr} alt="norr" className="w-17 h-17 object-contain" />
+              <img
+                src={sekolah?.logo_url || norr}
+                alt="Logo Sekolah"
+                className="w-17 h-17 object-contain"
+              />
             </div>
             <h4 className="text-white text-3xl font-bold mb-2 text-left">Sistem Pengelolaan PKL</h4>
-            <p className="text-red-200 text-left">SMKN 2 Singosari</p>
+            <p className="text-red-200 text-left">
+              {sekolah?.nama_sekolah || "Nama Sekolah"}
+            </p>
           </div>
 
           {/* Pilih role*/}

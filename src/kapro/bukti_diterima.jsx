@@ -44,7 +44,7 @@ export default function DataPeserta() {
   const [selectedRow, setSelectedRow] = useState(null);
 
   const namaGuru = localStorage.getItem("nama_guru") || "Guru SMK";
-  const user = { name: namaGuru, role: "Koordinator" };
+  const user = { name: namaGuru, role: "KAPROG" };
 
   const navigate = useNavigate();
 
@@ -57,7 +57,7 @@ export default function DataPeserta() {
       onChange: setKelas,
     },
     {
-      label: "Jurusan",
+      label: "Kompetensi Keahlian",
       value: jurusan,
       options: ["RPL", "TKJ", "MM", "AKL"],
       onChange: setJurusan,
@@ -123,7 +123,7 @@ export default function DataPeserta() {
   const columns = [
     { label: "Nama Siswa", key: "nama" },
     { label: "Kelas", key: "kelas" },
-    { label: "Jurusan", key: "jurusan" },
+    { label: "Kompetensi Keahlian", key: "jurusan" },
     { label: "Nomor Industri", key: "nomorIndustri" },
     { label: "Nama Industri", key: "namaIndustri" },
     { label: "Alamat Industri", key: "alamatIndustri" },

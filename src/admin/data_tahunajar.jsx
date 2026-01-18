@@ -192,7 +192,7 @@ export default function TahunAjaranPage() {
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
-            <h2 className="text-white font-bold text-base sm:text-lg">Tahun Ajaran</h2>
+            <h2 className="text-white font-bold text-base sm:text-lg">Data Tahun Ajaran</h2>
 
             <div className="relative" ref={exportRef}>
               <button

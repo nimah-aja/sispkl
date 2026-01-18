@@ -415,18 +415,31 @@ export default function Add({
                                 <li
                                   key={opt.value}
                                   onClick={() => {
+                                    if (opt.disabled) return; 
+
                                     handleChange(field.name, opt.value);
-                                    setSelectedLabels((prev) => ({ ...prev, [field.name]: opt.label }));
+                                    setSelectedLabels((prev) => ({
+                                      ...prev,
+                                      [field.name]: opt.label,
+                                    }));
                                     setDropdownState((prev) => ({
                                       ...prev,
                                       [field.name]: false,
                                     }));
                                     handleSearchChange(field.name, "");
                                   }}
-                                  className="px-4 py-2 cursor-pointer hover:bg-orange-50"
+                                  className={`px-4 py-2 cursor-pointer
+                                    ${opt.disabled
+                                      ? "text-gray-400 cursor-not-allowed bg-gray-50"
+                                      : "hover:bg-orange-50"}
+                                  `}
                                 >
                                   {opt.label}
+                                  {opt.disabled && (
+                                    <span className="ml-2 text-xs italic">(sudah jadi wali)</span>
+                                  )}
                                 </li>
+
                               ))}
                           </ul>
                         </div>

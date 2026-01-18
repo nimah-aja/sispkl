@@ -86,7 +86,6 @@ const CalendarPKL = ({ pklData }) => {
     { value: "Monitoring1", label: "Monitoring 1" },
     { value: "Monitoring2", label: "Monitoring 2" },
     { value: "Penjemputan", label: "Penjemputan" },
-    { value: "lainnya", label: "Lainnya..." },
   ];
 
 
@@ -212,7 +211,6 @@ const CalendarPKL = ({ pklData }) => {
       'Monitoring1': '#8b5cf6',
       'Monitoring2': '#3B82F6',
       'Penjemputan': '#F87171',
-      'Lainnya': '#10B981'
     };
     
     if (colorMap[jenisKegiatan]) {
@@ -941,7 +939,6 @@ const CalendarPKL = ({ pklData }) => {
                       <div className="flex-1">
                         <p className="font-semibold text-lg">{ev.title}</p>
                         <p className="text-sm opacity-90">
-                          {getJenisKegiatanLabel(ev.jenisKegiatan)}
                           {ev.source === "local" && " (Lokal)"}
                           {ev.source === "system" && " (Sistem)"}
                         </p>

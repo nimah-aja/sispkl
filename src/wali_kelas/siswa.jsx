@@ -144,7 +144,7 @@ export default function SiswaPage() {
         <main className="flex-1 p-6 bg-[#641E21] rounded-l-3xl">
           <div className="flex items-center mb-4 gap-1 w-full relative">
           <h2 className="text-white font-bold text-lg">
-            Data Peserta Didik
+            Data Siswa
           </h2>
 
           <div className="relative" ref={exportRef}>
