@@ -10,6 +10,7 @@ import Envelope from "../../assets/Envelope.svg";
 import out from "../../assets/out.svg";
 import check from "../../assets/check.svg";
 import logo from "../../assets/logo.png";
+import diterima from "../../assets/diterima.svg"
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function Sidebar({ active, setActive }) {
       { title: "Pembimbing", icon: pembimbing, route: "/guru/kaprodi/pembimbing", key: "pembimbing" },
       { title: "Perizinan PKL", icon: Envelope, route: "/guru/kaprodi/perizinan", key: "perizinan_pkl" },
       { title: "Pindah PKL", icon: out, route: "/guru/kaprodi/pengajuan_pindah_pkl", key: "pindah_pkl" },
-      { title: "Bukti Diterima", icon: out, route: "/guru/kaprodi/bukti_diterima", key: "bukti_diterima" },
+      { title: "Bukti Diterima", icon: diterima, route: "/guru/kaprodi/bukti_diterima", key: "bukti_diterima" },
     ];
 
   // main

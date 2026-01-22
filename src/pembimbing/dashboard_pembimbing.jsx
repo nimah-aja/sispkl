@@ -6,6 +6,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { FilePlus, XCircle, User, FileText } from "lucide-react";
 import industriIcon from "../assets/industri.svg";
 dayjs.extend(relativeTime);
+import sidebarCorporate from "../assets/sidebarCorporate.svg";
 
 // Components
 import Sidebar from "./components/SidebarDashboard";
@@ -43,7 +44,7 @@ export default function PKLDashboard() {
     },
     {
       title: "Data Industri",
-      icon: surrelIcon,
+      icon: sidebarCorporate,
       value: 0,
       description: "Memuat..."
     },
@@ -443,7 +444,7 @@ export default function PKLDashboard() {
       },
       {
         title: "Data Industri",
-        icon: surrelIcon,
+        icon: sidebarCorporate,
         value: totalIndustri,
         description: `${totalIndustri} tempat PKL`
       },
@@ -461,13 +462,13 @@ export default function PKLDashboard() {
       },
       {
         title: "Perizinan",
-        icon: perpindahan,
+        icon: surrelIcon,
         value: 0,
         description: "Belum ada data"
       },
       {
         title: "Permasalahan",
-        icon: userIcon,
+        icon: timeIcon,
         value: 0,
         description: "Belum ada data"
       },
