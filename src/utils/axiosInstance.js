@@ -1,3 +1,6 @@
+// import { createAxios } from "./createAxios";
+
+// export const api = createAxios(import.meta.env.VITE_API_URL);
 import axios from "axios";
 import { getAccessToken, refreshAccessToken, setTokens, removeTokens } from "./authHelper";
 
