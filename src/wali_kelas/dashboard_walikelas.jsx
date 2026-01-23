@@ -55,7 +55,7 @@ export default function DashboardWaliKelas() {
             value: 0, // nanti isi dari API lain
           },
           {
-            title: "Perizinan",
+            title: "Jumlah Perizinan",
             icon: surrelIcon,
             value: 0, // nanti isi dari API lain
           },
