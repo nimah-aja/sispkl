@@ -31,15 +31,12 @@ export default function IndustriPage() {
   useEffect(() => {
     const fetchIndustri = async () => {
       try {
-        // 1️⃣ ambil list available
         const available = await getAvailableIndustri();
 
-        // 2️⃣ ambil detail berdasarkan id
         const detailResults = await Promise.all(
           available.data.map((item) => getIndustriById(item.id))
         );
 
-        // 3️⃣ simpan data lengkap
         setData(detailResults);
       } catch (err) {
         console.error("Gagal mengambil data industri:", err);
@@ -59,11 +56,11 @@ export default function IndustriPage() {
   const columns = [
     { label: "Nama Industri", key: "name" },
     { label: "Alamat", key: "address" },
-    { label: "Sektor", key: "sector" },
+    { label: "Bidang", key: "sector" },
     { label: "Kuota", key: "quota" },
     { label: "Sisa", key: "remaining_slots" },
-    { label: "PIC", key: "pic_name" },
-    { label: "No PIC", key: "pic_phone" },
+    { label: "Pembimbing Industri", key: "pic_name" },
+    { label: "No Pembimbing Industri", key: "pic_phone" },
     { label: "Email", key: "email" },
     {
       label: "Website",
@@ -113,6 +110,7 @@ export default function IndustriPage() {
     });
 
     doc.save("data-industri.pdf");
+    setOpenExport(false);
   };
 
   const downloadExcel = () => {
@@ -122,6 +120,7 @@ export default function IndustriPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Industri");
     XLSX.writeFile(wb, "data-industri.xlsx");
+    setOpenExport(false);
   };
 
   return (
@@ -135,12 +134,31 @@ export default function IndustriPage() {
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-none md:rounded-l-3xl shadow-inner">
           {/* TITLE */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-4 relative">
             <h2 className="text-white font-bold text-lg">Industri</h2>
 
-            <button onClick={() => setOpenExport(!openExport)}>
+            <button onClick={() => setOpenExport(!openExport)} className="!bg-transparent">
               <Download size={18} className="text-white" />
             </button>
+
+            {/* EXPORT MENU */}
+            {openExport && (
+              <div className="absolute top-9 left-25 bg-white rounded shadow p-2 z-50">
+                <button
+                  onClick={downloadPDF}
+                  className="!bg-transparent flex items-center gap-2 px-3 py-2 hover:!bg-gray-100 w-full"
+                >
+                  <FileText size={14} /> PDF
+                </button>
+
+                <button
+                  onClick={downloadExcel}
+                  className="!bg-transparent flex items-center gap-2 px-3 py-2 hover:!bg-gray-100 w-full"
+                >
+                  <FileSpreadsheet size={14} /> Excel
+                </button>
+              </div>
+            )}
           </div>
 
           {/* SEARCH */}

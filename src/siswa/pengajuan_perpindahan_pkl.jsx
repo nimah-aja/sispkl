@@ -3,12 +3,8 @@ import Add from "./components/Add";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-// 🔜 kalau nanti ada API
-// import { submitPengajuanPKL } from "../utils/services/siswa/pengajuan_pkl";
-
 export default function PengajuanPKL() {
   const navigate = useNavigate();
-
   const fields = [
     {
       name: "nama_siswa",
@@ -32,60 +28,67 @@ export default function PengajuanPKL() {
       required: true,
     },
     {
-      name: "industri_lama",
-      label: "Nama Industri Lama",
-      type: "text",
-      width: "half",
-      required: false,
-    },
-    {
-      name: "industri_baru",
-      label: "Nama Industri Baru",
+      name: "nomor_industri",
+      label: "Nomor Industri",
       type: "text",
       width: "half",
       required: true,
     },
     {
-      name: "telp_industri_baru",
-      label: "No. Telp Industri Baru",
-      type: "text",
-      width: "half",
-      required: true,
-    },
-    {
-      name: "alamat_industri_baru",
-      label: "Alamat Industri Baru",
+      name: "industri",
+      label: "Nama Industri",
       type: "text",
       width: "full",
       required: true,
     },
     {
-      name: "keterangan",
-      label: "Keterangan",
-      type: "textarea",
+      name: "alamat_industri",
+      label: "Alamat Industri",
+      type: "text",
       width: "full",
-      required: false,
+      required: true,
+    },
+    {
+      name: "bukti_diterima",
+      label: "Bukti Diterima",
+      type: "file",
+      accept: "image/jpeg,image/png",
+      width: "full",
+      required: true,
+    },
+    {
+      name: "tanggal_mulai",
+      label: "Tanggal Mulai",
+      type: "date",
+      width: "half",
+      required: true,
+    },
+    {
+      name: "tanggal_selesai",
+      label: "Tanggal Selesai",
+      type: "date",
+      width: "half",
+      required: true,
     },
   ];
 
   const handleSubmit = async (formData) => {
-    const payload = {
-      nama_siswa: formData.get("nama_siswa"),
-      kelas: formData.get("kelas"),
-      jurusan: formData.get("jurusan"),
-      industri_lama: formData.get("industri_lama"),
-      industri_baru: formData.get("industri_baru"),
-      alamat_industri_baru: formData.get("alamat_industri_baru"),
-      telp_industri_baru: formData.get("telp_industri_baru"),
-      keterangan: formData.get("keterangan"),
-    };
+    const payload = new FormData();
+    payload.append("nama_siswa", formData.get("nama_siswa"));
+    payload.append("kelas", formData.get("kelas"));
+    payload.append("jurusan", formData.get("jurusan"));
+    payload.append("industri", formData.get("industri"));
+    payload.append("nomor_industri", formData.get("nomor_industri"));
+    payload.append("alamat_industri", formData.get("alamat_industri"));
+    payload.append("bukti_diterima", formData.get("bukti_diterima"));
+    payload.append("tanggal_mulai", formData.get("tanggal_mulai"));
+    payload.append("tanggal_selesai", formData.get("tanggal_selesai"));
 
-    console.log("DATA DIKIRIM:", payload);
+    console.log("DATA DIKIRIM:", Object.fromEntries(payload));
 
     try {
-      // 🔜 kalau sudah ada backend
+      // nanti tinggal sambung API multipart/form-data
       // await submitPengajuanPKL(payload);
-
       toast.success("Pengajuan PKL berhasil dikirim");
       navigate(-1);
     } catch (error) {
@@ -96,12 +99,12 @@ export default function PengajuanPKL() {
 
   return (
     <Add
-      title="Pengajuan Perpindahan PKL"
+      title="Form Bukti Diterima PKL"
       fields={fields}
       onSubmit={handleSubmit}
       onCancel={() => navigate(-1)}
       backgroundStyle={{ backgroundColor: "#F4EFE6" }}
-      containerStyle={{ maxHeight: "600px" }}
+      containerStyle={{ maxHeight: "650px" }}
     />
   );
 }

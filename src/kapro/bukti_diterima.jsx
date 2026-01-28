@@ -57,7 +57,7 @@ export default function DataPeserta() {
       onChange: setKelas,
     },
     {
-      label: "Kompetensi Keahlian",
+      label: "Konsentrasi Keahlian",
       value: jurusan,
       options: ["RPL", "TKJ", "MM", "AKL"],
       onChange: setJurusan,
@@ -123,7 +123,7 @@ export default function DataPeserta() {
   const columns = [
     { label: "Nama Siswa", key: "nama" },
     { label: "Kelas", key: "kelas" },
-    { label: "Kompetensi Keahlian", key: "jurusan" },
+    { label: "Konsentrasi Keahlian", key: "jurusan" },
     { label: "Nomor Industri", key: "nomorIndustri" },
     { label: "Nama Industri", key: "namaIndustri" },
     { label: "Alamat Industri", key: "alamatIndustri" },

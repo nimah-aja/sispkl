@@ -591,7 +591,7 @@ const generateLembarPersetujuanPDF = async (data, selectedStudents = []) => {
         <Header user={user} />
 
         <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
-          <h2 className="text-white font-bold mb-4">Data Pengajuan PKL</h2>
+          <h2 className="text-white font-bold mb-4">Data Persetujuan PKL</h2>
 
           <SearchBar
             query={query}

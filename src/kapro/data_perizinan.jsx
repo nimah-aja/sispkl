@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRef } from "react";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
+import Detail from "./components/Detail";
 
 
 // Components
@@ -24,6 +25,9 @@ export default function DataPerizinanSiswa() {
   const [dateFilter, setDateFilter] = useState("");
   const [dataPerizinan, setDataPerizinan] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [detailMode, setDetailMode] = useState("view");
+
 
   const itemsPerPage = 10;
 
@@ -189,7 +193,7 @@ export default function DataPerizinanSiswa() {
         <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
           <div className="flex items-center mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-lg">
-              Data Perizinan 
+              Data Perizinan
             </h2>
 
             <div className="relative" ref={exportRef}>
@@ -254,8 +258,13 @@ export default function DataPerizinanSiswa() {
             {filteredData.map((item, index) => (
               <div
                 key={index}
-                className="bg-white rounded-lg p-4 hover:shadow-md transition-all"
+                onClick={() => {
+                  setSelectedItem(item);
+                  setDetailMode("view");
+                }}
+                className="bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
               >
+
                 {/* HEADER */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-4">
@@ -281,7 +290,7 @@ export default function DataPerizinanSiswa() {
                 {/* ACTION BUTTON */}
                 {item.status === "Proses" && (
                   <div className="flex gap-2 ml-14">
-                    <button
+                    {/* <button
                       className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
                       style={{ backgroundColor: "#BC2424" }}
                     >
@@ -293,7 +302,7 @@ export default function DataPerizinanSiswa() {
                       style={{ backgroundColor: "#EC933A" }}
                     >
                       Terima
-                    </button>
+                    </button> */}
                   </div>
                 )}
               </div>
@@ -314,6 +323,35 @@ export default function DataPerizinanSiswa() {
                                 </div>
                               )}
         </main>
+        {selectedItem && (
+          <Detail
+            title="Detail Perizinan Siswa"
+            initialData={selectedItem}
+            mode={detailMode}
+            onClose={() => setSelectedItem(null)}
+            onChangeMode={setDetailMode}
+            onSubmit={(mode, data) => {
+              setDataPerizinan((prev) =>
+                prev.map((d) =>
+                  d.nama === data.nama
+                    ? { ...d, status: mode === "approve" ? "Disetujui" : "Ditolak" }
+                    : d
+                )
+              );
+
+              setSelectedItem(null);
+            }}
+            fields={[
+              { name: "nama", label: "Nama Siswa" },
+              { name: "kelas", label: "Kelas" },
+              { name: "tanggal", label: "Tanggal" },
+              { name: "alasan", label: "Alasan" },
+              { name: "lampiran", label: "Lampiran" },
+              { name: "status", label: "Status" },
+            ]}
+          />
+        )}
+
       </div>
     </div>
   );

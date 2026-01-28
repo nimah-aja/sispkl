@@ -30,7 +30,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
 
   const allRoles = [
     { key: "is_wali_kelas", name: "Wali Kelas", path: "/guru/wali_kelas/" },
-    { key: "is_kaprog", name: "Kepala Program Studi", path: "/guru/kaprodi" },
+    { key: "is_kaprog", name: "Kepala Konsentrasi Keahlian", path: "/guru/kaprodi" },
     { key: "is_pembimbing", name: "Pembimbing", path: "/guru/pembimbing/dashboard_pembimbing" },
     { key: "is_koordinator", name: "Koordinator", path: "/guru/koordinator" },
   ];
@@ -120,7 +120,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
       {/* TITLE */}
       <div>
         <h1 className="font-extrabold text-[#641E20]" style={{ fontSize: "40px" }}>
-          DASHBOARD Kepala Kompetensi Keahlian
+          Beranda Kepala Konsentrasi Keahlian
         </h1>
         <p className="text-sm font-bold text-black mt-1">
           Selamat datang {user.name}!

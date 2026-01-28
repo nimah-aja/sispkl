@@ -103,47 +103,7 @@ export default function Header({ query, setQuery, user: propUser, notifications 
         <div className="flex items-center space-x-6">
           
           {/* Icons */}
-            <div className="relative">
-              <img
-                src={addImage}
-                alt="Add"
-                className="w-9 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsAddOpen((v) => !v);
-                }}
-
-              />
-
-              {isAddOpen && (
-                <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg p-3 border border-gray-400 z-50 overflow-hidden">
-                  
-                  {/* Upload Pengantaran */}
-                  <button
-                    onClick={() => {
-                      setIsAddOpen(false);
-                      navigate("/guru/pembimbing/uploadPengantaran"); // ganti sesuai route kamu
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:!bg-gray-100 !bg-transparent text-left"
-                  >
-                    <FileUp className="w-5 h-5 text-orange-500" />
-                    Upload Pengantaran
-                  </button>
-
-                  {/* Cetak Surat */}
-                  <button
-                    onClick={() => {
-                      setIsAddOpen(false);
-                      navigate("/guru/pembimbing/cetakDokumen"); // ganti sesuai route kamu
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:!bg-gray-100 !bg-transparent text-left"
-                  >
-                    <Printer className="w-5 h-5 text-blue-600" />
-                    Cetak Surat
-                  </button>
-                </div>
-              )}
-              </div>
+    
 
             <button
               onClick={() => {

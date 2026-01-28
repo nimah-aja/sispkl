@@ -180,7 +180,7 @@ export default function KelasPage() {
   // kolom tabel
   const columns = [
     {
-      label: "Kompetensi Keahlian",
+      label: "Konsentrasi Keahlian",
       key: "jurusan_nama",
       render: (_, row) => {
         const jurusan = jurusanList.find((j) => j.id === row.jurusan_id);
@@ -565,7 +565,7 @@ export default function KelasPage() {
             placeholder="Pencarian"
             filters={[
               {
-                label: "Jurusan",
+                label: "Konsentrasi Keahlian",
                 value: filterKelas,
                 options: jurusanOptions,
                 onChange: setFilterKelas,

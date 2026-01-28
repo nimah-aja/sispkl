@@ -4,6 +4,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRef } from "react";
+import Detail from "./components/Detail";
+
 
 // Components
 import Sidebar from "./components/SidebarBiasa";
@@ -22,12 +24,15 @@ export default function DataPermasalahanSiswa() {
   const [dateFilter, setDateFilter] = useState("");
   const [dataPermasalahan, setDataPermasalahan] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [detailMode, setDetailMode] = useState("view");
+
 
   const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "Wali Kelas",
+    role: "Pembimbing",
   };
 
 
@@ -37,6 +42,7 @@ export default function DataPermasalahanSiswa() {
       pelapor: "Pembimbing",
       nama: "Firli Zulfa Azzahra",
       tanggal: "01/05/2025",
+      industri: "PT Astra Honda",
       masalah: "Kesulitan memahami materi Matematika",
       status: "Proses",
     },
@@ -44,6 +50,7 @@ export default function DataPermasalahanSiswa() {
       pelapor: "Pembimbing",
       nama: "Budi Santoso",
       tanggal: "20/11/2025",
+      industri: "PT Astra Honda",
       masalah: "Nilai rapor menurun drastis",
       status: "Selesai",
     },
@@ -51,6 +58,7 @@ export default function DataPermasalahanSiswa() {
       pelapor: "Pembimbing",
       nama: "Maya Anggraini",
       tanggal: "28/11/2025",
+      industri: "PT Astra Honda",
       masalah: "Kesulitan adaptasi di sekolah baru",
       status: "Proses",
     },
@@ -58,6 +66,7 @@ export default function DataPermasalahanSiswa() {
       pelapor: "Pembimbing",
       nama: "Putri Maharani",
       tanggal: "05/12/2025",
+      industri: "PT Astra Honda",
       masalah: "Bolos sekolah tanpa keterangan",
       status: "Selesai",
     },
@@ -65,6 +74,7 @@ export default function DataPermasalahanSiswa() {
       pelapor: "Pembimbing",
       nama: "Andi Pratama",
       tanggal: "15/11/2025",
+      industri: "PT Astra Honda",
       masalah: "Konflik dengan teman sekelas",
       status: "Proses",
     },
@@ -198,7 +208,7 @@ export default function DataPermasalahanSiswa() {
         <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
           <div className="flex items-center mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-lg">
-              Data Permasalahan 
+              Data Permasalahan
             </h2>
 
             <div className="relative" ref={exportRef}>
@@ -264,8 +274,13 @@ export default function DataPermasalahanSiswa() {
             {filteredData.map((item, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl p-4 hover:shadow-md transition-all"
+                onClick={() => {
+                  setSelectedItem(item);
+                  setDetailMode("view");
+                }}
+                className="bg-white rounded-xl p-4 hover:shadow-md transition-all cursor-pointer"
               >
+
                 {/* HEADER */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-4">
@@ -338,6 +353,24 @@ export default function DataPermasalahanSiswa() {
                                 </div>
                               )}
         </main>
+        {selectedItem && (
+          <Detail
+            title="Detail Permasalahan Siswa"
+            initialData={selectedItem}
+            mode={detailMode}
+            onClose={() => setSelectedItem(null)}
+            onChangeMode={setDetailMode}
+            onSubmit={() => setSelectedItem(null)}
+            fields={[
+              { name: "nama", label: "Nama Siswa" },
+              { name: "industri", label: "Nama Industri" },
+              { name: "masalah", label: "Permasalahan Siswa", full: true },
+              { name: "tanggal", label: "Tanggal" },
+              { name: "status", label: "Status" },
+            ]}
+          />
+        )}
+
       </div>
     </div>
   );
