@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRef } from "react";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
+import Detail from "./components/Detail";
 
 
 // Components
@@ -24,12 +25,14 @@ export default function DataPerizinanSiswa() {
   const [dateFilter, setDateFilter] = useState("");
   const [dataPerizinan, setDataPerizinan] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [detailMode, setDetailMode] = useState("view");
 
   const itemsPerPage = 10;
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "Wali Kelas",
+    role: "Pembimbing",
   };
 
   const getStatusIcon = (status) => {
@@ -254,8 +257,13 @@ export default function DataPerizinanSiswa() {
             {filteredData.map((item, index) => (
               <div
                 key={index}
-                className="bg-white rounded-lg p-4 hover:shadow-md transition-all"
+                onClick={() => {
+                  setSelectedItem(item);
+                  setDetailMode("view");
+                }}
+                className="bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
               >
+
                 {/* HEADER */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-4">
@@ -314,6 +322,38 @@ export default function DataPerizinanSiswa() {
                                 </div>
                               )}
         </main>
+        {selectedItem && (
+          <Detail
+            title="Detail Perizinan Siswa"
+            initialData={selectedItem}
+            mode={detailMode}
+            onClose={() => setSelectedItem(null)}
+            onChangeMode={setDetailMode}
+            onSubmit={(mode, data) => {
+              console.log(mode, data);
+
+              // contoh update status
+              setDataPerizinan((prev) =>
+                prev.map((d) =>
+                  d.nama === data.nama
+                    ? { ...d, status: mode === "approve" ? "Disetujui" : "Ditolak" }
+                    : d
+                )
+              );
+
+              setSelectedItem(null);
+            }}
+            fields={[
+              { name: "nama", label: "Nama Siswa" },
+              { name: "kelas", label: "Kelas" },
+              { name: "tanggal", label: "Tanggal" },
+              { name: "alasan", label: "Alasan" },
+              { name: "lampiran", label: "Lampiran" },
+              { name: "status", label: "Status" },
+            ]}
+          />
+        )}
+
       </div>
     </div>
   );

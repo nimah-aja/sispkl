@@ -106,10 +106,10 @@ export default function JurusanPage() {
   );
 
   const columns = [
-    { label: "Kode Jurusan", key: "kode" },
-    { label: "Nama Jurusan", key: "nama" },
+    { label: "Kode Konsentrasi Keahlian", key: "kode" },
+    { label: "Nama Konsentrasi Keahlian", key: "nama" },
     {
-      label: "Kaprog",
+      label: "Kepala Konsentrasi Keahlian",
       key: "kaprog_guru_id",
       render: (_, row) => {
         const guru = guruList.find((g) => g.id === row.kaprog_guru_id);
@@ -339,7 +339,7 @@ export default function JurusanPage() {
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
             <h2 className="text-white font-bold text-base sm:text-lg">
-              Kompetensi Keahlian
+              Konsentrasi Keahlian
             </h2>
 
             <div className="relative" ref={exportRef}>
@@ -386,7 +386,7 @@ export default function JurusanPage() {
             placeholder="Pencarian"
             filters={[
               {
-                label: "Kode Jurusan",
+                label: "Kode Konsentrasi Keahlian",
                 value: filterJurusan,
                 options: kodeOptions,
                 onChange: setFilterJurusan,

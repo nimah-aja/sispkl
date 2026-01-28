@@ -2,11 +2,13 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 // import assets
+import kegiatan from "../../assets/kegiatan.svg";
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
 import sidebarUsers from "../../assets/sidebarUsers.svg";
 import sidebarChalk from "../../assets/exclamation 2.svg";
 import envelope from "../../assets/envelopenew.svg";
-import logo from "../../assets/logo.png";                     // LOGO BARU
+import logo from "../../assets/logo.png";           
+import bukti from "../../assets/bukti.svg"      
 import pindahPKL_side from "../../assets/pindahpkl_side.svg"
 import sidebarCorporate from "../../assets/sidebarCorporate.svg";
 
@@ -17,10 +19,10 @@ export default function Sidebar({ active, setActive }) {
     { title: "Beranda", icon: sidebarDashboard, route: "/guru/pembimbing/dashboard_pembimbing", key: "sidebarDashboard" },
     { title: "Siswa", icon: sidebarUsers, route: "/guru/pembimbing/siswa", key: "siswa" },
     { title: "Industri", icon: sidebarCorporate, route: "/guru/pembimbing/industri", key: "industri" },
-    { title: "Kegiatan", icon: sidebarChalk, route: "/guru/pembimbing/kegiatan", key: "kegiatan" },
-    { title: "Bukti Kegiatan", icon: sidebarChalk, route: "/guru/pembimbing/bukti_kegiatan", key: "bukti_kegiatan" },
-    { title: "Permasalahan", icon: envelope, route: "/guru/pembimbing/permasalahan", key: "permasalahan" },
-    { title: "Perizinan", icon: sidebarCorporate, route: "/guru/pembimbing/perizinan", key: "perizinan" },
+    { title: "Kegiatan", icon: kegiatan, route: "/guru/pembimbing/kegiatan", key: "kegiatan" }, 
+    { title: "Bukti Kegiatan", icon: bukti, route: "/guru/pembimbing/bukti_kegiatan", key: "bukti_kegiatan" },
+    { title: "Permasalahan", icon: sidebarChalk, route: "/guru/pembimbing/permasalahan", key: "permasalahan" },
+    { title: "Perizinan", icon: envelope, route: "/guru/pembimbing/perizinan", key: "perizinan" },
     { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/guru/pembimbing/perpindahan", key: "perpindahanPKL" }
   ];
 

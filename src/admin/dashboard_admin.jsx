@@ -176,7 +176,7 @@ export default function PKLDashboard() {
 
 
       const dataDisplayTemp = [
-        { title: "Kompetensi Keahlian", icon: gradIcon, value: jurusanData.length },
+        { title: "Konsentrasi Keahlian", icon: gradIcon, value: jurusanData.length },
         { title: "Jumlah Kelas", icon: bookIcon, value: kelasData.length },
         { title: "Jumlah Siswa", icon: usersIcon, value: siswaData.length },
         { title: "Jumlah Guru", icon: chalkIcon, value: guruData.length },
@@ -329,7 +329,7 @@ export default function PKLDashboard() {
               {/* PIE CHART */}
               <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                 <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <h2 className="font-semibold text-gray-800 mb-4">Kelas per Kompetensi Keahlian</h2>
+                  <h2 className="font-semibold text-gray-800 mb-4">Kelas per Konsentrasi Keahlian</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie

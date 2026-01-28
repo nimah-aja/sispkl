@@ -264,7 +264,7 @@ export default function IndustriPage() {
     { label: "Pembimbing", key: "pic" },
     { label: "No. Telp Pembimbing", key: "pic_telp", sortable: false },
     {
-      label: "Jurusan",
+      label: "Konsentrasi Keahlian",
       key: "jurusan_nama",
     },
   ];
@@ -599,7 +599,7 @@ const handleExportExcel = () => {
             placeholder="Pencarian"
             filters={[
               {
-                label: "Jurusan",
+                label: "Konsentrasi Keahlian",
                 value: filterIndustri,
                 options: jurusanOptions,
                 onChange: setFilterIndustri,

@@ -788,37 +788,37 @@ const handlePrintPDF = () => {
 
                         {/* KANAN - Tombol Upload */}
                         {/* KANAN - Tombol Upload & Print */}
-<div className="flex items-center gap-2">
-  <button 
-    disabled={!canSubmit}
-    onClick={(e) => {
-      e.stopPropagation();
-      handleUploadClick(item);
-    }}
-    className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md
-      ${
-        canSubmit
-          ? "!bg-[#641E21] text-white"
-          : "!bg-gray-200 text-gray-400 cursor-not-allowed"
-      }`}
-  >
-    <Upload className="w-3.5 h-3.5" />
-    Unggah
-  </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            disabled={!canSubmit}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUploadClick(item);
+                            }}
+                            className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md
+                              ${
+                                canSubmit
+                                  ? "!bg-[#641E21] text-white"
+                                  : "!bg-gray-200 text-gray-400 cursor-not-allowed"
+                              }`}
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            Unggah
+                          </button>
 
-  {/* BUTTON PRINT - Buka Modal */}
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    handleOpenSuratTugasModal(item);
-  }}
-  className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md
-    !bg-[#EC933A] text-white hover:opacity-90"
->
-  <FileText className="w-3.5 h-3.5" />
-  Print
-</button>
-</div>
+                          {/* BUTTON PRINT - Buka Modal */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenSuratTugasModal(item);
+                          }}
+                          className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md
+                            !bg-[#EC933A] text-white hover:opacity-90"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Cetak
+                        </button>
+                        </div>
 
                       </div>
                     </div>

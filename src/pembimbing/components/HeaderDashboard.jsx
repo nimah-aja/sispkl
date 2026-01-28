@@ -102,7 +102,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
     time: item.time,
     onClick: item.onClick,
 
-    // ⬇️ INI YANG HILANG
+    // INI YANG HILANG
     actions: item.actions,
 
     icon:
@@ -130,7 +130,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
       {/* TITLE */}
       <div>
         <h1 className="font-extrabold text-[#641E20]" style={{ fontSize: "40px" }}>
-          DASHBOARD PEMBIMBING
+          Beranda Pembimbing
         </h1>
         <p className="text-sm font-bold text-black mt-1">
           Selamat datang {user.name}!
@@ -140,48 +140,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
       {/* RIGHT SIDE */}
       <div className="flex items-center gap-4">
 
-        {/* Icons */}
-         <div className="relative">
-                      <img
-                        src={addImage}
-                        alt="Add"
-                        className="w-9 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsAddOpen((v) => !v);
-                        }}
-        
-                      />
-        
-                      {isAddOpen && (
-                        <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg p-3 border border-gray-400 z-50 overflow-hidden">
-                          
-                          {/* Upload Pengantaran */}
-                          <button
-                            onClick={() => {
-                              setIsAddOpen(false);
-                              navigate("/guru/pembimbing/uploadPengantaran"); // ganti sesuai route kamu
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:!bg-gray-100 !bg-transparent text-left"
-                          >
-                            <FileUp className="w-5 h-5 text-orange-500" />
-                            Upload Pengantaran
-                          </button>
-        
-                          {/* Cetak Surat */}
-                          <button
-                            onClick={() => {
-                              setIsAddOpen(false);
-                              navigate("/guru/pembimbing/cetakDokumen"); // ganti sesuai route kamu
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:!bg-gray-100 !bg-transparent text-left"
-                          >
-                            <Printer className="w-5 h-5 text-blue-600" />
-                            Cetak Surat
-                          </button>
-                        </div>
-                      )}
-                      </div>
+
         <button
           onClick={() => {
             setIsNotificationOpen((v) => !v);

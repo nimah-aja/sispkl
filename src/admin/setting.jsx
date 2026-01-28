@@ -355,7 +355,6 @@ export default function Setting() {
         setMaskotFile(null);
         
         setIsEdit(false);
-        alert("Profil berhasil diperbarui!");
         
         // Refresh data dari server
         await fetchSekolahData();

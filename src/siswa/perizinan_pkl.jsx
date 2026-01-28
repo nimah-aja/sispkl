@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import Add from "./components/Add";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export default function PengajuanPKL() {
   const navigate = useNavigate();
+  const [file, setFile] = useState(null);
 
   const fields = [
     {
@@ -35,28 +36,34 @@ export default function PengajuanPKL() {
       width: "full",
       required: true,
     },
+    {
+      name: "surat_dokter",
+      label: "Upload Surat Dokter",
+      type: "file",
+      width: "full",
+      required: true,
+      accept: ".pdf,.jpg,.png",
+      onChange: (e) => setFile(e.target.files[0]),
+    },
   ];
 
   const handleSubmit = async (formData) => {
+    if (!file) {
+      toast.error("Surat dokter wajib diupload");
+      return;
+    }
+
     const payload = {
       nama_siswa: formData.get("nama_siswa"),
       kelas: formData.get("kelas"),
       tanggal: formData.get("tanggal"),
       alasan: formData.get("alasan"),
+      surat_dokter: file,
     };
 
     console.log("DATA DIKIRIM:", payload);
-
-    try {
-      // nanti tinggal sambung API
-      // await submitPengajuanPKL(payload);
-
-      toast.success("Pengajuan PKL berhasil dikirim");
-      navigate(-1);
-    } catch (error) {
-      console.error(error);
-      toast.error("Gagal mengirim pengajuan PKL");
-    }
+    toast.success("Pengajuan PKL berhasil dikirim");
+    navigate(-1);
   };
 
   return (

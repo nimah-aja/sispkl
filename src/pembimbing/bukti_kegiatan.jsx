@@ -23,7 +23,7 @@ export default function DataRealisasiKegiatan() {
   const exportRef = useRef(null);
   const [filterKegiatan, setFilterKegiatan] = useState("");
 
-  const [active, setActive] = useState("kegiatan");
+  const [active, setActive] = useState("bukti_kegiatan");
   const [query, setQuery] = useState("");
   const [openExport, setOpenExport] = useState(false);
 

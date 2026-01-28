@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 // assets
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
 import pengajuan_PKL from "../../assets/pengajuan_PKL.svg";
+import sidebarCorporate from "../../assets/sidebarCorporate.svg";
 import logo from "../../assets/logo.png";
 
 export default function Sidebar({ active, setActive }) {
@@ -24,7 +25,7 @@ export default function Sidebar({ active, setActive }) {
     },
     {
       title: "Industri",
-      icon: pengajuan_PKL,
+      icon: sidebarCorporate,
       route: "/siswa/industri",
       key: "industri",
     },
