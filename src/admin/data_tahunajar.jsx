@@ -81,6 +81,7 @@ export default function TahunAjaranPage() {
   const columns = [
     { label: "Kode", key: "kode" },
     { label: "Nama Tahun Ajaran", key: "nama" },
+    { label: "Status", key: "is_active", render: (val) => (val ? "Aktif" : "Tidak Aktif") },
   ];
 
   const inputFields = [

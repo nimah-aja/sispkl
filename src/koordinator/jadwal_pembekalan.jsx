@@ -151,7 +151,7 @@ const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
     },
 
     { label: "Ruangan", key: "ruangan" },
-    { label: "Jurusan", key: "jurusan" },
+    { label: "Konsentrasi Keahlian", key: "jurusan" },
     {
       label: "Status",
       key: "status",
