@@ -45,11 +45,7 @@ export default function KoordinatorDashboard() {
       { title: "Data Siswa", icon: sidebarUsers, value: 20 },
       { title: "Pengajuan PKL", icon: pengajuanPKL, value: 2 },
       { title: "Pembimbing", icon: Pembimbing, value: 2 },
-      { title: "Surat Pengantaran", icon: suratPengantaran, value: 8 },
-      { title: "Surat Monitoring", icon: monitoring, value: 12 },
-      { title: "Surat Penjemputan", icon: suratPenjemputan, value: 6 },
       { title: "Perpindahan PKL", icon: perpindahanPKL, value: 3 },
-      { title: "Pembekalan", icon: pembekalan, value: 7 },
     ];
 
     setDataDisplay(dummyData);

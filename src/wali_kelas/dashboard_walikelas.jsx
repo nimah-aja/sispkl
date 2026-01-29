@@ -105,40 +105,75 @@ export default function DashboardWaliKelas() {
   };
 
 
+  // Data Notifikasi Perizinan
+  const notifikasiPerizinan = [
+    {
+      id: 1,
+      nama: "Firli Zulfa Azzahra",
+      kelas: "XII",
+      status: "SAKIT",
+      lampiran: "Ada",
+      icon: "FZ",
+      iconColor: "#F97316", // orange
+    },
+    {
+      id: 2,
+      nama: "Andi Pratama",
+      kelas: "XI RPL 2",
+      status: "SAKIT",
+      lampiran: "Ada",
+      icon: "AP",
+      iconColor: "#10B981", // green
+      iconBg: "#10B981",
+    },
+  ];
+
+  // Data Notifikasi Permasalahan
+  const notifikasiPermasalahan = [
+    {
+      id: 1,
+      nama: "Firli Zulfa Azzahra",
+      pelapor: "Pembimbing",
+      keterangan: "Kesulitan memahami materi Matematika",
+      status: "Proses",
+      icon: "FZ",
+      iconColor: "#F97316", 
+    },
+    {
+      id: 2,
+      nama: "Budi Santoso",
+      pelapor: "Pembimbing",
+      keterangan: "Nilai rapor menurun drastis",
+      status: "Proses",
+      icon: "BS",
+      iconColor: "#F97316", 
+    },
+  ];
+
+  // Gabungkan semua notifikasi
   const aktivitasDummy = [
-  {
-    type: "submit",
-    title: "Pengajuan PKL Baru",
-    description: "Ahmad Fauzi mengajukan PKL ke PT. Universal Big Data",
-    time: "2 jam lalu",
-    onClick: () =>
-      navigate("/guru/wali_kelas/pengajuanpkl"),
-    actions: [
-      {
-        label: "Detail",
-        color: "#F97316", // orange
-        onClick: () =>
-          navigate("/guru/wali_kelas/pengajuanpkl"),
-      },
-    ],
-  },
-  {
-    type: "approved",
-    title: "Perizinan Disetujui",
-    description: "Izin sakit atas nama Siti Aisyah telah disetujui",
-    time: "Kemarin",
-    onClick: () =>
-      navigate("/guru/wali_kelas/dataperizinansiswa"),
-  },
-  {
-    type: "rejected",
-    title: "Permasalahan Ditolak",
-    description: "Permasalahan PKL Budi Santoso ditolak oleh Kaprodi",
-    time: "2 hari lalu",
-    onClick: () =>
-      navigate("/guru/wali_kelas/datapermasalahansiswa"),
-  },
-];
+    ...notifikasiPerizinan.map((item) => ({
+      type: item.status === "SAKIT" && item.icon === "✓" ? "approved" : "pending",
+      title: `${item.nama} | ${item.kelas}`,
+      description: `${item.status} • Lampiran: ${item.lampiran}`,
+      time: "",
+      icon: item.icon,
+      iconColor: item.iconColor,
+      iconBg: item.iconBg,
+      onClick: () => navigate("/guru/wali_kelas/dataperizinansiswa"),
+    })),
+    ...notifikasiPermasalahan.map((item) => ({
+      type: item.status === "Selesai" ? "approved" : "pending",
+      title: item.nama,
+      description: `Pelapor: ${item.pelapor}`,
+      subdescription: item.keterangan,
+      status: item.status,
+      time: "",
+      icon: item.icon,
+      iconColor: item.iconColor,
+      onClick: () => navigate("/guru/wali_kelas/datapermasalahansiswa"),
+    })),
+  ];
 
 const getInitials = (name = "") => {
   if (!name) return "-";
