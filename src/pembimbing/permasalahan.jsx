@@ -5,6 +5,11 @@ import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRef } from "react";
 import Detail from "./components/Detail";
+import Add from "./components/Add";
+import SaveConfirmationModal from "./components/Save";
+
+import saveImg from "../assets/save.svg";
+import editGrafik from "../assets/editGrafik.svg";
 
 
 // Components
@@ -23,6 +28,7 @@ export default function DataPermasalahanSiswa() {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [dataPermasalahan, setDataPermasalahan] = useState([]);
+  const [mode, setMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState(null);
   const [detailMode, setDetailMode] = useState("view");
@@ -79,6 +85,12 @@ export default function DataPermasalahanSiswa() {
       status: "Proses",
     },
   ];
+
+  
+
+
+
+
 
   const getInitials = (name = "") =>
     name
@@ -195,6 +207,55 @@ export default function DataPermasalahanSiswa() {
     doc.save("data_permasalahan_siswa.pdf");
   };
 
+  const addFields = [
+    {
+      label: "Nama Siswa",
+      name: "nama",
+      width: "full",
+    },
+    {
+      label: "Industri",
+      name: "industri",
+      width: "full",
+    },
+    {
+      label: "Permasalahan Siswa",
+      name: "masalah",
+      width: "full",
+      type: "textarea",
+      rows: 4,
+    },
+  ];
+
+  if (mode === "add") {
+  return (
+    <Add
+      title="Tambah Permasalahan Siswa"
+      fields={addFields}
+      image={editGrafik}
+      onSubmit={(formData) => {
+        const raw = Object.fromEntries(formData);
+
+        if (!raw.masalah) return;
+
+        setDataPermasalahan(prev => [
+          {
+            pelapor: "Pembimbing",
+            tanggal: new Date().toLocaleDateString("id-ID"),
+            status: "Proses",
+            ...raw,
+          },
+          ...prev,
+        ]);
+
+        setMode("list");
+      }}
+      onCancel={() => setMode("list")}
+    />
+  );
+}
+
+
 
   return (
     <div className="bg-white min-h-screen w-full">
@@ -250,6 +311,7 @@ export default function DataPermasalahanSiswa() {
 
           {/* SEARCH & FILTER */}
           <SearchBar
+          onAddClick={() => setMode("add")}
             query={search}
             setQuery={setSearch}
             placeholder="Cari nama / pelapor / masalah"
@@ -371,6 +433,7 @@ export default function DataPermasalahanSiswa() {
           />
         )}
 
+        
       </div>
     </div>
   );

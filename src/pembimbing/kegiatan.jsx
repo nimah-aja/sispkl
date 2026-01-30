@@ -75,6 +75,20 @@ const TugasTerbaruPage = () => {
     guru1: { nama: "Inasni Dyah Rahmatika, S.Pd.", jabatan: "Guru", dinas: "SMK Negeri 2 Singosari" }
   });
 
+
+    const handleCetakBeritaAcara = (item) => {
+      navigate("/guru/pembimbing/berita_acara", {
+        state: {
+          tugas: item,
+          id_kegiatan: item.id,
+          id_industri: item.industri_id,
+          industri_nama: item.industri_nama,
+          alamat: item.alamat,
+          siswa: item.siswa || [],
+        }
+      });
+    };
+
   // Fungsi untuk tambah baris guru
 const handleTambahGuru = () => {
   const newId = Date.now() + Math.random(); // ID unik
@@ -652,12 +666,13 @@ const handlePrintPDF = () => {
 
 
   return (
-    <div className="bg-white min-h-screen w-full">
-      <Header query={query} setQuery={setQuery} user={user} />
-      <div className="flex">
-        <div className="hidden md:block">
-          <Sidebar active={active} setActive={setActive} />
-        </div>
+   <div className="bg-white min-h-screen w-full">
+         <Header user={user} />
+   
+         <div className="flex flex-col md:flex-row">
+           <div className="md:block hidden">
+             <Sidebar active={active} setActive={setActive} />
+           </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-none md:rounded-l-3xl shadow-inner">
           <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
@@ -810,11 +825,12 @@ const handlePrintPDF = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenSuratTugasModal(item);
+                            handleCetakBeritaAcara(item);
                           }}
                           className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md
                             !bg-[#EC933A] text-white hover:opacity-90"
                         >
+
                           <FileText className="w-3.5 h-3.5" />
                           Cetak
                         </button>

@@ -6,6 +6,9 @@ import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRef } from "react";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
 import Detail from "./components/Detail";
+import editGrafik from "../assets/editGrafik.svg";
+import Add from "./components/Add";
+
 
 
 // Components
@@ -17,6 +20,7 @@ import Pagination from "./components/Pagination";
 
 export default function DataPerizinanSiswa() {
   const exportRef = useRef(null);
+  const [mode, setMode] = useState("list");
   const [openExport, setOpenExport] = useState(false);
 
   const [active, setActive] = useState("perizinan");
@@ -179,6 +183,74 @@ export default function DataPerizinanSiswa() {
     doc.save("data_perizinan_siswa.pdf");
   };
 
+  const addFields = [
+      {
+      name: "nama_siswa",
+      label: "Nama Siswa",
+      type: "text",
+      width: "half",
+      required: true,
+    },
+    {
+      name: "kelas",
+      label: "Kelas",
+      type: "text",
+      width: "half",
+      required: true,
+    },
+    {
+      name: "tanggal",
+      label: "Tanggal",
+      type: "date",
+      width: "full",
+      required: true,
+    },
+    {
+      name: "alasan",
+      label: "Alasan",
+      type: "textarea",
+      width: "full",
+      required: true,
+    },
+    {
+      name: "surat_dokter",
+      label: "Upload Surat Dokter",
+      type: "file",
+      width: "full",
+      required: true,
+      accept: ".pdf,.jpg,.png",
+      onChange: (e) => setFile(e.target.files[0]),
+    },
+    ];
+  
+    if (mode === "add") {
+    return (
+      <Add
+        title="Tambah Perizinan Siswa"
+        fields={addFields}
+        image={editGrafik}
+        onSubmit={(formData) => {
+          const raw = Object.fromEntries(formData);
+  
+          if (!raw.masalah) return;
+  
+          setDataPermasalahan(prev => [
+            {
+              pelapor: "Pembimbing",
+              tanggal: new Date().toLocaleDateString("id-ID"),
+              status: "Proses",
+              ...raw,
+            },
+            ...prev,
+          ]);
+  
+          setMode("list");
+        }}
+        onCancel={() => setMode("list")}
+      />
+    );
+  }
+
 
   return (
     <div className="bg-white min-h-screen w-full">
@@ -234,6 +306,7 @@ export default function DataPerizinanSiswa() {
 
           {/* SEARCH & FILTER */}
           <SearchBar
+            onAddClick={() => setMode("add")}
             query={search}
             setQuery={setSearch}
             placeholder="Cari nama / kelas / alasan"

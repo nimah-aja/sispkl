@@ -56,6 +56,7 @@ import PindahPKLPembimbing from "./pembimbing/perpindahan";
 import UploadPengantaran from "./pembimbing/upload_pengantaran";
 import CetakDokumen from "./pembimbing/cetak_dokumen"
 import TugasTerbaruPage from "./pembimbing/components/TugasTerbaruPage";
+import BeritaAcara from "./pembimbing/berita_acara"
   
 // siswa
 import DashboardSiswa from "./siswa/dashboard_siswa";
@@ -126,6 +127,10 @@ function AppContent() {
           <Route
             path="/guru/pembimbing/surat-tugas/add"
             element={<TugasTerbaruPage />}
+          />
+          <Route
+            path="/guru/pembimbing/berita_acara"
+            element={<BeritaAcara />}
           />
 
 

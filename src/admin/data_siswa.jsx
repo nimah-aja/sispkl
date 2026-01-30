@@ -254,17 +254,42 @@ const handleImportExcel = async (file) => {
     setPreviewResult(res);
     setBulkSessionId(res.session_id);
 
+    const { valid_count, error_count } = res.summary;
+
+    // kalau SEMUA invalid
+    if (valid_count === 0 && error_count > 0) {
+      res.error_rows.forEach((row) => {
+        toast.error(
+          `Baris ${row.row_number}: ${row.errors.join(", ")}`
+        );
+      });
+
+      return; // STOP, jangan buka modal import
+    }
+
+    // kalau ada sebagian invalid
+    if (error_count > 0) {
+      res.error_rows.forEach((row) => {
+        toast.error(
+          `Baris ${row.row_number}: ${row.errors.join(", ")}`
+        );
+      });
+    }
+
     toast.success(
-      `Preview berhasil. Valid: ${res.summary.valid_count}, Invalid: ${res.summary.error_count}`
+      `Preview selesai. Valid: ${valid_count}, Invalid: ${error_count}`
     );
 
+    // hanya buka modal kalau ada data valid
+    if (valid_count > 0) {
+      setIsConfirmSaveOpen(true);
+    }
 
-    // konfirmasi import
-    setIsConfirmSaveOpen(true);
   } catch (err) {
     toast.error("Gagal preview file Excel");
   }
 };
+
 
 
   // form add
