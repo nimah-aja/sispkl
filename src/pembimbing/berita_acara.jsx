@@ -3,7 +3,7 @@ import { Printer, Save, Download, Calendar, Users, Building, MapPin, X, Plus, Tr
 import toast from "react-hot-toast";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import logoSmk from "../assets/logo.png";
+import logoSmk from "../assets/LOGOPROV.png";
 
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
@@ -12,7 +12,7 @@ export default function SuratBeritaAcaraPage() {
   const [active, setActive] = useState("berita_acara");
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "Koordinator PKL",
+    role: "Pembimbing",
   };
 
   // State untuk logo
@@ -24,29 +24,31 @@ export default function SuratBeritaAcaraPage() {
 
   // State untuk data berita acara dengan format baru
   const [formData, setFormData] = useState({
-    hari: "Rabu",
-    tanggalPembuatan: "19 Desember 2025",
+    hari: "...........   ",
+    tanggalPembuatan: "................................",
     namaIndustri: "JOTUN SINGOSARI",
     alamatIndustri: "Jl. Panglima Sudirman No.148 Kavling E2, Pangetan, Kec. Singosari, Kab. Malang, Jawa Timur 65153",
-    jumlahPraktikan: "5",
-    tanggalAwal: "1 Desember 2025",
-    tanggalAkhir: "19 Desember 2025",
-    tanggalMonitoring: "19 Desember 2025",
+    jumlahPraktikan: ".......",
+    tanggalAwal: "....................",
+    tanggalAkhir: "....................",
+    tanggalMonitoring: ".............   ",
+    bulan: ".............   ",
+    tahun_surat: ".............  ",
     judulPenjemputan: "PENJEMPUTAN PRAKTIK KERJA INDUSTRI (PKL)",
     tahun: "TAHUN 2025",
     catatanPembimbingIndustri: [
-      "Siswa telah menunjukkan kemampuan yang baik dalam mengikuti prosedur kerja",
-      "Disiplin waktu perlu ditingkatkan",
-      "Komunikasi dengan tim sudah cukup baik"
+      ".....................................................................",
+      ".....................................................................",
+      "....................................................................."
     ],
     catatanPembimbingSekolah: [
-      "Perlu meningkatkan tanggung jawab dalam menyelesaikan tugas",
-      "Disiplin dalam mengikuti aturan industri",
-      "Kerja sama dengan pembimbing industri sudah baik"
+      ".....................................................................",
+      ".....................................................................",
+      "....................................................................."
     ],
-    namaPembimbingIndustri: "Muhammad Ali Zainal Abidin",
+    namaPembimbingIndustri: "........................",
     jabatanPembimbingIndustri: "Pembimbing Industri",
-    namaPembimbingSekolah: "TRANA ADILAM",
+    namaPembimbingSekolah: "........................",
     jabatanPembimbingSekolah: "Pembimbing Sekolah"
   });
 
@@ -55,43 +57,27 @@ export default function SuratBeritaAcaraPage() {
     { 
       id: 1, 
       nama: "ZAHIRA MUTIA", 
-      hadir: "S", 
-      sakit: "3", 
-      izin: "0", 
-      keterangan: "Hadir sesuai jadwal" 
+      hadir: "", 
+      sakit: "", 
+      izin: "", 
+      keterangan: "" 
     },
     { 
       id: 2, 
       nama: "ABDUL HALIM AL FIROS", 
-      hadir: "9", 
-      sakit: "0", 
-      izin: "5", 
-      keterangan: "Izin 5 hari" 
+      hadir: "", 
+      sakit: "", 
+      izin: "", 
+      keterangan: "" 
     },
     { 
       id: 3, 
       nama: "ANDIKA SATRIAL E", 
-      hadir: "15", 
-      sakit: "0", 
-      izin: "0", 
-      keterangan: "Hadir penuh" 
+      hadir: "", 
+      sakit: "", 
+      izin: "", 
+      keterangan: "" 
     },
-    { 
-      id: 4, 
-      nama: "ANGGER A", 
-      hadir: "8", 
-      sakit: "2", 
-      izin: "0", 
-      keterangan: "Sakit 2 hari" 
-    },
-    { 
-      id: 5, 
-      nama: "DARUL ALIM", 
-      hadir: "8", 
-      sakit: "0", 
-      izin: "2", 
-      keterangan: "Izin keluarga" 
-    }
   ]);
 
   // State untuk daftar surat yang sudah dibuat
@@ -644,11 +630,13 @@ const handleGeneratePDF = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <Sidebar active={active} setActive={setActive} />
-
-      <div className="flex flex-col flex-1">
-        <Header user={user} />
+     <div className="bg-white min-h-screen w-full">
+             <Header user={user} />
+       
+             <div className="flex flex-col md:flex-row">
+               <div className="md:block hidden">
+                 <Sidebar active={active} setActive={setActive} />
+               </div>
 
         <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
           {/* Header dengan tombol toggle */}
@@ -756,7 +744,7 @@ const handleGeneratePDF = () => {
                   <img 
                     src={logo.preview} 
                     alt="Logo SMK" 
-                    className="w-16 h-16 object-contain"
+                    className="w-30 h-30 object-contain"
                     onError={(e) => {
                       e.target.src = logoSmk;
                     }}
@@ -790,7 +778,8 @@ const handleGeneratePDF = () => {
                 {/* Informasi Monitoring */}
                 <div className="mb-6">
                   <div className="space-y-2 mb-4">
-                    <p><span className="font-semibold">Hari ini</span> : {formData.hari}, {formData.tanggalMonitoring}</p>
+                    <p>
+                    <span className="">Hari ini : {formData.hari} Tanggal : {formData.tanggalMonitoring}Bulan: {formData.bulan} Tahun : {formData.tahun_surat}</span> </p>
                     <p>Telah melaksanakan monitoring dan pembimbingan peserta didik PKL SMK Negeri 2 Singosari pada Industri/Lembaga :</p>
                     <p><span className="font-semibold">Nama Industri/Lembaga</span> : {formData.namaIndustri}</p>
                     <p><span className="font-semibold">Alamat Industri/Lembaga</span> : {formData.alamatIndustri}</p>
@@ -828,10 +817,10 @@ const handleGeneratePDF = () => {
                         <tr key={siswa.id}>
                           <td className="border border-black p-2 text-center">{index + 1}.</td>
                           <td className="border border-black p-2">{siswa.nama || "-"}</td>
-                          <td className="border border-black p-2 text-center">{siswa.hadir || "-"}</td>
-                          <td className="border border-black p-2 text-center">{siswa.sakit || "-"}</td>
-                          <td className="border border-black p-2 text-center">{siswa.izin || "-"}</td>
-                          <td className="border border-black p-2">{siswa.keterangan || "-"}</td>
+                          <td className="border border-black p-2 text-center">{siswa.hadir }</td>
+                          <td className="border border-black p-2 text-center">{siswa.sakit }</td>
+                          <td className="border border-black p-2 text-center">{siswa.izin }</td>
+                          <td className="border border-black p-2">{siswa.keterangan}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -842,21 +831,29 @@ const handleGeneratePDF = () => {
                 <div className="mb-6">
                   <p className="font-bold mb-2">B. Catatan tentang kinerja siswa</p>
                   
-                  <div className="mb-4">
-                    <p className="font-bold mb-1">1. Catatan pembimbing Industri</p>
-                    <ul className="list-disc pl-5">
+                 <div className="mb-4">
+                  <p className="font-bold mb-1 ">1. Catatan pembimbing Industri</p>
+
+                  {formData.catatanPembimbingIndustri.length > 0 && (
+                    <ul className="list-disc pl-10">
                       {formData.catatanPembimbingIndustri.map((catatan, index) => (
                         <li key={index}>{catatan}</li>
                       ))}
                     </ul>
-                  </div>
+                  )}
+                </div>
+
 
                   <div>
                     <p className="font-bold mb-1">2. Catatan pembimbing sekolah</p>
                     <ul className="list-disc pl-5">
+                      {formData.catatanPembimbingSekolah.length > 0 && (
+                    <ul className="list-disc pl-5">
                       {formData.catatanPembimbingSekolah.map((catatan, index) => (
                         <li key={index}>{catatan}</li>
                       ))}
+                    </ul>
+                  )}
                     </ul>
                   </div>
                 </div>
