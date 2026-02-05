@@ -204,7 +204,7 @@ export default function JurusanPage() {
     return (
       <>
         <Add
-          title="Tambah Data Jurusan"
+          title="Tambah Data Konsentrasi Keahlian"
           fields={inputFields}
           image={guruImg}
           existingData={jurusan}
@@ -266,7 +266,7 @@ export default function JurusanPage() {
     return (
       <>
         <Add
-          title="Ubah Data Jurusan"
+          title="Ubah Data Konsentrasi Keahlian"
           fields={inputFields}
           image={editGrafik}
           existingData={jurusan.filter((j) => j.id !== selectedRow.id)}
