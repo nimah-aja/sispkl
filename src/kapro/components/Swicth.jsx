@@ -173,7 +173,7 @@ export default function ProfileRolePopup({
               setShowProfile(true);
             }}
           >
-            <User className="w-5 h-5 text-gray-500" /> {/* icon orang */}
+            <User className="w-5 h-5 text-gray-500" />
             Profil Saya
           </div>
         </div>

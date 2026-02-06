@@ -10,22 +10,18 @@ export const getGuru = async () => {
   return guruList;
 };
 
-/**
- * Ambil guru berdasarkan processed_by (guru.id)
- */
+/* Ambil guru berdasarkan processed_by (guru.id)*/
 export const fetchGuruById = async (id) => {
   try {
     const res = await axios.get(`/api/guru/${id}`);
-    return res.data.data; // Perhatikan ini: res.data.data bukan res.data
+    return res.data.data; 
   } catch (err) {
     console.error("Fetch guru error:", err);
     return null;
   }
 };
 
-/**
- * Mapping guru → user shape (buat surat / profile)
- */
+/* Mapping guru */
 export const mapGuruToUser = (guru) => {
   if (!guru) return null;
 

@@ -138,7 +138,7 @@ export default function DataPengajuan() {
   };
 
   const handleEditClick = (item) => {
-    console.log("✏️ Edit clicked for:", item.name, "ID:", item.id);
+    console.log(" Edit clicked for:", item.name, "ID:", item.id);
     setSelectedSurat(item);
     setShowEditModal(true);
     setShowPreview(false);
@@ -164,7 +164,7 @@ export default function DataPengajuan() {
 
   // Fungsi untuk update data setelah edit
   const handleSaveEdit = (updatedData) => {
-    console.log("💾 Menyimpan perubahan data:", updatedData);
+    console.log("Menyimpan perubahan data:", updatedData);
 
     // Update state dengan data yang sudah diedit
     setPengajuanList((prev) =>
@@ -207,7 +207,7 @@ export default function DataPengajuan() {
     setGeneratingPDF(true);
 
     try {
-      console.log("📄 Membuat PDF dengan jsPDF untuk:", data.nama_perusahaan);
+      console.log(" Membuat PDF dengan jsPDF untuk:", data.nama_perusahaan);
 
       // Buat PDF baru
       const doc = new jsPDF({
@@ -410,7 +410,7 @@ export default function DataPengajuan() {
         }
       }, 500);
     } catch (error) {
-      console.error("❌ Error generating PDF:", error);
+      console.error("Error generating PDF:", error);
     } finally {
       setGeneratingPDF(false);
     }
@@ -426,7 +426,7 @@ export default function DataPengajuan() {
     setGeneratingPDF(true);
 
     try {
-      console.log("🖨️ Mencetak Lembar Persetujuan untuk:", surat.name);
+      console.log("Mencetak Lembar Persetujuan untuk:", surat.name);
 
       const payload = {
         school_info: {
@@ -451,7 +451,7 @@ export default function DataPengajuan() {
 
       await generateLembarPersetujuanPDF(payload, [], printDirectly);
     } catch (error) {
-      console.error("❌ Error generating Lembar Persetujuan:", error);
+      console.error("Error generating Lembar Persetujuan:", error);
       setGeneratingPDF(false);
     }
   };
@@ -553,7 +553,7 @@ export default function DataPengajuan() {
       doc.text(surat.nisn || "-", margin + 40, yPosition);
 
       yPosition += 7;
-      doc.text("Kelas/Jurusan", margin, yPosition);
+      doc.text("Kelas/Kompetensi Keahlian", margin, yPosition);
       doc.text(":", margin + 35, yPosition);
       doc.text(
         `${surat.class || ""} / ${surat.jurusan || "Teknik Komputer dan Jaringan"}`,
@@ -662,7 +662,7 @@ export default function DataPengajuan() {
         doc.save(fileName);
       }
     } catch (error) {
-      console.error("❌ Error generating Surat Tugas:", error);
+      console.error(" Error generating Surat Tugas:", error);
     } finally {
       setGeneratingPDF(false);
     }
@@ -917,7 +917,7 @@ export default function DataPengajuan() {
                   </div>
                 </div>
 
-                {/* FOOTER - TEMPAT TANGGAL DAN TANDA TANGAN - PERBAIKAN ALIGNMENT */}
+                {/* FOOTER  */}
                 <div className="mt-12 w-full">
                   <div className="flex justify-end">
                     <div className="flex flex-col items-end w-[280px]">
@@ -932,7 +932,7 @@ export default function DataPengajuan() {
                       {/* Spasi kosong untuk jarak */}
                       <div className="h-16"></div>
                       
-                      {/* Tanda tangan - menggunakan width yang sama dengan tanggal */}
+                      {/* Tanda tangan */}
                       <div className="w-full text-right">
                         <p className="whitespace-nowrap">
                           ( ................................................................ )
@@ -955,7 +955,7 @@ export default function DataPengajuan() {
 
                 <button
                   onClick={async () => {
-                    await handleExportLembarPersetujuan(selectedSurat, false); // Simpan ke file
+                    await handleExportLembarPersetujuan(selectedSurat, false); 
                   }}
                   disabled={generatingPDF}
                   className="!bg-[#EC933A] text-white px-6 py-3 rounded-lg text-md font-semibold hover:bg-orange-500 transition disabled:opacity-50"

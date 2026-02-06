@@ -23,7 +23,7 @@ export default function PengajuanPKL() {
     },
     {
       name: "jurusan",
-      label: "Jurusan",
+      label: "Konsentrasi Keahlian",
       type: "text",
       width: "half",
       required: true,
@@ -89,7 +89,6 @@ export default function PengajuanPKL() {
     console.log("DATA DIKIRIM:", Object.fromEntries(payload));
 
     try {
-      // nanti tinggal sambung API multipart/form-data
       // await submitPengajuanPKL(payload);
 
       toast.success("Pengajuan PKL berhasil dikirim");

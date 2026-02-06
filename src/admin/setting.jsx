@@ -6,12 +6,9 @@ import iconPlus from "../assets/iconplus.svg";
 import { Pencil, Save, X } from "lucide-react";
 import axios from "axios";
 
-// Import fungsi API dari sekolah.js
+// Import utils
 import { getSekolah, updateSekolah } from "../utils/services/admin/sekolah";
 
-/* =========================
-   CONFIG FIELD
-========================= */
 const fields = [
   { label: "Akreditasi", name: "akreditasi", type: "text" },
   { label: "Email", name: "email", type: "email" },
@@ -33,9 +30,7 @@ const fields = [
 // URL LOGO DEFAULT
 const DEFAULT_LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_SMKN_2_Singosari.png";
 
-/* =========================
-   FIELD COMPONENT
-========================= */
+
 function ProfileField({ label, name, type, value, isEdit, onChange }) {
   return (
     <div className="mb-4">
@@ -61,9 +56,7 @@ function ProfileField({ label, name, type, value, isEdit, onChange }) {
   );
 }
 
-/* =========================
-   MAIN COMPONENT
-========================= */
+// main
 export default function Setting() {
   const [active, setActive] = useState("");
   const [isEdit, setIsEdit] = useState(false);
@@ -99,11 +92,9 @@ export default function Setting() {
   const [logoSekolahFile, setLogoSekolahFile] = useState(null);
   const [maskot, setMaskot] = useState(null);
   const [maskotFile, setMaskotFile] = useState(null);
-  const [originalLogoFromAPI, setOriginalLogoFromAPI] = useState(""); // Simpan logo asli dari API
+  const [originalLogoFromAPI, setOriginalLogoFromAPI] = useState(""); 
 
-  /* =========================
-     FETCH DATA SEKOLAH
-  ========================= */
+// fetch sekolah
   useEffect(() => {
     fetchSekolahData();
   }, []);
@@ -160,7 +151,7 @@ export default function Setting() {
             // Jika logo dalam format base64
             logoToDisplay = sekolah.logo;
           }
-          setOriginalLogoFromAPI(sekolah.logo); // Simpan logo asli dari API
+          setOriginalLogoFromAPI(sekolah.logo); 
         } else if (sekolah.logo_url && sekolah.logo_url !== "") {
           logoToDisplay = sekolah.logo_url;
           setOriginalLogoFromAPI(sekolah.logo_url);
@@ -196,9 +187,6 @@ export default function Setting() {
     }
   };
 
-  /* =========================
-     HANDLER
-  ========================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -479,7 +467,7 @@ export default function Setting() {
             {isEdit ? (
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-12 gap-6 md:gap-10">
-                  {/* ===== LEFT IMAGE SECTION ===== */}
+                  {/* image section */}
                   <div className="col-span-12 md:col-span-4 space-y-6 md:space-y-8">
                     {/* Logo Sekolah */}
                     <div>
@@ -591,7 +579,7 @@ export default function Setting() {
                     </div>
                   </div>
 
-                  {/* ===== RIGHT FORM SECTION ===== */}
+                  {/* right section */}
                   <div className="col-span-12 md:col-span-8">
                     {errorMessage && isEdit && (
                       <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
@@ -615,7 +603,7 @@ export default function Setting() {
                   </div>
                 </div>
 
-                {/* ===== ACTION BUTTONS (EDIT MODE) ===== */}
+                {/* edit mode */}
                 <div className="mt-8 md:mt-12 flex flex-col sm:flex-row justify-center gap-3 md:gap-4">
                   <button
                     type="submit"
@@ -653,10 +641,10 @@ export default function Setting() {
                 </div>
               </form>
             ) : (
-              /* VIEW MODE (Hanya tampil, tidak bisa edit) */
+              // tampilan view
               <div>
                 <div className="grid grid-cols-12 gap-6 md:gap-10">
-                  {/* ===== LEFT IMAGE SECTION ===== */}
+                  {/* image section */}
                   <div className="col-span-12 md:col-span-4 space-y-6 md:space-y-8">
                     {/* Logo Sekolah */}
                     <div>
@@ -697,7 +685,7 @@ export default function Setting() {
                     </div>
                   </div>
 
-                  {/* ===== RIGHT FORM SECTION ===== */}
+                  {/* right section */}
                   <div className="col-span-12 md:col-span-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 md:gap-x-8 gap-y-4 md:gap-y-6">
                       {fields.map((field) => (
@@ -715,7 +703,7 @@ export default function Setting() {
                   </div>
                 </div>
 
-                {/* ===== EDIT BUTTON (VIEW MODE) ===== */}
+                {/* edit button */}
                 <div className="mt-8 md:mt-12 flex justify-center">
                   <button
                     type="button"

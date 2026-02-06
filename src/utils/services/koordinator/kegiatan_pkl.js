@@ -1,6 +1,6 @@
 import axios from "../../axiosInstance";
 
-/* ================= CREATE ================= */
+/*  CREATE  */
 // payload:
 // {
 //   deskripsi,
@@ -22,13 +22,12 @@ export const createKegiatanPKL = async (data) => {
   return res.data;
 };
 
-/* ================= LIST BY TAHUN AJARAN (HISTORY) ================= */
+/*  LIST BY TAHUN AJARAN (HISTORY)  */
 export const getKegiatanPKLByTahunAjaran = async (tahunAjaranId) => {
   const res = await axios.get(
     `/api/kegiatan-pkl/tahun-ajaran/${tahunAjaranId}`
   );
 
-  // ambil field yang dipakai aja
   return res.data.map((item) => ({
     id: item.id,
     deskripsi: item.deskripsi,
@@ -40,7 +39,7 @@ export const getKegiatanPKLByTahunAjaran = async (tahunAjaranId) => {
   }));
 };
 
-/* ================= UPDATE ================= */
+/*  UPDATE  */
 export const updateKegiatanPKL = async (id, data) => {
   const payload = {
     deskripsi: data.deskripsi,
@@ -48,14 +47,14 @@ export const updateKegiatanPKL = async (id, data) => {
     tahun_ajaran_id: data.tahun_ajaran_id,
     tanggal_mulai: data.tanggal_mulai,
     tanggal_selesai: data.tanggal_selesai,
-    status: data.status, // kalau mau update status
+    status: data.status, 
   };
 
   const res = await axios.put(`/api/kegiatan-pkl/${id}`, payload);
   return res.data;
 };
 
-/* ================= DELETE ================= */
+/*  DELETE  */
 export const deleteKegiatanPKL = async (id) => {
   const res = await axios.delete(`/api/kegiatan-pkl/${id}`);
   return res.data;

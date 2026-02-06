@@ -65,9 +65,9 @@ export default function TugasTerbaru({
     // Navigasi ke halaman upload dengan semua data yang diperlukan
     navigate("/guru/pembimbing/uploadPengantaran", {
       state: { 
-        tugas: item, // Kirim seluruh objek item
-        id_kegiatan: item.id, // ID kegiatan
-        id_industri: item.industri_id, // ID industri
+        tugas: item, 
+        id_kegiatan: item.id, 
+        id_industri: item.industri_id, 
         industri_nama: item.industri_nama || item.industri?.nama,
         nama_kegiatan: item.nama,
         deskripsi: item.deskripsi,
@@ -229,7 +229,7 @@ export default function TugasTerbaru({
         </div>
       </div>
 
-      {/* ================= POPUP SISWA ================= */}
+      {/*  POPUP SISWA  */}
       {popup && (
         <div
           className="fixed inset-0 z-[9999]"
@@ -239,7 +239,7 @@ export default function TugasTerbaru({
             className="absolute bg-white border border-gray-300 rounded-xl shadow-lg p-4 w-[320px]"
             style={{ 
               top: popupPos.top, 
-              left: Math.min(popupPos.left, window.innerWidth - 340) // Pastikan tidak keluar layar
+              left: Math.min(popupPos.left, window.innerWidth - 340) 
             }}
             onClick={(e) => e.stopPropagation()}
           >

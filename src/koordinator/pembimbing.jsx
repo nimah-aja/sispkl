@@ -181,8 +181,7 @@ export default function DataPeserta() {
     setMode("edit");
   };
 
-  // ================= RENDER ADD / EDIT =================
-  // Bagian render add / edit
+  //  RENDER ADD / EDIT 
 if (mode === "add" || (mode === "edit" && editData)) {
   return (
     <>
@@ -247,7 +246,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
 }
 
 
-  // ================= RENDER LIST =================
+  //  RENDER LIST 
   return (
     <div className="flex min-h-screen bg-white">
       <Sidebar active={active} setActive={setActive} />
@@ -338,7 +337,6 @@ if (mode === "add" || (mode === "edit" && editData)) {
                   onDelete={() => {
                     console.log("DELETE DATA:", selectedRow);
         
-                    // ❌ belum pakai BE → simulasi aja
                     // nanti kalau ada API tinggal ganti isinya
         
                     setIsDeleteOpen(false);

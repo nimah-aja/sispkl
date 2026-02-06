@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, Pencil, Save } from "lucide-react";
 import headerBg from "../../assets/maskot.svg";
 
-// 🔗 API utils
+//  API utils
 import { updateGuruProfile } from "../../utils/services/guru/profile";
 
 export default function ProfilePage({ user, onClose, roles = [] }) {
@@ -34,7 +34,7 @@ export default function ProfilePage({ user, onClose, roles = [] }) {
     return map[name] || name;
   };
 
-  // ===== HANDLE INPUT =====
+  //  HANDLE INPUT 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -54,7 +54,7 @@ export default function ProfilePage({ user, onClose, roles = [] }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ===== SAVE KE API =====
+  //  SAVE KE API 
   const handleSave = async () => {
     if (errors.nip || errors.phone) return;
 

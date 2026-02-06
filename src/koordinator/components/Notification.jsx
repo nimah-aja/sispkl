@@ -58,7 +58,7 @@ export default function NotificationCard({
                 )}
               </div>
 
-              {/* Button(s) */}
+              {/* Button */}
               {notif.buttons && notif.buttons.length > 0 && (
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   {notif.buttons.map((btn, bIdx) => (

@@ -16,7 +16,6 @@ const CalendarWrapper = ({ pklData }) => {
 
   return (
     <div>
-      {/* PREVIEW SELALU ADA */}
       <div
         className="bg-white border border-[#641E21] rounded-xl p-4 
                    shadow-sm cursor-pointer hover:bg-gray-50 transition"
@@ -72,7 +71,7 @@ const CalendarPKL = ({ pklData }) => {
   const weekdayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
   const mappedTodayIndex = dayjs().day() === 0 ? 6 : dayjs().day() - 1;
 
-  // Tambahkan event PKL dari API — tandai semua tanggal dari mulai sampai selesai
+  //  event PKL 
   useEffect(() => {
     if (!pklData || pklData.status !== "Approved") return;
 
@@ -84,13 +83,13 @@ const CalendarPKL = ({ pklData }) => {
         id: `pkl-start`,
         date: start.format("YYYY-MM-DD"),
         title: "PKL Mulai",
-        color: "#EC933A", // warna untuk tanggal mulai
+        color: "#EC933A", 
         },
         {
         id: `pkl-end`,
         date: end.format("YYYY-MM-DD"),
         title: "PKL Selesai",
-        color: "#F87171", // warna untuk tanggal selesai (bisa beda)
+        color: "#F87171", 
         },
     ];
 
@@ -334,7 +333,6 @@ const CalendarPKL = ({ pklData }) => {
       </div>
 
       {/* MODAL ADD EVENT */}
-      {/* MODAL ADD EVENT (UI BARU) */}
         {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center !z-[9999]">
             <div className="bg-[#641E21] w-[480px] overflow-hidden">

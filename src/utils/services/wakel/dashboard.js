@@ -2,7 +2,6 @@ import axios from "../../axiosInstance";
 
 /**
  * GET Dashboard Wali Kelas
- * Endpoint: /api/guru/dashboard/wali-kelas
  */
 export const getDashboardWaliKelas = async () => {
   try {

@@ -6,7 +6,7 @@ export const getSiswa = async () => {
   });
 
   const siswaList = res.data.data.data;
-  siswaList.sort((a, b) => a.nama_lengkap.localeCompare(b.nama_lengkap));   //sort A-Z
+  siswaList.sort((a, b) => a.nama_lengkap.localeCompare(b.nama_lengkap));
 
   return siswaList;
 };

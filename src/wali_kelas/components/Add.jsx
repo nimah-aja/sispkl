@@ -621,7 +621,7 @@ export default function Add({
         <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
           <button
             type="button"
-            onClick={handleCancelClick} // buka modal
+            onClick={handleCancelClick} 
             className="button-radius"
             style={{
               "--btn-bg": "#3A3D3D",

@@ -1,4 +1,3 @@
-// utils/services/pkl/industri.js
 import axios from "../../axiosInstance";
 
 export const getIndustriPreview = async () => {
@@ -6,9 +5,7 @@ export const getIndustriPreview = async () => {
   return res.data.data;
 };
 
-/**
- * Total industri PKL
- */
+// Total industri PKL
 export const getTotalIndustri = async () => {
   const list = await getIndustriPreview();
   return list.length;

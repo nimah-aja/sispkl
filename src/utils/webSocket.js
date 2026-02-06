@@ -1,4 +1,3 @@
-// src/utils/websocket.js
 
 let socket = null;
 

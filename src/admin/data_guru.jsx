@@ -289,13 +289,13 @@ const handleExportExcel = () => {
         <SaveConfirmationModal
           isOpen={isConfirmSaveOpen}
           title="Konfirmasi Simpan"
-          message="Apakah kamu yakin ingin menyimpan data jurusan ini?"
+          message="Apakah kamu yakin ingin menyimpan data guru ini?"
           onClose={() => setIsConfirmSaveOpen(false)}
           onSave={async () => {
             try {
               await createGuru(pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil ditambahkan");
+              toast.success("Data guru berhasil ditambahkan");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -303,7 +303,7 @@ const handleExportExcel = () => {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal menambahkan data");
               }
@@ -379,7 +379,7 @@ const handleExportExcel = () => {
             try {
               await updateGuru(selectedRow.id, pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil diperbarui");
+              toast.success("Data guru berhasil diperbarui");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -387,7 +387,7 @@ const handleExportExcel = () => {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal memperbarui data");
               }

@@ -94,25 +94,25 @@ export default function KoordinatorDashboard() {
                 key={idx}
                 item={item}
                 onClick={() => {
-  const title = item.title.toLowerCase();
+                  const title = item.title.toLowerCase();
 
-  if (title.includes("peserta pkl"))
-    navigate("/guru/koordinator/pesertaPKL");
-  else if (title.includes("pengajuan pkl"))
-    navigate("/guru/koordinator/pengajuanPKL");
-  else if (title.includes("pembimbing"))
-    navigate("/guru/koordinator/pembimbing");
-  else if (title.includes("surat pengantaran"))
-    navigate("/guru/koordinator/suratPengantaran");
-  else if (title.includes("monitoring"))
-    navigate("/guru/koordinator/monitoring");
-  else if (title.includes("surat penjemputan"))
-    navigate("/guru/koordinator/suratPenjemputan");
-  else if (title.includes("perpindahan pkl"))
-    navigate("/guru/koordinator/perpindahanPKL");
-  else if (title.includes("pembekalan"))
-    navigate("/guru/koordinator/pembekalan");
-}}
+                  if (title.includes("peserta pkl"))
+                    navigate("/guru/koordinator/pesertaPKL");
+                  else if (title.includes("pengajuan pkl"))
+                    navigate("/guru/koordinator/pengajuanPKL");
+                  else if (title.includes("pembimbing"))
+                    navigate("/guru/koordinator/pembimbing");
+                  else if (title.includes("surat pengantaran"))
+                    navigate("/guru/koordinator/suratPengantaran");
+                  else if (title.includes("monitoring"))
+                    navigate("/guru/koordinator/monitoring");
+                  else if (title.includes("surat penjemputan"))
+                    navigate("/guru/koordinator/suratPenjemputan");
+                  else if (title.includes("perpindahan pkl"))
+                    navigate("/guru/koordinator/perpindahanPKL");
+                  else if (title.includes("pembekalan"))
+                    navigate("/guru/koordinator/pembekalan");
+                }}
 
               />
             ))}
@@ -171,7 +171,7 @@ export default function KoordinatorDashboard() {
         { name: "nama_siswa", label: "Nama Siswa" },
         { name: "nisn", label: "NISN" },
         { name: "kelas", label: "Kelas" },
-        { name: "jurusan", label: "Jurusan" },
+        { name: "jurusan", label: "Konsentrasi Keahlian" },
         { name: "status", label: "Status" },
         { name: "tanggal_permohonan", label: "Tanggal Pengajuan" },
       ]}

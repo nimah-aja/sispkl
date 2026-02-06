@@ -6,7 +6,7 @@ export const getKelas = async () => {
   });
 
   const jurusanList = res.data.data.data;
-  jurusanList.sort((a, b) => a.nama.localeCompare(b.nama));   //sort A-Z
+  jurusanList.sort((a, b) => a.nama.localeCompare(b.nama));   
 
   return jurusanList;
 };

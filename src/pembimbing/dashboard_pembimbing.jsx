@@ -80,7 +80,7 @@ export default function PKLDashboard() {
   const [selectedIndustri, setSelectedIndustri] = useState(null);
   const [selectedAktivitas, setSelectedAktivitas] = useState(null);
   const [aktivitasItems, setAktivitasItems] = useState([]);
-  const [detailType, setDetailType] = useState(null); // 'siswa', 'industri', 'kegiatan', 'realisasi'
+  const [detailType, setDetailType] = useState(null); 
 
   const navigate = useNavigate();
   const user = {
@@ -148,7 +148,7 @@ export default function PKLDashboard() {
         
         // Mapping data kegiatan aktif
         const kegiatanItems = (kegiatanRes || []).map((kegiatan) => {
-          let type = "info"; // default
+          let type = "info"; 
           let title = "";
           
           if (kegiatan.status === "active") type = "info";
@@ -186,7 +186,7 @@ export default function PKLDashboard() {
         
         console.log("Kegiatan items mapped:", kegiatanItems);
         
-        // Mapping data realisasi - DENGAN DATA LENGKAP
+        // Mapping data realisasi 
         const realisasiItems = (realisasiRes || []).map((realisasi) => {
           let type = "approved";
           let title = "Anda Melakukan Realisasi Kegiatan";
@@ -602,7 +602,7 @@ export default function PKLDashboard() {
           </div>
         </main>
 
-        {/* MODAL DETAIL - GUNAKAN detailType untuk conditional */}
+        {/* MODAL DETAIL  */}
         {detailOpen && detailType && (
           <Detail
             title={

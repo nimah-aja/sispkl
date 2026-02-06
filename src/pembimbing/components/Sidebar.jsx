@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 // import assets
-import logo from "../../assets/logo.png";                     // LOGO BARU
+import logo from "../../assets/logo.png";             
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
 import sidebarUsers from "../../assets/sidebarUsers.svg";
 import sidebarChalk from "../../assets/exclamation 2.svg";

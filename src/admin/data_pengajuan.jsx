@@ -20,7 +20,7 @@ import { getPembimbingPKL } from "../utils/services/kapro/pembimbing";
 
 const DataPengajuanPKL = () => {
   const [openDetail, setOpenDetail] = useState(false);
-    const [detailMode, setDetailMode] = useState("view"); // view | approve | reject
+    const [detailMode, setDetailMode] = useState("view"); 
     const [detailData, setDetailData] = useState(null);
   const [active, setActive] = useState("Pengajuan");
   const [query, setQuery] = useState('');
@@ -180,12 +180,10 @@ const DataPengajuanPKL = () => {
         toast.success("Pengajuan PKL berhasil ditolak");
         }
 
-        // 🔥 TUTUP MODAL
         setOpenDetail(false);
         setDetailMode("view");
         setDetailData(null);
 
-        // 🔥 REFRESH LIST
         fetchSubmissions();
 
     } catch (err) {
@@ -236,7 +234,7 @@ const DataPengajuanPKL = () => {
     useEffect(() => {
       const fetchPembimbing = async () => {
         const res = await getPembimbingPKL();
-        setPembimbingOptions(res); // sudah format dropdown
+        setPembimbingOptions(res); 
       };
 
       fetchPembimbing();
@@ -252,7 +250,7 @@ const DataPengajuanPKL = () => {
     { name: "nama_siswa", label: "Nama Siswa" },
     { name: "nisn", label: "NISN" },
     { name: "kelas", label: "Kelas" },
-    { name: "jurusan", label: "Jurusan" },
+    { name: "jurusan", label: "Konsentrasi Keahlian" },
     { name: "status", label: "Status" },
     ];
 
@@ -270,7 +268,7 @@ const DataPengajuanPKL = () => {
         name: "pembimbing_id",
         label: "Nama Pembimbing",
         type: "select",
-        options: pembimbingOptions, // atau simpan di state biar rapi
+        options: pembimbingOptions, 
         full: true,
         required: true,
     },

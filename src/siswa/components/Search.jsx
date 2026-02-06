@@ -19,7 +19,7 @@ export default function SearchBar({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setOpenIndex(null); // tutup dropdown
+        setOpenIndex(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);

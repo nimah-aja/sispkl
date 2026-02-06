@@ -65,7 +65,7 @@ export default function IndustriPage() {
   const [selectedPembimbing, setSelectedPembimbing] = useState("");
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [modeView, setModeView] = useState("master"); 
-  // "master" | "statistik"
+
   
 
   const [industriStatistik, setIndustriStatistik] = useState([]);
@@ -111,7 +111,7 @@ export default function IndustriPage() {
         const jurusanData = await getJurusan();
         setJurusanList(jurusanData); 
       } catch (err) {
-        console.error("Gagal ambil data jurusan:", err);
+        console.error("Gagal ambil data konsentrasi keahlian:", err);
       }
     };
   
@@ -184,7 +184,7 @@ export default function IndustriPage() {
     ...new Set(industri.map((b) => b.bidang).filter(Boolean)),
   ];
 
-  // Filter data berdasarkan jurusan (nama), bukan id
+  // Filter data berdasarkan jurusan 
   const filteredData = mergedIndustri.filter((b) => {
     const s = search.toLowerCase();
 
@@ -309,7 +309,7 @@ export default function IndustriPage() {
       "No. Telp": item.no_telp,
       Pembimbing: item.pic,
       "No. Telp Pembimbing": item.pic_telp,
-      Jurusan: item.jurusan_nama,
+      "Konsentrasi Keahlian": item.jurusan_nama,
     })),
   [dataWithNo]
 );
@@ -373,7 +373,7 @@ const handleExportExcel = () => {
 
               // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("jurusan not found")) {
-                toast.error("jurusan tidak tersedia di sistem");
+                toast.error("konsentrasi keahlian tidak tersedia di sistem");
                 return; 
               }
 
@@ -412,13 +412,13 @@ const handleExportExcel = () => {
         <SaveConfirmationModal
           isOpen={isConfirmSaveOpen}
           title="Konfirmasi Simpan"
-          message="Apakah kamu yakin ingin menyimpan data jurusan ini?"
+          message="Apakah kamu yakin ingin menyimpan data industri ini?"
           onClose={() => setIsConfirmSaveOpen(false)}
           onSave={async () => {
             try {
               await createIndustri(pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil ditambahkan");
+              toast.success("Data industri berhasil ditambahkan");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -426,7 +426,7 @@ const handleExportExcel = () => {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal menambahkan data");
               }
@@ -474,7 +474,7 @@ const handleExportExcel = () => {
 
               // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("jurusan not found")) {
-                toast.error("jurusan tidak tersedia di sistem");
+                toast.error("konsentrasi keahlian tidak tersedia di sistem");
                 return; 
               }
 
@@ -519,7 +519,7 @@ const handleExportExcel = () => {
             try {
               await updateIndustri(selectedRow.id, pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil diperbarui");
+              toast.success("Data industri berhasil diperbarui");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -527,7 +527,7 @@ const handleExportExcel = () => {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal memperbarui data");
               }
@@ -636,46 +636,46 @@ const handleExportExcel = () => {
                   expandedRowId={expandedRowId}
                   renderExpandedRow={(row) => (
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-  <div className="flex flex-col items-center text-center">
-    <div className="flex items-center gap-1 font-semibold">
-      <Users size={16} />
-      <span>Kuota</span>
-    </div>
-    <p className="mt-1 font-semibold">{row.kuota_siswa || "-" }</p>
-  </div>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <Users size={16} />
+                          <span>Kuota</span>
+                        </div>
+                        <p className="mt-1 font-semibold">{row.kuota_siswa || "-" }</p>
+                      </div>
 
-  <div className="flex flex-col items-center text-center">
-    <div className="flex items-center gap-1 font-semibold">
-      <UserCheck size={16} />
-      <span>Siswa Aktif</span>
-    </div>
-    <p className="mt-1 font-semibold">{row.active_students || "-"}</p>
-  </div>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <UserCheck size={16} />
+                          <span>Siswa Aktif</span>
+                        </div>
+                        <p className="mt-1 font-semibold">{row.active_students || "-"}</p>
+                      </div>
 
-  <div className="flex flex-col items-center text-center">
-    <div className="flex items-center gap-1 font-semibold">
-      <Clock size={16} />
-      <span>Pending</span>
-    </div>
-    <p className="mt-1 font-semibold">{row.pending_applications || "-"}</p>
-  </div>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <Clock size={16} />
+                          <span>Pending</span>
+                        </div>
+                        <p className="mt-1 font-semibold">{row.pending_applications || "-"}</p>
+                      </div>
 
-  <div className="flex flex-col items-center text-center">
-    <div className="flex items-center gap-1 font-semibold">
-      <CheckCircle size={16} />
-      <span>Disetujui</span>
-    </div>
-    <p className="mt-1 font-semibold">{row.approved_applications || "-"}</p>
-  </div>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <CheckCircle size={16} />
+                          <span>Disetujui</span>
+                        </div>
+                        <p className="mt-1 font-semibold">{row.approved_applications || "-"}</p>
+                      </div>
 
-  <div className="flex flex-col items-center text-center">
-    <div className="flex items-center gap-1 font-semibold">
-      <UserMinus size={16} />
-      <span>Sisa</span>
-    </div>
-    <p className="mt-1 font-semibold">{row.remaining_slots || "-"}</p>
-  </div>
-</div>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <UserMinus size={16} />
+                          <span>Sisa</span>
+                        </div>
+                        <p className="mt-1 font-semibold">{row.remaining_slots || "-"}</p>
+                      </div>
+                    </div>
 
                   )}
                 />

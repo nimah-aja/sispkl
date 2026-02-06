@@ -1,7 +1,6 @@
-// utils/services/industri.js
 import axios from "../../axiosInstance"; 
 
-/* ================= LIST AVAILABLE INDUSTRI ================= */
+/*  LIST AVAILABLE INDUSTRI  */
 export const getAvailableIndustri = async () => {
   try {
     const res = await axios.get("/api/pkl/industri/available");
@@ -12,7 +11,7 @@ export const getAvailableIndustri = async () => {
   }
 };
 
-/* ================= GET INDUSTRI BY ID ================= */
+/*  GET INDUSTRI BY ID  */
 export const getIndustriById = async (id) => {
   try {
     const res = await axios.get(`/api/pkl/industri/${id}`);

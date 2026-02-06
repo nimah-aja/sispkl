@@ -315,10 +315,9 @@ export default function Add({
   const handleResetClick = () => {
     const form = document.getElementById("addForm");
     if (form) {
-      form.reset(); // reset semua input
+      form.reset(); 
     }
 
-    // reset juga state-state pendukung seperti date, dropdown, dsb
     setFieldErrors({});
     setSelectedValues(initialData?.roles || []);
     setSelectedLabels({});

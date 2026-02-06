@@ -256,7 +256,7 @@ const DataPengajuanPKL = () => {
                 { name: "nama_siswa", label: "Nama Siswa" },
                 { name: "nisn", label: "NISN" },
                 { name: "kelas", label: "Kelas" },
-                { name: "jurusan", label: "Jurusan" },
+                { name: "jurusan", label: "Kompetensi Keahlian" },
                 { name: "status", label: "Status" },
                 { name: "tanggal_permohonan", label: "Tanggal Pengajuan" },
               ]}

@@ -27,7 +27,7 @@ export default function IndustriPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================= FETCH DATA ================= */
+  /*  FETCH DATA  */
   useEffect(() => {
     const fetchIndustri = async () => {
       try {
@@ -52,7 +52,7 @@ export default function IndustriPage() {
     i.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  /* ================= TABLE ================= */
+  /*  TABLE  */
   const columns = [
     { label: "Nama Industri", key: "name" },
     { label: "Alamat", key: "address" },
@@ -81,7 +81,7 @@ export default function IndustriPage() {
     },
   ];
 
-  /* ================= EXPORT ================= */
+  /*  EXPORT  */
   const exportData = filteredData.map((d, i) => ({
     No: i + 1,
     ID: d.id,

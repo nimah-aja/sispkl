@@ -53,7 +53,7 @@ export default function SuratPengantaranPage() {
     nipKepsek: "19700210 199802 2009",
   });
 
-  // State untuk guru yang ditugaskan (hanya 1 guru) - SESUAI GAMBAR
+  // State untuk guru yang ditugaskan 
   const [guruPenugasan, setGuruPenugasan] = useState([
     {
       id: 1,
@@ -64,7 +64,7 @@ export default function SuratPengantaranPage() {
     },
   ]);
 
-  // State untuk form input - SESUAI GAMBAR
+  // State untuk form input 
   const [formData, setFormData] = useState({
     nomorSurat: "800 / 376 / 101.6.9.19 /2025",
     keperluan: "Penjemputan Siswa Praktik Kerja Lapangan (PKL)",
@@ -258,7 +258,7 @@ export default function SuratPengantaranPage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Format khusus untuk nama kepala sekolah (pastikan gelar benar)
+    // Format khusus untuk nama kepala sekolah
     if (name === "namaKepsek") {
       // Pastikan format gelar benar
       const formattedValue = value
@@ -276,7 +276,7 @@ export default function SuratPengantaranPage() {
     }
   };
 
-  // Handle perubahan input guru (dropdown) - menggunakan ID guru
+  // Handle perubahan input guru 
   const handleGuruSelectChange = (guruId) => {
     const selectedGuru = guruList.find((g) => g.id === parseInt(guruId));
 
@@ -313,7 +313,6 @@ export default function SuratPengantaranPage() {
       guru1: {
         ...prev.guru1,
         [field]: value,
-        // Reset guruId jika diubah manual
         ...(field === "nama" ? { guruId: "" } : {}),
       },
     }));
@@ -375,7 +374,7 @@ export default function SuratPengantaranPage() {
     toast.success("Surat tugas berhasil disimpan!");
   };
 
-  // Fungsi untuk generate dan print PDF - POSISI TANDA TANGAN DIPERBAIKI
+  // Fungsi untuk generate dan print PDF 
   const handlePrintPDF = () => {
     setGeneratingPDF(true);
 
@@ -395,7 +394,7 @@ export default function SuratPengantaranPage() {
       const pageWidth = 210;
       let yPosition = 30;
 
-      // ===== KOP SURAT =====
+      //  KOP SURAT 
       // Logo di kiri (ukuran lebih besar sesuai gambar)
       if (logo.preview) {
         try {
@@ -406,8 +405,8 @@ export default function SuratPengantaranPage() {
         }
       }
 
-      // Header teks (di tengah dengan jarak dari logo)
-      const textStartX = marginLeft + 30; // Mulai dari setelah logo
+      // Header teks 
+      const textStartX = marginLeft + 30; logo
 
       // PEMERINTAH PROVINSI JAWA TIMUR
       doc.setFont("times", "bold");
@@ -423,7 +422,7 @@ export default function SuratPengantaranPage() {
       doc.setFontSize(16);
       doc.text("SMK NEGERI 2 SINGOSARI", pageWidth / 2, 40, { align: "center" });
 
-      // Alamat (font lebih kecil)
+      // Alamat 
       doc.setFont("times", "normal");
       doc.setFontSize(10);
       doc.text(
@@ -438,19 +437,19 @@ export default function SuratPengantaranPage() {
 
       yPosition = 60;
 
-      // Garis pemisah tipis (seperti di gambar)
+      // Garis pemisah tipis 
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.2);
       doc.line(marginLeft, yPosition, pageWidth - marginRight, yPosition);
 
       yPosition += 15;
 
-      // ===== JUDUL SURAT TUGAS =====
+      //  JUDUL SURAT TUGAS 
       doc.setFont("times", "bold");
       doc.setFontSize(14);
       doc.text("SURAT TUGAS", pageWidth / 2, yPosition, { align: "center" });
 
-      // Nomor Surat (teks lebih kecil)
+      // Nomor Surat
       yPosition += 10;
       doc.setFont("times", "normal");
       doc.setFontSize(11);
@@ -463,7 +462,7 @@ export default function SuratPengantaranPage() {
 
       yPosition += 15;
 
-      // ===== ISI SURAT =====
+      //  ISI SURAT 
       doc.setFontSize(12);
       doc.text(
         "Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang menugaskan kepada :",
@@ -473,7 +472,7 @@ export default function SuratPengantaranPage() {
 
       yPosition += 10;
 
-      // Tabel Guru yang Ditugaskan (hanya 1 baris) - SESUAI GAMBAR
+      // Tabel Guru yang Ditugaskan
       const tableHeaders = [["NO", "NAMA", "JABATAN", "DINAS"]];
       const tableBody = guruPenugasan.map((guru, index) => [
         `${index + 1}`,
@@ -517,11 +516,11 @@ export default function SuratPengantaranPage() {
       let finalY = doc.lastAutoTable?.finalY || yPosition + 20;
       yPosition = finalY + 10;
 
-      // ===== DATA PELAKSANAAN =====
+      //  DATA PELAKSANAAN 
       doc.setFontSize(12);
       doc.setFont("times", "normal");
 
-      // Label bold, isi normal (seperti di gambar)
+      // Label bold
       const labelWidth = 40;
       const colonWidth = 5;
       const valueStartX = marginLeft + labelWidth + colonWidth;
@@ -554,7 +553,7 @@ export default function SuratPengantaranPage() {
       doc.text(`: ${dataSuratTugas.tempat}`, valueStartX, yPosition);
       yPosition += 7;
 
-      // Alamat (multi-line)
+      // Alamat 
       doc.setFont("times", "bold");
       doc.text("Alamat", marginLeft, yPosition);
       doc.setFont("times", "normal");
@@ -565,13 +564,12 @@ export default function SuratPengantaranPage() {
         maxAlamatWidth,
       );
       
-      // Mulai dari baris pertama di sebelah "Alamat :"
       doc.text(alamatLines, valueStartX, yPosition);
       yPosition += alamatLines.length * 5;
 
       yPosition += 15;
 
-      // ===== PENUTUP SURAT =====
+      //  PENUTUP SURAT 
       doc.setFontSize(12);
       doc.text(
         "Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya",
@@ -587,10 +585,10 @@ export default function SuratPengantaranPage() {
 
       yPosition += 20;
 
-      // ===== TANDA TANGAN ===== POSISI DIPERBAIKI SESUAI GAMBAR
+      //  TANDA TANGAN 
       const rightAlignX = pageWidth - marginRight;
 
-      // Tanggal - POSISI LEBIH KE BAWAH
+      // Tanggal
       doc.text(
         `Singosari, ${dataSuratTugas.tanggalDibuat}`,
         rightAlignX,
@@ -598,8 +596,8 @@ export default function SuratPengantaranPage() {
         { align: "right" },
       );
       
-      // Jarak antara tanggal dan jabatan - DIPERKECIL (tidak selebar sebelumnya)
-      yPosition += 25; // Dikurangi dari 35 menjadi 25
+      // Jarak antara tanggal dan jabatan 
+      yPosition += 25; 
       
       // Jabatan
       doc.text(
@@ -609,10 +607,10 @@ export default function SuratPengantaranPage() {
         { align: "right" },
       );
 
-      // Jarak antara jabatan dan nama - DIPERKECIL (tidak terlalu besar)
-      yPosition += 40; // Dikurangi dari 50 menjadi 40
+      // Jarak antara jabatan dan nama
+      yPosition += 40; 
       
-      // Nama Kepala Sekolah (BOLD)
+      // Nama Kepala Sekolah 
       doc.setFont("times", "bold");
       doc.setFontSize(13);
       doc.text(dataSuratTugas.namaKepsek, rightAlignX, yPosition, {
@@ -637,13 +635,13 @@ export default function SuratPengantaranPage() {
         { align: "right" },
       );
 
-      // ===== SAVE PDF =====
+      //  SAVE PDF 
       const fileName = `Surat_Tugas_${formData.nomorSurat.replace(/\//g, "_")}.pdf`;
       doc.save(fileName);
 
       toast.success("PDF berhasil diunduh!");
     } catch (error) {
-      console.error("❌ Error generating PDF:", error);
+      console.error("Error generating PDF:", error);
       toast.error("Gagal membuat PDF. Silakan coba lagi.");
     } finally {
       setGeneratingPDF(false);
@@ -704,7 +702,7 @@ export default function SuratPengantaranPage() {
 
           {/* KONTEN UTAMA - PREVIEW DAN FORM */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* KOLOM KIRI: PREVIEW SURAT - SESUAI GAMBAR */}
+            {/* KOLOM KIRI: PREVIEW SURAT */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
@@ -716,13 +714,13 @@ export default function SuratPengantaranPage() {
               </div>
 
               <div className="border border-gray-300 rounded-lg p-6 bg-gray-50 font-serif">
-                {/* KOP SURAT - SESUAI GAMBAR */}
+                {/* KOP SURAT */}
                 <div className="flex items-start gap-4 mb-4">
                   <div className="flex-shrink-0">
                     <img
                       src={logo.preview}
                       alt="Logo Provinsi Jawa Timur"
-                      className="w-20 h-24 object-contain" // Ukuran lebih besar seperti gambar
+                      className="w-20 h-24 object-contain"
                     />
                   </div>
                   <div className="flex-1 text-center">
@@ -749,7 +747,7 @@ export default function SuratPengantaranPage() {
                 {/* Garis pemisah tipis seperti di gambar */}
                 <div className="border-t border-black my-4"></div>
 
-                {/* JUDUL - SESUAI GAMBAR */}
+                {/* JUDUL  */}
                 <div className="text-center my-6">
                   <p className="font-bold text-lg tracking-wide underline decoration-2">
                     SURAT TUGAS
@@ -759,14 +757,14 @@ export default function SuratPengantaranPage() {
                   </p>
                 </div>
 
-                {/* PENUGASAN - SESUAI GAMBAR */}
+                {/* PENUGASAN  */}
                 <div className="mb-4 text-sm leading-relaxed">
                   <p>
                     Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang menugaskan kepada :
                   </p>
                 </div>
 
-                {/* TABEL GURU - SESUAI GAMBAR */}
+                {/* TABEL GURU  */}
                 <div className="mb-6">
                   <table className="w-full border-collapse border border-black text-sm">
                     <thead>
@@ -790,7 +788,7 @@ export default function SuratPengantaranPage() {
                   </table>
                 </div>
 
-                {/* DETAIL PELAKSANAAN - SESUAI GAMBAR */}
+                {/* DETAIL PELAKSANAAN  */}
                 <div className="space-y-2 mb-6 text-sm">
                   <p>
                     <span className="font-bold inline-block w-32">Keperluan</span> 
@@ -819,7 +817,7 @@ export default function SuratPengantaranPage() {
                   </p>
                 </div>
 
-                {/* PENUTUP - SESUAI GAMBAR */}
+                {/* PENUTUP */}
                 <div className="mb-8 text-sm leading-relaxed">
                   <p>
                     Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya
@@ -827,20 +825,20 @@ export default function SuratPengantaranPage() {
                   <p>dan melaporkan hasilnya kepada kepala sekolah.</p>
                 </div>
 
-                {/* TANDA TANGAN - POSISI DIPERBAIKI SESUAI GAMBAR */}
+                {/* TANDA TANGAN*/}
                 <div className="text-right text-sm">
-                  {/* Spasi untuk menurunkan tanggal - DIPERBESAR */}
-                  <div className="mb-8"></div> {/* Ditambah dari sebelumnya */}
+                  {/* Spasi untuk menurunkan tanggal  */}
+                  <div className="mb-8"></div> 
                   
                   <p>Singosari, {dataSuratTugas.tanggalDibuat}</p>
                   
-                  {/* Jarak antara tanggal dan jabatan - DIPERKECIL */}
-                  <div className="h-12"></div> {/* Dikurangi dari h-24 */}
+                  {/* Jarak antara tanggal dan jabatan */}
+                  <div className="h-12"></div>
                   
                   <p>Kepala SMK Negeri 2 Singosari</p>
                   
-                  {/* Jarak antara jabatan dan nama - DIPERKECIL */}
-                  <div className="h-24"></div> {/* Dikurangi dari h-40 */}
+                  {/* Jarak antara jabatan dan nama */}
+                  <div className="h-24"></div> 
                   
                   <p className="font-bold text-base">{dataSuratTugas.namaKepsek}</p>
                   <p className="text-xs mt-1">{dataSuratTugas.pangkatGolongan}</p>

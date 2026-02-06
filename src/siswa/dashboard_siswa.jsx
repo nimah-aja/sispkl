@@ -22,10 +22,6 @@ import Detail from "./components/Detail";
 import { connectWS, disconnectWS } from "../utils/webSocket";
 
 
-
-
-
-
 // ICONS
 import userIcon from "../assets/sidebarUsers.svg";
 import timeIcon from "../assets/timewalkel.png";
@@ -223,7 +219,7 @@ useEffect(() => {
       },
     };
 
-    // ⬆️ MASUKKAN KE AKTIVITAS PALING ATAS
+    //  MASUKKAN KE AKTIVITAS PALING ATAS
     setAktivitas((prev) => [notifBaru, ...prev]);
   });
 

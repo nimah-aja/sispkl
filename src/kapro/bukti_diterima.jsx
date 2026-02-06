@@ -35,7 +35,7 @@ export default function DataPeserta() {
   const [status, setStatus] = useState("");
   const [peserta, setPeserta] = useState([]);
 
-  const [mode, setMode] = useState("list"); // list, add, edit
+  const [mode, setMode] = useState("list"); 
   const [editData, setEditData] = useState(null);
   const [pendingData, setPendingData] = useState(null);
   const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
@@ -137,7 +137,7 @@ export default function DataPeserta() {
     No: i + 1,
     "Nama Siswa": item.nama,
     Kelas: item.kelas,
-    Jurusan: item.jurusan,
+    "Konsentrasi Keahlian": item.jurusan,
     "Nomor Industri": item.nomorIndustri,
     "Nama Industri": item.namaIndustri,
     "Alamat Industri": item.alamatIndustri,
@@ -172,7 +172,7 @@ export default function DataPeserta() {
   const inputFields = [
     { label: "Nama Siswa", name: "nama", width: "full" },
     { label: "Kelas", name: "kelas", width: "half" },
-    { label: "Jurusan", name: "jurusan", width: "half" },
+    { label: "Konsentrasi Keahlian", name: "jurusan", width: "half" },
     { label: "Nomor Industri", name: "nomorIndustri", width: "half" },
     { label: "Nama Industri", name: "namaIndustri", width: "full" },
     { label: "Alamat Industri", name: "alamatIndustri", width: "full" },

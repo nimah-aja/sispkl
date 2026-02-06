@@ -119,7 +119,6 @@ export default function DataPengajuan() {
       const pageWidth = 210;
       let yPosition = 20;
 
-      // ===== KOP SURAT =====
       // Logo
       if (logoSmk) {
         try {
@@ -152,7 +151,7 @@ export default function DataPengajuan() {
       // Spasi
       yPosition += 10;
 
-      // ===== JUDUL SURAT TUGAS =====
+      //  JUDUL SURAT TUGAS 
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text("SURAT TUGAS", pageWidth / 2, yPosition, { align: 'center' });
@@ -165,7 +164,7 @@ export default function DataPengajuan() {
 
       yPosition += 15;
 
-      // ===== ISI SURAT =====
+      //  ISI SURAT 
       doc.setFontSize(11);
       doc.text("Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang", marginLeft, yPosition);
       yPosition += 6;
@@ -216,7 +215,7 @@ export default function DataPengajuan() {
       let finalY = doc.lastAutoTable?.finalY || yPosition + 50;
       yPosition = finalY + 10;
 
-      // ===== DATA PELAKSANAAN =====
+      //  DATA PELAKSANAAN 
       doc.setFontSize(11);
 
       // Keperluan
@@ -254,14 +253,14 @@ export default function DataPengajuan() {
 
       yPosition += 15;
 
-      // ===== PENUTUP SURAT =====
+      //  PENUTUP SURAT 
       doc.text("Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya", marginLeft, yPosition);
       yPosition += 6;
       doc.text("dan melaporkan hasilnya kepada kepala sekolah.", marginLeft, yPosition);
 
       yPosition += 20;
 
-      // ===== TANDA TANGAN =====
+      //  TANDA TANGAN 
       doc.text(`Singosari, ${dataSuratTugas.tanggalDibuat}`, pageWidth - marginRight, yPosition, { align: 'right' });
       yPosition += 20;
       doc.text("Kepala SMK Negeri 2 Singosari", pageWidth - marginRight, yPosition, { align: 'right' });
@@ -275,7 +274,7 @@ export default function DataPengajuan() {
       doc.setFontSize(10);
       doc.text(`NIP. ${dataSuratTugas.nipKepsek}`, pageWidth - marginRight, yPosition, { align: 'right' });
 
-      // ===== AUTO PRINT =====
+      //  AUTO PRINT 
       doc.autoPrint({ variant: 'non-conform' });
 
       // Buka PDF di tab baru dan langsung print
@@ -291,7 +290,7 @@ export default function DataPengajuan() {
       }, 500);
 
     } catch (error) {
-      console.error("❌ Error generating PDF:", error);
+      console.error(" Error generating PDF:", error);
       alert("Gagal membuat PDF. Silakan coba lagi.");
     } finally {
       setGeneratingPDF(false);

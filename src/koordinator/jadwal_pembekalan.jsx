@@ -21,7 +21,7 @@ import addImg from "../assets/addSidebar.svg";
 import saveImg from "../assets/save.svg";
 import deleteImg from "../assets/deleteGrafik.svg";
 
-/* ================= AVATAR INISIAL ================= */
+/*  AVATAR INISIAL  */
 const AvatarInitial = ({ name }) => {
   const initials = name
     .split(" ")
@@ -62,7 +62,7 @@ const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
     role: "Koordinator",
   };
 
-  /* ================= DUMMY DATA ================= */
+  /*  DUMMY DATA  */
   useEffect(() => {
     setData([
       {
@@ -104,7 +104,7 @@ const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
     ]);
   }, []);
 
-  /* ================= FILTER ================= */
+  /*  FILTER  */
   const filteredData = data.filter((item) => {
     const matchQuery =
       item.materi.toLowerCase().includes(query.toLowerCase()) ||
@@ -121,14 +121,14 @@ const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
     setCurrentPage(1);
   }, [query, statusFilter]);
 
-  /* ================= PAGINATION ================= */
+  /*  PAGINATION  */
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  /* ================= TABLE COLUMNS ================= */
+  /*  TABLE COLUMNS  */
   const columns = [
     { label: "Tanggal", key: "tanggal" },
     { label: "Waktu", key: "waktu" },
@@ -219,7 +219,7 @@ const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
     { label: "Materi", name: "materi", width: "full" },
     { label: "Pembicara", name: "pembicara", width: "full" },
     { label: "Ruangan", name: "ruangan", width: "half" },
-    { label: "Jurusan", name: "jurusan", width: "half" },
+    { label: "Kompetensi Keahlian", name: "jurusan", width: "half" },
     {
         label: "Status",
         name: "status",
@@ -295,7 +295,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
         <Header query={query} setQuery={setQuery} user={user} />
 
         <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
-          {/* ================= TITLE ================= */}
+          {/*  TITLE  */}
           <div className="flex items-center mb-4 gap-1 w-full relative">
             <h2 className="text-white font-bold text-lg">
                 Data Jadwal Pembekalan
@@ -338,7 +338,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
             </div>
 
 
-          {/* ================= SEARCH & FILTER ================= */}
+          {/*  SEARCH & FILTER  */}
           <SearchBar
             query={query}
             setQuery={setQuery}
@@ -355,7 +355,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
             className="mb-4"
           />
 
-          {/* ================= TABLE ================= */}
+          {/*  TABLE  */}
           <Table
             columns={columns}
             data={paginatedData}
@@ -371,7 +371,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
             }}
           />
 
-          {/* ================= PAGINATION ================= */}
+          {/*  PAGINATION  */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-4 text-white">
               <span>

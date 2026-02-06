@@ -26,11 +26,11 @@ export default function CetakDokumenPKL() {
     },
   ];
 
-  /* ===================== PDF SYSTEM ===================== */
+  /*  PDF SYSTEM  */
   const handlePrint = (docTitle) => {
   const doc = new jsPDF("p", "mm", "a4");
 
-  /* ================= KOP SURAT ================= */
+  /*  KOP SURAT  */
   doc.setFont("times", "bold");
   doc.setFontSize(14);
   doc.text("SMK NEGERI 2 SINGOSARI", 105, 18, { align: "center" });
@@ -47,18 +47,18 @@ export default function CetakDokumenPKL() {
   doc.setLineWidth(0.8);
   doc.line(20, 32, 190, 32);
 
-  /* ================= TANGGAL ================= */
+  /*  TANGGAL  */
   doc.setFontSize(11);
   doc.text("Singosari, ", 190, 42, { align: "right" });
 
-  /* ================= TUJUAN ================= */
+  /*  TUJUAN  */
   doc.text("Kepada Yth.", 20, 55);
   doc.setFont("times", "bold");
   doc.text("", 20, 61);
   doc.setFont("times", "normal");
   doc.text("Di Tempat", 20, 67);
 
-  /* ================= JUDUL SURAT ================= */
+  /*  JUDUL SURAT  */
   doc.setFont("times", "bold");
   doc.setFontSize(12);
   doc.text("SURAT PERMOHONAN", 105, 80, { align: "center" });
@@ -69,7 +69,7 @@ export default function CetakDokumenPKL() {
     align: "center",
   });
 
-  /* ================= ISI SURAT ================= */
+  /*  ISI SURAT  */
   doc.setFontSize(11);
   doc.text("Dengan hormat,", 20, 100);
 
@@ -82,7 +82,7 @@ export default function CetakDokumenPKL() {
     { lineHeightFactor: 1.6 }
   );
 
-  /* ================= DATA SISWA ================= */
+  /*  DATA SISWA  */
   let y = 135;
 
   doc.text("Nama", 20, y);
@@ -97,14 +97,14 @@ export default function CetakDokumenPKL() {
   doc.text(": XII RPL 1", 60, y);
 
   y += 8;
-  doc.text("Jurusan", 20, y);
+  doc.text("Konsentrasi Keahlian", 20, y);
   doc.text(": Rekayasa Perangkat Lunak", 60, y);
 
   y += 8;
   doc.text("Periode PKL", 20, y);
   doc.text(": 1 November – 31 Desember 2026", 60, y);
 
-  /* ================= PENUTUP ================= */
+  /*  PENUTUP  */
   doc.text(
     "Demikian surat permohonan ini kami sampaikan.\n" +
       "Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.",
@@ -113,7 +113,7 @@ export default function CetakDokumenPKL() {
     { lineHeightFactor: 1.6 }
   );
 
-  /* ================= TANDA TANGAN ================= */
+  /*  TANDA TANGAN  */
   doc.text("Kepala Sekolah,", 130, 220);
   doc.text("SMK Negeri 2 Singosari", 130, 226);
 
@@ -123,11 +123,11 @@ export default function CetakDokumenPKL() {
   doc.setFont("times", "normal");
   doc.text("NIP. 196505121990031004", 130, 256);
 
-  /* ================= SAVE ================= */
+  /*  SAVE  */
   doc.save(`${docTitle.replaceAll(" ", "_")}.pdf`);
 };
 
-  /* ===================== END PDF ===================== */
+  /*  END PDF  */
 
   const handleBack = () => {
     window.history.back();

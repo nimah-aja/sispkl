@@ -393,7 +393,7 @@ useEffect(() => {
                 <input
                   type={
                     isSiswa
-                      ? "text" // NISN tetap text biar bisa dikontrol
+                      ? "text" 
                       : isPasswordField && showPassword
                       ? "text"
                       : inputConfig.secondField.type

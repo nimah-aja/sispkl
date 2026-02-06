@@ -40,15 +40,12 @@ export default function GuruPage() {
     role: "Pembimbing",
   };
 
-  // =========================
   // DATA (INDUSTRI)
-  // =========================
   useEffect(() => {
     const fetchIndustri = async () => {
         setLoading(true);
         try {
-        const res = await getGuruIndustri(); // panggil API
-        // Map sesuai format tabel
+        const res = await getGuruIndustri(); 
         const mapped = res.data.map((item, i) => ({
             no: i + 1,
             industri_id: item.industri_id,
@@ -68,9 +65,7 @@ export default function GuruPage() {
     }, []);
 
 
-  // =========================
   // FILTER SEARCH
-  // =========================
   const filteredData = industriData.filter((item) =>
     item.nama_industri.toLowerCase().includes(search.toLowerCase())
     );
@@ -83,9 +78,8 @@ export default function GuruPage() {
     ...item,
   }));
 
-  // =========================
+ 
   // PAGINATION
-  // =========================
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -93,18 +87,14 @@ export default function GuruPage() {
     );
 
 
-  // =========================
-  // KOLOM TABEL (DIUBAH)
-  // =========================
+  // KOLOM TABEL 
   const columns = [
     { label: "No", key: "no", sortable: false },
     { label: "Nama Industri", key: "nama_industri" },
     { label: "Jumlah Siswa", key: "jumlah_siswa", sortable: false },
   ];
 
-  // =========================
   // EXPORT
-  // =========================
   const exportData = filteredData.map((item) => ({
     No: item.no,
     "Nama Industri": item.nama_industri,
@@ -134,9 +124,7 @@ export default function GuruPage() {
     XLSX.writeFile(workbook, "data_industri.xlsx");
   };
 
-  // =========================
   // RENDER
-  // =========================
   return (
     <div className="bg-white min-h-screen w-full">
       <Header user={user} />

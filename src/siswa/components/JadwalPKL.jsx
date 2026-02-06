@@ -42,9 +42,7 @@ export default function JadwalPKLCard({ dataPKL}) {
     }
   };
 
-  // ================================
   // LOAD INDUSTRI
-  // ================================
   useEffect(() => {
     const fetchIndustri = async () => {
       if (!dataPKL?.industri_id) {
@@ -68,9 +66,7 @@ export default function JadwalPKLCard({ dataPKL}) {
     fetchIndustri();
   }, [dataPKL]);
 
-  // ================================
   // EMPTY STATE
-  // ================================
   if (!dataPKL || pklStatus === "pending" || pklStatus === "rejected") {
     return (
       <div className="bg-white p-6 rounded-2xl border-2 border-[#6e0f0f]
@@ -83,9 +79,7 @@ export default function JadwalPKLCard({ dataPKL}) {
     );
   }
 
-  // ================================
   // FORMAT & STATUS
-  // ================================
   const now = dayjs();
 
   const status = (start, end) => {

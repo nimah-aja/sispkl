@@ -1,43 +1,43 @@
 // utils/services/admin/tahunAjaran.js
 import axios from "../../axiosInstance";
 
-/* ================= CREATE ================= */
+/*  CREATE  */
 export const createTahunAjaran = async (tahunData) => {
   const res = await axios.post("/api/tahun-ajaran", tahunData);
   return res.data;
 };
 
-/* ================= LIST ALL ================= */
+/*  LIST ALL  */
 export const getTahunAjaran = async () => {
   const res = await axios.get("/api/tahun-ajaran");
   return res.data;
 };
 
-/* ================= GET ACTIVE ================= */
+/*  GET ACTIVE  */
 export const getActiveTahunAjaran = async () => {
   const res = await axios.get("/api/tahun-ajaran/active");
   return res.data;
 };
 
-/* ================= GET BY ID ================= */
+/*  GET BY ID  */
 export const getTahunAjaranById = async (id) => {
   const res = await axios.get(`/api/tahun-ajaran/${id}`);
   return res.data;
 };
 
-/* ================= UPDATE ================= */
+/*  UPDATE  */
 export const updateTahunAjaran = async (id, updatedData) => {
   const res = await axios.put(`/api/tahun-ajaran/${id}`, updatedData);
   return res.data;
 };
 
-/* ================= DELETE ================= */
+/*  DELETE  */
 export const deleteTahunAjaran = async (id) => {
   const res = await axios.delete(`/api/tahun-ajaran/${id}`);
   return res.data;
 };
 
-/* ================= ACTIVATE ================= */
+/*  ACTIVATE  */
 export const activateTahunAjaran = async (id) => {
   const res = await axios.put(`/api/tahun-ajaran/${id}/activate`);
   return res.data;

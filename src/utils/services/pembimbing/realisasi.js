@@ -1,6 +1,6 @@
 import axios from "../../axiosInstance";
 
-/* ================= LIST REALISASI SAYA ================= */
+/*  LIST REALISASI SAYA  */
 export const getMyRealisasiKegiatan = async () => {
   try {
     const res = await axios.get("/api/realisasi-kegiatan/me");
@@ -11,7 +11,7 @@ export const getMyRealisasiKegiatan = async () => {
   }
 };
 
-/* ================= SUBMIT REALISASI ================= */
+/*  SUBMIT REALISASI  */
 export const submitRealisasiKegiatan = async (payload) => {
   try {
     const res = await axios.post("/api/realisasi-kegiatan/submit", payload);
@@ -22,7 +22,7 @@ export const submitRealisasiKegiatan = async (payload) => {
   }
 };
 
-/* ================= GET REALISASI BY ID ================= */
+/*  GET REALISASI BY ID  */
 export const getRealisasiById = async (id) => {
   try {
     const res = await axios.get(`/api/realisasi-kegiatan/${id}`);

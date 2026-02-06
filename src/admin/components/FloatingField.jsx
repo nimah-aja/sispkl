@@ -93,7 +93,7 @@ export default function FloatingField({ label, value, onChange, type = "text", o
         {label}
       </label>
 
-      {/* 🔥 TEKS ERROR */}
+      {/* TEKS ERROR */}
       {error && (
         <div className="absolute  top-13 flex items-center gap-1 text-xs text-red-500">
           <AlertCircle size={14} />

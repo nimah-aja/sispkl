@@ -103,7 +103,7 @@ export default function PKLDashboard() {
   //   return () => clearInterval(interval);
   // }, []);
 
-  // === FetchData dengan caching ===
+  //  FetchData dengan caching 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -137,7 +137,7 @@ export default function PKLDashboard() {
         axios.get("/api/siswa"),
         axios.get("/api/guru"),
         axios.get("/api/industri"),
-        getPKLApplications(), // 🔥 sama persis kayak kaprog
+        getPKLApplications(),
       ]);
 
 
@@ -150,7 +150,7 @@ export default function PKLDashboard() {
 
       const pengajuanData = pengajuanRes?.data || [];
 
-      // === PENGAJUAN PKL PER KELAS ===
+      //  PENGAJUAN PKL PER KELAS 
       const pengajuanKelasGrouped = {};
 
       pengajuanData.forEach((p) => {
@@ -190,7 +190,7 @@ export default function PKLDashboard() {
 
 
 
-      // === KELAS PER JURUSAN ===
+      // KELAS PER JURUSAN
       const jurusanMap = {};
       jurusanData.forEach((j) => {
         jurusanMap[j.id] = j.kode || j.kode_jurusan || `JRS${j.id}`;
@@ -207,7 +207,7 @@ export default function PKLDashboard() {
         value: kelasGrouped[j],
       }));
 
-      // === GURU PER ROLE ===
+      // GURU PER ROLE 
       const roleGrouped = { Koordinator: 0, Pembimbing: 0, Wali_Kelas: 0, Kaprog: 0 };
       guruData.forEach((g) => {
         if (g.is_koordinator) roleGrouped.Koordinator++;
@@ -221,7 +221,7 @@ export default function PKLDashboard() {
         value: roleGrouped[r],
       }));
 
-      // === MURID PER KELAS ===
+      // MURID PER KELAS 
       const muridGrouped = {};
       kelasData.forEach((k) => {
         const jumlah = siswaData.filter((s) => s.kelas_id === k.id).length;
@@ -287,7 +287,7 @@ export default function PKLDashboard() {
                     key={idx}
                     item={item}
                     onClick={() => {
-                      if (item.title.includes("Jurusan")) navigate("/admin/jurusan");
+                      if (item.title.includes("Konsentrasi")) navigate("/admin/konsentrasi_keahlian");
                       else if (item.title.includes("Kelas")) navigate("/admin/kelas");
                       else if (item.title.includes("Siswa")) navigate("/admin/siswa");
                       else if (item.title.includes("Guru")) navigate("/admin/guru");
