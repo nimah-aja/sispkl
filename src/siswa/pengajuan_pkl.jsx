@@ -3,7 +3,6 @@ import Add from "./components/Add";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-// API baru
 import { getAvailableIndustri } from "../utils/services/siswa/industri";
 import { submitPengajuanPKL } from "../utils/services/siswa/pengajuan_pkl";
 
@@ -16,12 +15,12 @@ export default function PengajuanPKL() {
     const fetchIndustri = async () => {
       try {
         const response = await getAvailableIndustri();
-        const data = response.data; // ambil array data
+        const data = response.data; 
 
         // format untuk dropdown: label = name, value = id
         const formatted = data.map((item) => ({
-          label: item.name, // tampil di dropdown
-          value: item.id,   // dikirim saat submit
+          label: item.name,
+          value: item.id,   
         }));
 
         setListIndustri(formatted);
@@ -53,7 +52,7 @@ export default function PengajuanPKL() {
 
   const handleSubmit = async (formData) => {
     const payload = {
-      industri_id: parseInt(formData.get("industri_id")), // tetap pakai id
+      industri_id: parseInt(formData.get("industri_id")), 
       catatan: formData.get("catatan"),
     };
 

@@ -18,7 +18,7 @@ export default function Sidebar({ active, setActive }) {
 
   const items = [
     { title: "Beranda", icon: sidebarDashboard, route: "/admin", key: "sidebarDashboard" },
-    { title: "Konsentrasi Keahlian", icon: sidebarGrad, route: "/admin/jurusan", key: "sidebarGrad" },
+    { title: "Konsentrasi Keahlian", icon: sidebarGrad, route: "/admin/konsentrasi_keahlian", key: "sidebarGrad" },
     { title: "Kelas", icon: sidebarBook, route: "/admin/kelas", key: "sidebarBook" },
     { title: "Siswa", icon: sidebarUsers, route: "/admin/siswa", key: "sidebarUsers" },
     { title: "Guru", icon: sidebarChalk, route: "/admin/guru", key: "sidebarChalk" },

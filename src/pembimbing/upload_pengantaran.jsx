@@ -37,16 +37,14 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-/* =========================
-   CloudUpload (INLINE) - MULTIPLE VERSION
-========================= */
+/* CloudUpload (INLINE)  */
 function CloudUpload({ images, setImages, setAllUploaded }) {
   const fileInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
 
-  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_SIZE = 5 * 1024 * 1024;
   const ALLOWED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
   const validateFile = (file) => {
@@ -81,7 +79,7 @@ function CloudUpload({ images, setImages, setAllUploaded }) {
   const onFileSelect = (e) => {
     const files = Array.from(e.target.files || []);
     handleFiles(files);
-    e.target.value = ""; // Reset input
+    e.target.value = ""; 
   };
 
   const handleFiles = async (files) => {
@@ -96,7 +94,7 @@ function CloudUpload({ images, setImages, setAllUploaded }) {
     
     for (let i = 0; i < validFiles.length; i++) {
       const file = validFiles[i];
-      const index = images.length + i; // Index untuk tracking progress
+      const index = images.length + i; 
       
       try {
         // Set progress awal
@@ -128,7 +126,7 @@ function CloudUpload({ images, setImages, setAllUploaded }) {
           originalName: file.name,
           originalSize: file.size,
           fileType: file.type,
-          preview: URL.createObjectURL(file), // Local preview URL
+          preview: URL.createObjectURL(file), 
           uploadedAt: new Date().toISOString()
         };
 
@@ -379,9 +377,7 @@ function CloudUpload({ images, setImages, setAllUploaded }) {
   );
 }
 
-/* =========================
-   PAGE
-========================= */
+/* PAGE*/
 export default function UploadBuktiPengantaran() {
   const [images, setImages] = useState([]);
   const [formKey, setFormKey] = useState(0);
@@ -460,9 +456,8 @@ export default function UploadBuktiPengantaran() {
       setAllImagesUploaded(false);
       setFormKey((k) => k + 1);
 
-      // =====> NAVIGASI KEMBALI KE HALAMAN SEBELUMNYA
-      navigate(-1); // balik 1 step ke halaman sebelumnya
-      // atau: navigate("/guru/pembimbing"); // kalau mau ke route tertentu
+      //  NAVIGASI KEMBALI KE HALAMAN SEBELUMNYA
+      navigate(-1); 
 
     } catch (err) {
       console.error(err);

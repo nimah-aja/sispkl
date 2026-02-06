@@ -39,7 +39,7 @@ const RiwayatPengajuan = () => {
         getGuru(),
       ]);
 
-      // 🔁 bikin map
+      // bikin map
       const industriMap = {};
       industriRes.forEach(i => {
         industriMap[i.id] = i.nama;

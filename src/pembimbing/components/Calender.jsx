@@ -802,7 +802,7 @@ const CalendarPKL = ({ pklData }) => {
               <div className="px-5 pb-2">
                 <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-2">
                   <p className="text-yellow-300 text-sm font-medium">
-                    ⚠️ Mode Offline - Data akan disimpan secara lokal
+                     Mode Offline - Data akan disimpan secara lokal
                   </p>
                 </div>
               </div>

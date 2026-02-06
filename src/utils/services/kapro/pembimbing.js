@@ -8,24 +8,20 @@ export const getPembimbingPKL = async () => {
     res.data ||
     [];
 
-  // 🔥 FORMAT FINAL UNTUK DROPDOWN
+  // FORMAT FINAL UNTUK DROPDOWN
   return data.map((p) => ({
     label: p.nama,
-    value: p.id, // amankan tipe
+    value: p.id, 
   }));
 };
 
-/**
- * Total guru pembimbing PKL
- */
+// Total guru pembimbing PKL
 export const getTotalPembimbing = async () => {
   const list = await getPembimbingPKL();
   return list.length;
 };
 
-/**
- * Ambil list pembimbing PKL (FULL DATA untuk table)
- */
+// Ambil list pembimbing PKL 
 export const getPembimbingList = async () => {
   const res = await axios.get("/api/pkl/pembimbing");
 

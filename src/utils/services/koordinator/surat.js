@@ -10,11 +10,10 @@ export const lettersApi = axios.create({
 
 /**
  * Generate Lembar Persetujuan PKL PDF dan langsung download
- * POST /api/v1/letters/lembar-persetujuan
  */
 export const generateAndDownloadLembarPersetujuan = async (payload) => {
   try {
-    console.log("📤 Mengirim ke API /api/v1/letters/lembar-persetujuan");
+    console.log(" Mengirim ke API /api/v1/letters/lembar-persetujuan");
     console.log("Payload:", JSON.stringify(payload, null, 2));
     
     // 1. Generate PDF
@@ -23,7 +22,7 @@ export const generateAndDownloadLembarPersetujuan = async (payload) => {
       payload
     );
     
-    console.log("✅ Response generate:", generateResponse.data);
+    console.log("Response generate:", generateResponse.data);
     
     // 2. Download PDF
     const filename = generateResponse.data.filename;
@@ -31,7 +30,7 @@ export const generateAndDownloadLembarPersetujuan = async (payload) => {
       throw new Error("Filename tidak ditemukan di response");
     }
     
-    console.log("📥 Filename untuk download:", filename);
+    console.log("Filename untuk download:", filename);
     
     const downloadResponse = await lettersApi.get(
       `/api/v1/letters/download/${filename}`,
@@ -56,7 +55,7 @@ export const generateAndDownloadLembarPersetujuan = async (payload) => {
     return filename;
     
   } catch (error) {
-    console.error("❌ Error generateAndDownloadLembarPersetujuan:", error);
+    console.error(" Error generateAndDownloadLembarPersetujuan:", error);
     
     // Tampilkan error detail
     if (error.response) {
@@ -83,11 +82,10 @@ export const generateAndDownloadLembarPersetujuan = async (payload) => {
 
 /**
  * Generate Surat Tugas PDF dan langsung download
- * POST /api/v1/letters/surat-tugas
  */
 export const generateAndDownloadSuratTugas = async (payload) => {
   try {
-    console.log("📤 Mengirim ke API /api/v1/letters/surat-tugas");
+    console.log(" Mengirim ke API /api/v1/letters/surat-tugas");
     console.log("Payload:", JSON.stringify(payload, null, 2));
     
     // 1. Generate PDF
@@ -96,7 +94,7 @@ export const generateAndDownloadSuratTugas = async (payload) => {
       payload
     );
     
-    console.log("✅ Response generate:", generateResponse.data);
+    console.log(" Response generate:", generateResponse.data);
     
     // 2. Download PDF
     const filename = generateResponse.data.filename;
@@ -127,7 +125,7 @@ export const generateAndDownloadSuratTugas = async (payload) => {
     return filename;
     
   } catch (error) {
-    console.error("❌ Error generateAndDownloadSuratTugas:", error);
+    console.error(" Error generateAndDownloadSuratTugas:", error);
     
     if (error.response) {
       console.error("Response status:", error.response.status);

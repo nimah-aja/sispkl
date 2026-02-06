@@ -163,12 +163,12 @@ const DataPengajuanPKL = () => {
         toast.success("Pengajuan PKL berhasil ditolak");
         }
 
-        // 🔥 TUTUP MODAL
+        // TUTUP MODAL
         setOpenDetail(false);
         setDetailMode("view");
         setDetailData(null);
 
-        // 🔥 REFRESH LIST
+        // REFRESH LIST
         fetchSubmissions();
 
     } catch (err) {
@@ -219,7 +219,7 @@ const DataPengajuanPKL = () => {
     useEffect(() => {
   const fetchPembimbing = async () => {
     const res = await getPembimbingPKL();
-    setPembimbingOptions(res); // sudah format dropdown
+    setPembimbingOptions(res); 
   };
 
   fetchPembimbing();
@@ -230,7 +230,7 @@ const DataPengajuanPKL = () => {
     { name: "nama_siswa", label: "Nama Siswa" },
     { name: "nisn", label: "NISN" },
     { name: "kelas", label: "Kelas" },
-    { name: "jurusan", label: "Jurusan" },
+    { name: "jurusan", label: "Kompetensi Keahlian" },
     { name: "status", label: "Status" },
     ];
 
@@ -248,7 +248,7 @@ const DataPengajuanPKL = () => {
         name: "pembimbing_id",
         label: "Nama Pembimbing",
         type: "select",
-        options: pembimbingOptions, // atau simpan di state biar rapi
+        options: pembimbingOptions, 
         full: true,
         required: true,
     },

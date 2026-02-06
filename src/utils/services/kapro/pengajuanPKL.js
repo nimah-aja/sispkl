@@ -34,7 +34,7 @@ export const getPKLApplications = async () => {
 };
 
 /**
- * ✅ Hitung summary pengajuan PKL
+ *  Hitung summary pengajuan PKL
  */
 export const getPKLApplicationSummary = async () => {
   const { data } = await getPKLApplications();

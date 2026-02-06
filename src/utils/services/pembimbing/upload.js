@@ -19,12 +19,12 @@ export const uploadImage = async (file) => {
     // 3. Kirim sebagai raw binary
     const response = await axios.post(
       "/api/upload/image",
-      processedBlob, // Raw binary file
+      processedBlob,
       {
         headers: {
-          "Content-Type": "image/jpeg", // Sesuai dengan yang diharapkan server
+          "Content-Type": "image/jpeg", 
         },
-        timeout: 60000, // 60 detik
+        timeout: 60000, 
       }
     );
 
@@ -61,7 +61,7 @@ const convertToJpeg = (file) => {
             );
           },
           "image/jpeg",
-          0.9 // Kualitas 90%
+          0.9 
         );
       };
       img.onerror = reject;

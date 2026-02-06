@@ -34,7 +34,7 @@ export default function TahunAjaranPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [mode, setMode] = useState("list"); // list, add, edit
+  const [mode, setMode] = useState("list"); 
   const [selectedRow, setSelectedRow] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   

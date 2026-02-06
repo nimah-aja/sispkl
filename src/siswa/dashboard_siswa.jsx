@@ -15,15 +15,10 @@ import PKLProgressCircle from "./components/Progress";
 import { getPengajuanMe } from "../utils/services/siswa/pengajuan_pkl";
 import {getIndustri} from "../utils/services/admin/get_industri";
 import {getGuru} from "../utils/services/admin/get_guru";
-import ChatbotIframe from "./components/Chatbot";
 import { createPortal } from "react-dom";
 import Detail from "./components/Detail";
 
 import { connectWS, disconnectWS } from "../utils/webSocket";
-
-
-
-
 
 
 // ICONS
@@ -223,7 +218,7 @@ useEffect(() => {
       },
     };
 
-    // ⬆️ MASUKKAN KE AKTIVITAS PALING ATAS
+    //  MASUKKAN KE AKTIVITAS PALING ATAS
     setAktivitas((prev) => [notifBaru, ...prev]);
   });
 

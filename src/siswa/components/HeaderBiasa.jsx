@@ -11,7 +11,6 @@ import LogoutModal from "../components/Logout";
 import PopupNotifikasi from "./PopupNotifikasi";
 
 // assets
-// import asset
 import logo from "../../assets/logo.png";
 import profile from "../../assets/profile.svg";
 import logoutIcon from "../../assets/logout.svg";
@@ -49,7 +48,7 @@ export default function HeaderKoordinator({
     navigate("/");
   };
 
-  // 🔁 Mapping data Aktivitas → PopupNotifikasi
+  //  Mapping data Aktivitas → PopupNotifikasi
   const popupNotifications = notifications.map((item) => ({
     tab: item.type, // submit | approved | rejected
     title: item.title,

@@ -42,7 +42,7 @@ export default function DataPermasalahanSiswa() {
   };
 
 
-  // ================= DUMMY DATA =================
+  //  DUMMY DATA 
   const dummyDataPermasalahan = [
     {
       pelapor: "Pembimbing",
@@ -117,7 +117,7 @@ export default function DataPermasalahanSiswa() {
   };
 
 
-  // ================= LOAD DATA =================
+  //  LOAD DATA 
   useEffect(() => {
     setDataPermasalahan(dummyDataPermasalahan);
   }, []);
@@ -127,13 +127,13 @@ export default function DataPermasalahanSiswa() {
     setCurrentPage(1);
   }, [search, statusFilter, dateFilter]);
 
-  // ================= HELPER =================
+  //  HELPER 
   const parseDate = (dateStr) => {
     const [day, month, year] = dateStr.split("/");
     return new Date(`${year}-${month}-${day}`);
   };
 
-  // ================= FILTER DATA =================
+  //  FILTER DATA 
   const filteredData = dataPermasalahan.filter((item) => {
     const q = search.toLowerCase();
 
@@ -165,7 +165,7 @@ export default function DataPermasalahanSiswa() {
     currentPage * itemsPerPage
   );
 
-  // ================= TABLE =================
+  //  TABLE 
   const columns = [
     { label: "Pelapor", key: "pelapor" },
     { label: "Nama", key: "nama" },

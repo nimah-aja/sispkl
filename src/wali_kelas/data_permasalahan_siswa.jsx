@@ -36,7 +36,7 @@ export default function DataPermasalahanSiswa() {
   };
 
 
-  // ================= DUMMY DATA =================
+  //  DUMMY DATA 
   const dummyDataPermasalahan = [
     {
       pelapor: "Pembimbing",
@@ -105,7 +105,7 @@ export default function DataPermasalahanSiswa() {
   };
 
 
-  // ================= LOAD DATA =================
+  //  LOAD DATA 
   useEffect(() => {
     setDataPermasalahan(dummyDataPermasalahan);
   }, []);
@@ -115,13 +115,13 @@ export default function DataPermasalahanSiswa() {
     setCurrentPage(1);
   }, [search, statusFilter, dateFilter]);
 
-  // ================= HELPER =================
+  //  HELPER 
   const parseDate = (dateStr) => {
     const [day, month, year] = dateStr.split("/");
     return new Date(`${year}-${month}-${day}`);
   };
 
-  // ================= FILTER DATA =================
+  //  FILTER DATA 
   const filteredData = dataPermasalahan.filter((item) => {
     const q = search.toLowerCase();
 
@@ -153,7 +153,7 @@ export default function DataPermasalahanSiswa() {
     currentPage * itemsPerPage
   );
 
-  // ================= TABLE =================
+  //  TABLE 
   const columns = [
     { label: "Pelapor", key: "pelapor" },
     { label: "Nama", key: "nama" },
@@ -284,7 +284,7 @@ export default function DataPermasalahanSiswa() {
                 {/* HEADER */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-4">
-                    {/* AVATAR ORANGE FIX */}
+                    {/* AVATAR ORANGE  */}
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500 text-white font-bold text-sm"
                     >

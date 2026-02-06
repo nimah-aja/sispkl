@@ -97,7 +97,7 @@ function AppContent() {
 
         {/* Admin */}
         <Route path="/admin" element={<DashboardAdmin />} />
-        <Route path="/admin/jurusan" element={<DashboardAdminJurusan />} />
+        <Route path="/admin/konsentrasi_keahlian" element={<DashboardAdminJurusan />} />
         <Route path="/admin/kelas" element={<DashboardAdminKelas />} />
         <Route path="/admin/siswa" element={<DashboardAdminSiswa />} />
         <Route path="/admin/guru" element={<DashboardAdminGuru />} />

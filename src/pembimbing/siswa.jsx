@@ -79,7 +79,7 @@ export default function DataPeserta() {
     const fetchPeserta = async () => {
       try {
         // 1. Ambil data siswa
-        const siswaRes = await getGuruSiswa(); // dari API siswa
+        const siswaRes = await getGuruSiswa(); 
         const siswaData = siswaRes.data;
 
         // 2. Ambil data tasks untuk dapetin nisn & kelas
@@ -102,8 +102,8 @@ export default function DataPeserta() {
             username: item.siswa_username,
             nama: item.siswa_nama,
             industri: item.industri_nama,
-            nisn: taskSiswa?.nisn || "-",      // ambil dari tasks API
-            kelas: taskSiswa?.kelas || "-",    // ambil dari tasks API
+            nisn: taskSiswa?.nisn || "-",      
+            kelas: taskSiswa?.kelas || "-",    
             tanggal_mulai: dayjs(item.tanggal_mulai).format("DD-MM-YYYY"),
             tanggal_selesai: dayjs(item.tanggal_selesai).format("DD-MM-YYYY"),
             status: item.status,

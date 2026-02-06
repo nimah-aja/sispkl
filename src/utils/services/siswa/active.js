@@ -1,4 +1,3 @@
-// services/pklService.js
 export const getActivePKL = async () => {
   try {
     const response = await fetch("/api/pkl/active/me");
@@ -8,7 +7,7 @@ export const getActivePKL = async () => {
     // hitung sisa hari
     const today = new Date();
     const endDate = new Date(data.tanggal_selesai);
-    const diffTime = endDate - today; // selisih milidetik
+    const diffTime = endDate - today; 
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return {

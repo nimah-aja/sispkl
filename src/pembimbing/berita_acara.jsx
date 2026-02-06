@@ -243,7 +243,6 @@ export default function SuratBeritaAcaraPage() {
   };
 
   // Fungsi untuk generate dan download PDF
-  // Fungsi untuk generate dan download PDF
 const handleGeneratePDF = () => {
   setGeneratingPDF(true);
 
@@ -261,7 +260,7 @@ const handleGeneratePDF = () => {
     const pageWidth = 210;
     let yPosition = 15;
 
-    // ===== KOP SURAT =====
+    //  KOP SURAT 
     if (logo.preview) {
       try {
         doc.addImage(logo.preview, 'PNG', marginLeft, yPosition, 18, 18);
@@ -270,7 +269,7 @@ const handleGeneratePDF = () => {
       }
     }
 
-    // Header - DIUBAH POSISI AGAR SAMA DENGAN PREVIEW
+    // Header 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
@@ -284,7 +283,7 @@ const handleGeneratePDF = () => {
              pageWidth / 2, yPosition + 24, { align: 'center' });
     doc.text("Telepon (0341) 4345127", pageWidth / 2, yPosition + 29, { align: 'center' });
 
-    // Garis pemisah - 2 GARIS SEPERTI DI PREVIEW
+    // Garis pemisah 
     yPosition = yPosition + 36;
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.5);
@@ -294,14 +293,14 @@ const handleGeneratePDF = () => {
 
     yPosition += 10;
 
-    // ===== JUDUL BERITA ACARA DI SAMPING KIRI =====
+    //  JUDUL BERITA ACARA DI SAMPING KIRI 
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("BERITA ACARA", marginLeft, yPosition);
 
     yPosition += 12;
 
-    // ===== JUDUL PENJEMPUTAN PKL DI TENGAH =====
+    //  JUDUL PENJEMPUTAN PKL DI TENGAH 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text(formData.judulPenjemputan, pageWidth / 2, yPosition, { align: 'center' });
@@ -310,11 +309,10 @@ const handleGeneratePDF = () => {
 
     yPosition += 15;
 
-    // ===== INFORMASI MONITORING - SESUAI PREVIEW =====
+    //  INFORMASI MONITORING 
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     
-    // Format sesuai preview: "Hari ini : Rabu, 19 Desember 2025"
     doc.text("Hari ini", marginLeft, yPosition);
     doc.text(":", marginLeft + 18, yPosition);
     doc.text(`${formData.hari}, ${formData.tanggalMonitoring}`, marginLeft + 22, yPosition);
@@ -345,7 +343,7 @@ const handleGeneratePDF = () => {
     
     yPosition += 10;
 
-    // ===== CATATAN KEHADIRAN =====
+    //  CATATAN KEHADIRAN 
     doc.setFont("helvetica", "bold");
     const catatanKehadiran = `A. Catatan tentang kehadiran siswa mulai tanggal ${formData.tanggalAwal} S.d tanggal ${formData.tanggalAkhir} Tahun 2025`;
     const catatanLines = doc.splitTextToSize(catatanKehadiran, 180);
@@ -356,15 +354,15 @@ const handleGeneratePDF = () => {
 
     yPosition += 5;
 
-    // ===== TABEL KEHADIRAN - DIBUAT MANUAL UNTUK FORMAT YANG SAMA =====
+    //  TABEL KEHADIRAN 
     const tableTop = yPosition;
     
     // Lebar kolom
     const colNoWidth = 12;
     const colNamaWidth = 70;
-    const colRekapWidth = 45; // Total untuk 3 sub-kolom (bukan 4)
+    const colRekapWidth = 45; 
     const colKeteranganWidth = 63;
-    const subColWidth = colRekapWidth / 3; // 15mm per sub-kolom (bukan /4)
+    const subColWidth = colRekapWidth / 3; 
     
     // Header utama tabel
     doc.setFontSize(10);
@@ -378,7 +376,7 @@ const handleGeneratePDF = () => {
     doc.rect(marginLeft + colNoWidth, tableTop, colNamaWidth, 8);
     doc.text("Nama", marginLeft + colNoWidth + colNamaWidth/2, tableTop + 5, { align: 'center' });
     
-    // Rekap Kehadiran (colspan 3)
+    // Rekap Kehadiran
     doc.rect(marginLeft + colNoWidth + colNamaWidth, tableTop, colRekapWidth, 8);
     doc.text("Rekap Kehadiran", marginLeft + colNoWidth + colNamaWidth + colRekapWidth/2, tableTop + 5, { align: 'center' });
     
@@ -389,7 +387,7 @@ const handleGeneratePDF = () => {
     // Sub-header untuk Rekap Kehadiran
     const subHeaderTop = tableTop + 8;
     
-    // No (kosong di sub-header)
+    // No
     doc.rect(marginLeft, subHeaderTop, colNoWidth, 6);
     
     // Nama (kosong di sub-header)
@@ -408,7 +406,7 @@ const handleGeneratePDF = () => {
     doc.rect(marginLeft + colNoWidth + colNamaWidth + subColWidth*2, subHeaderTop, subColWidth, 6);
     doc.text("A", marginLeft + colNoWidth + colNamaWidth + subColWidth*2 + subColWidth/2, subHeaderTop + 3.5, { align: 'center' });
     
-    // Keterangan (kosong di sub-header)
+    // Keterangan 
     doc.rect(marginLeft + colNoWidth + colNamaWidth + colRekapWidth, subHeaderTop, colKeteranganWidth, 6);
     
     // Data siswa
@@ -433,7 +431,7 @@ const handleGeneratePDF = () => {
         doc.text(siswa.nama || "-", marginLeft + colNoWidth + 2, currentY + rowHeight/2 + 1);
       }
       
-      // Sub-kolom S (Hadir)
+      // Sub-kolom S 
       doc.rect(marginLeft + colNoWidth + colNamaWidth, currentY, subColWidth, rowHeight);
       doc.text(siswa.hadir || "-", marginLeft + colNoWidth + colNamaWidth + subColWidth/2, currentY + rowHeight/2 + 1, { align: 'center' });
       
@@ -457,12 +455,10 @@ const handleGeneratePDF = () => {
       
       currentY += rowHeight;
       
-      // Cek jika perlu halaman baru (maksimum 8 baris per halaman)
       if ((index + 1) % 8 === 0 && (index + 1) < daftarSiswa.length) {
         doc.addPage();
         currentY = 20;
         
-        // Draw header baru di halaman baru
         doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         
@@ -496,7 +492,7 @@ const handleGeneratePDF = () => {
     // Update yPosition untuk konten berikutnya
     yPosition = currentY + 15;
 
-    // ===== CATATAN KINERJA SISWA =====
+    //  CATATAN KINERJA SISWA 
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("B. Catatan tentang kinerja siswa", marginLeft, yPosition);
@@ -550,9 +546,9 @@ const handleGeneratePDF = () => {
       yPosition += 5;
     }
 
-    yPosition += 25; // Spasi lebih banyak untuk tanda tangan
+    yPosition += 25; 
 
-    // ===== TANDA TANGAN - SESUAI DENGAN PREVIEW =====
+    //  TANDA TANGAN 
     const colWidth = (pageWidth - marginLeft - marginRight) / 2;
     
     // Kiri: Pembimbing Industri
@@ -568,7 +564,7 @@ const handleGeneratePDF = () => {
     doc.setFont("helvetica", "bold");
     doc.text(formData.namaPembimbingSekolah, marginLeft + colWidth + 40, yPosition + 25, { align: 'center' });
 
-    // ===== SAVE PDF =====
+    //  SAVE PDF 
     const fileName = `Berita_Acara_PKL_${formData.namaIndustri.replace(/\s+/g, '_')}.pdf`;
     doc.save(fileName);
 

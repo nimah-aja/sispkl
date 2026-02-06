@@ -56,7 +56,7 @@ import { getJurusanKaprodi } from "../utils/services/kapro/jurusan";
 export default function KaprodiDashboard() {
   const navigate = useNavigate();
   const [pembimbingOptions, setPembimbingOptions] = useState([]);
-  const [detailMode, setDetailMode] = useState("view");// "view" | "approve" | "reject"
+  const [detailMode, setDetailMode] = useState("view");
   const [openDetail, setOpenDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [aktivitas, setAktivitas] = useState([]);
@@ -108,7 +108,7 @@ export default function KaprodiDashboard() {
         toast.success("Pengajuan PKL berhasil ditolak");
       }
 
-      // 🔥 TUTUP MODAL
+      // TUTUP MODAL
       setOpenDetail(false);
       setDetailMode("view");
       setDetailData(null);
@@ -228,9 +228,7 @@ export default function KaprodiDashboard() {
           else pending++;
         });
 
-        // ===============================
-        // 🔥 BIKIN DATA AKTIVITAS
-        // ===============================
+        //  BIKIN DATA AKTIVITAS
         // const aktivitasData = applications.slice(0, 5).map((item) => {
         //   const status = item.application?.status;
 
@@ -251,7 +249,7 @@ export default function KaprodiDashboard() {
         //     description: `${description} di ${item.industri_nama}`,
         //     time: formatWaktu(item.application.tanggal_permohonan),
 
-        //     // 🔥 KUNCI UTAMA
+        //     //  KUNCI UTAMA
         //     onClick: async () => {
         //       try {
         //         const allGuru = await getGuru();
@@ -434,16 +432,12 @@ export default function KaprodiDashboard() {
     fetchDashboardData();
   }, []);
 
-  // ===============================
   // AKTIVITAS KHUSUS PENDING
-  // ===============================
   const pendingAktivitas = aktivitas.filter(
     (item) => item.type === "submit"
   );
 
-  // ===============================
   // HEADER NOTIFICATION (NO ACTION)
-  // ===============================
   const headerNotifications = pendingAktivitas.map(
     ({ actions, ...rest }) => ({
       ...rest,
@@ -505,7 +499,7 @@ export default function KaprodiDashboard() {
   { name: "nama_siswa", label: "Nama Siswa" },
   { name: "nisn", label: "NISN" },
   { name: "kelas", label: "Kelas" },
-  { name: "jurusan", label: "Jurusan" },
+  { name: "jurusan", label: "Kompetensi Keahlian" },
   { name: "status", label: "Status" },
 ];
 
@@ -630,7 +624,7 @@ export default function KaprodiDashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      {/* KOLOM KIRI: Notifikasi (2/3 width) */}
+                      {/* KOLOM KIRI: Notifikasi*/}
                       <div className="lg:col-span-2">
                         <AktivitasTerkini
                           icon={<Bell size={22} />}
@@ -640,7 +634,7 @@ export default function KaprodiDashboard() {
                         />
                       </div>
           
-                      {/* KOLOM KANAN: Quick Actions + Status (1/3 width) */}
+                      {/* KOLOM KANAN: Quick Actions + Status*/}
                       <div className="lg:col-span-1 space-y-6">
                         <div className="max-w-6xl mx-auto mb-10">
                           <div className="bg-white border rounded-xl shadow-sm">
@@ -654,7 +648,7 @@ export default function KaprodiDashboard() {
                             <ul className="divide-y">
                               {jurusanList.length === 0 && (
                                 <li className="px-6 py-4 text-sm text-gray-500">
-                                  Tidak ada jurusan yang di-assign ke kaprodi
+                                  Tidak ada kompetensi keahlian yang di-assign ke kaprodi
                                 </li>
                               )}
 
@@ -698,7 +692,7 @@ export default function KaprodiDashboard() {
             onClose={() => {
               setOpenDetail(false);
               setDetailMode("view");
-              setDetailData(null); // 🔥 WAJIB
+              setDetailData(null); 
             }}
 
             initialData={{
@@ -782,11 +776,6 @@ export default function KaprodiDashboard() {
           </div>
         </div>
       )}
-
-
-      
-
-
           </div>
         );
 

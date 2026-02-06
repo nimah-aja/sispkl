@@ -1,8 +1,7 @@
 import axios from "../../axiosInstance";
 
-/* =========================
-   GET SEKOLAH AKTIF
-========================= */
+// GET SEKOLAH AKTIF
+
 export const getSekolah = async () => {
   try {
     const res = await axios.get("/api/sekolah");
@@ -14,9 +13,7 @@ export const getSekolah = async () => {
   }
 };
 
-/* =========================
-   GET SEKOLAH BY ID
-========================= */
+// GET SEKOLAH BY ID
 export const getSekolahById = async (id) => {
   try {
     const res = await axios.get(`/api/sekolah/${id}`);
@@ -27,9 +24,7 @@ export const getSekolahById = async (id) => {
   }
 };
 
-/* =========================
-   CREATE SEKOLAH (POST)
-========================= */
+// CREATE SEKOLAH (POST)
 export const createSekolah = async (payload) => {
   const body = {
     akreditasi: payload.akreditasi,
@@ -61,15 +56,12 @@ export const createSekolah = async (payload) => {
   }
 };
 
-/* =========================
-   UPDATE SEKOLAH (PUT) - DIPERBAIKI
-========================= */
+// UPDATE SEKOLAH (PUT) 
 export const updateSekolah = async (id, payload) => {
   console.log("=== DEBUG updateSekolah ===");
   console.log("ID:", id);
   console.log("Payload dari frontend:", payload);
   
-  // Pastikan payload tidak undefined
   if (!payload) {
     console.error("Payload is undefined!");
     throw new Error("Payload tidak boleh kosong");

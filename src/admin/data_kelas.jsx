@@ -69,7 +69,7 @@ export default function KelasPage() {
         const data = await getJurusan();
         setJurusanList(data);
       } catch (err) {
-        console.error("Gagal ambil data jurusan:", err);
+        console.error("Gagal ambil data konsentrasi keahlian:", err);
       }
     };
 
@@ -124,7 +124,7 @@ export default function KelasPage() {
         const data = await getJurusan();
         setJurusanList(data);
       } catch (err) {
-        console.error("Gagal ambil data jurusan:", err);
+        console.error("Gagal ambil data konsentrasi keahlian:", err);
       }
     };
 
@@ -229,7 +229,7 @@ export default function KelasPage() {
   // kolom input
     const inputFieldsAdd = [
       {
-        label: "Jurusan",
+        label: "Konsentrasi Keahlian",
         name: "jurusan_id",
         width: "full",
         type: "select",
@@ -247,7 +247,7 @@ export default function KelasPage() {
 
     const inputFieldsEdit = [
       {
-        label: "Jurusan",
+        label: "Konsentrasi Keahlian",
         name: "jurusan_id",
         width: "full",
         type: "select",
@@ -259,7 +259,7 @@ export default function KelasPage() {
         name: "wali_kelas_guru_id",
         type: "select",
         width: "full",
-        options: waliKelasOptionsEdit, // ✅ EDIT
+        options: waliKelasOptionsEdit, 
       },
     ];
 
@@ -270,7 +270,7 @@ export default function KelasPage() {
 
     return {
       No: i + 1,
-      Jurusan: jurusan ? jurusan.nama : "-",
+      "Konsentrasi Keahlian": jurusan ? jurusan.nama : "-",
       "Nama Kelas": k.nama,
     };
   });
@@ -284,10 +284,10 @@ export default function KelasPage() {
 
     autoTable(doc, {
       startY: 20,
-      head: [["No", "Jurusan", "Nama Kelas"]],
+      head: [["No", "Konsentrasi Keahlian", "Nama Kelas"]],
       body: exportData.map((row) => [
         row.No,
-        row.Jurusan,
+        row["Konsentrasi Keahlian"],
         row["Nama Kelas"],
       ]),
       styles: { fontSize: 10 },
@@ -363,14 +363,14 @@ export default function KelasPage() {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan not found")) {
-                toast.error("Jurusan ID tidak ada di sistem");
+                toast.error("Konsentrasi keahlian ID tidak ada di sistem");
                 return;
               }
 
               if (
                 /jurusan id.*must be a positive number/i.test(rawMessage.trim())
               ) {
-                toast.error("Jurusan ID harus angka positif");
+                toast.error("konsentrasi keahlian ID harus angka positif");
                 return;
               }
 
@@ -391,13 +391,13 @@ export default function KelasPage() {
         <SaveConfirmationModal
           isOpen={isConfirmSaveOpen}
           title="Konfirmasi Simpan"
-          message="Apakah kamu yakin ingin menyimpan data jurusan ini?"
+          message="Apakah kamu yakin ingin menyimpan data kelas ini?"
           onClose={() => setIsConfirmSaveOpen(false)}
           onSave={async () => {
             try {
               await createKelas(pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil ditambahkan");
+              toast.success("Data kelas berhasil ditambahkan");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -405,7 +405,7 @@ export default function KelasPage() {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal menambahkan data");
               }
@@ -647,13 +647,13 @@ export default function KelasPage() {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan not found")) {
-                toast.error("Jurusan ID tidak ditemukan");
+                toast.error("Konsentrasi keahlian ID tidak ditemukan");
               } else if (
                 rawMessage
                   .toLowerCase()
                   .includes("kelas with this nama already exists")
               ) {
-                toast.error("Kelas dengan nama tersebut sudah ada di jurusan ini");
+                toast.error("Kelas dengan nama tersebut sudah ada di konsentrasi keahlian ini");
               } else {
                 toast.error(apiError?.message || "Gagal menambahkan data");
               }

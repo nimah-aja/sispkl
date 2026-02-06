@@ -62,7 +62,7 @@ export default function SimpleFloatingActions({pklStatus}) {
   ];
 
 
-  /* ================= DRAG HANDLER ================= */
+  /*  DRAG HANDLER  */
   const onMouseDown = (e) => {
     dragging.current = true;
     startPos.current = {
@@ -89,7 +89,7 @@ export default function SimpleFloatingActions({pklStatus}) {
     dragging.current = false;
   };
 
-  /* ================= RENDER ================= */
+  /*  RENDER  */
   return createPortal(
     <div
       className="fixed inset-0 pointer-events-none z-[999999]"

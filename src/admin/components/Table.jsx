@@ -148,7 +148,7 @@ export default function Table({
           {sortedData.length > 0 ? (
             sortedData.map((row, i) => (
               <React.Fragment key={row.id || i}>
-                {/* ===== ROW UTAMA ===== */}
+                {/* ROW UTAMA */}
                 <tr className="bg-white border-b hover:bg-orange-50 transition">
                   {showMore && (
                     <td className="py-3 px-0 text-center relative">
@@ -208,7 +208,7 @@ export default function Table({
                   )}
                 </tr>
 
-                {/* ===== ROW EXPANDED ===== */}
+                {/*  ROW EXPANDED  */}
                 {expandedRowId === row.id && renderExpandedRow && (
                   <tr className=" bg-orange-50">
                     <td

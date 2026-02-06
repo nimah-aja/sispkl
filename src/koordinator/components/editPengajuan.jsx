@@ -133,7 +133,7 @@ export default function EditPengajuan({
 
     // **VALIDASI**: Pastikan ada data yang diedit
     if (!editableSurat) {
-      alert("❌ Data tidak ditemukan!");
+      alert("Data tidak ditemukan!");
       return;
     }
 
@@ -156,7 +156,7 @@ export default function EditPengajuan({
 
     if (editMode === "kelompok") {
       if (selectedSiswaForGroup.length === 0) {
-        alert("⚠️ Silakan pilih minimal 1 siswa untuk mode kelompok!");
+        alert("Silakan pilih minimal 1 siswa untuk mode kelompok!");
         return;
       }
 
@@ -196,7 +196,7 @@ export default function EditPengajuan({
       });
 
       console.log(
-        `✅ Mode kelompok: ${siswaUntukExport.length} siswa terpilih`,
+        `Mode kelompok: ${siswaUntukExport.length} siswa terpilih`,
       );
     } else {
       // Mode individu: gunakan SEMUA data TERBARU dari form
@@ -216,7 +216,7 @@ export default function EditPengajuan({
           periode: currentData.periode,
         },
       ];
-      console.log(`✅ Mode individu: 1 siswa (${currentData.name})`);
+      console.log(` Mode individu: 1 siswa (${currentData.name})`);
     }
 
     // **PASTIKAN**: Format students dengan data TERBARU
@@ -250,7 +250,7 @@ export default function EditPengajuan({
       nip_kaprog: currentData.nip_kaprog || guruDetail?.nip || "",
     };
 
-    console.log("✅ PAYLOAD AKHIR YANG AKAN DIKIRIM KE BE:");
+    console.log("PAYLOAD AKHIR YANG AKAN DIKIRIM KE BE:");
     console.log("=========================================");
     console.log("Nama perusahaan:", payload.nama_perusahaan);
     console.log("Tempat Tanggal:", payload.tempat_tanggal);
@@ -270,32 +270,32 @@ export default function EditPengajuan({
     // Validasi final
     if (payload.nama_perusahaan === selectedSurat?.nama_perusahaan) {
       console.warn(
-        "⚠️ PERINGATAN: Nama perusahaan masih sama dengan data asli!",
+        "PERINGATAN: Nama perusahaan masih sama dengan data asli!",
       );
       console.warn("   Data asli:", selectedSurat?.nama_perusahaan);
       console.warn("   Data diedit:", currentData.nama_perusahaan);
     } else {
-      console.log("✅ Nama perusahaan BERHASIL diubah!");
+      console.log(" Nama perusahaan BERHASIL diubah!");
     }
 
     if (onExportPDF) {
       // **KIRIM DATA TERBARU** ke parent component
       onExportPDF(payload, editMode === "kelompok", siswaUntukExport);
     } else {
-      alert("❌ Fungsi export tidak tersedia!");
+      alert("Fungsi export tidak tersedia!");
     }
   };
 
   const handleGenerateSuratTugas = () => {
     if (!editableSurat) {
-      console.error("❌ Editable surat tidak ada!");
+      console.error("Editable surat tidak ada!");
       return;
     }
 
     if (onGenerateSuratTugas) {
       onGenerateSuratTugas(editableSurat);
     } else {
-      alert("❌ Fungsi generate Surat Tugas tidak tersedia!");
+      alert(" Fungsi generate Surat Tugas tidak tersedia!");
     }
   };
 
@@ -329,10 +329,10 @@ export default function EditPengajuan({
           </div>
 
           <div className="bg-white p-8 rounded-lg shadow-sm text-[12px] leading-relaxed">
-            {/* KOP SURAT YANG SUDAH DIPERBAIKI - LOGO 35x35 DAN DITAIKKAN LAGI */}
+            {/* KOP SURAT  */}
             <div className="flex items-start justify-between border-b-2 border-black pb-4 mb-4">
-              {/* Logo - Ukuran 35x35 dan DITAIKKAN LAGI */}
-              <div className="flex-shrink-0 -mt-4"> {/* DARI -mt-2 MENJADI -mt-4 */}
+              {/* Logo */}
+              <div className="flex-shrink-0 -mt-4"> 
                 <img
                   src={logoSmk}
                   alt="Logo SMK Negeri 2 Singosari"
@@ -340,8 +340,8 @@ export default function EditPengajuan({
                 />
               </div>
               
-              {/* Teks - di Kanan */}
-              <div className="flex-1 ml-4 pt-3"> {/* DARI pt-2 MENJADI pt-3 */}
+              {/* Teks  */}
+              <div className="flex-1 ml-4 pt-3"> 
                 <div className="text-center">
                   <p className="font-bold text-lg uppercase tracking-tight mb-1">
                     PEMERINTAH PROVINSI JAWA TIMUR
@@ -451,7 +451,7 @@ export default function EditPengajuan({
             </div>
 
             <div className="mt-6 text-end">
-              {/* TEMPAT TANGGAL DENGAN TITIK-TITIK PANJANG UNTUK TANGGAL */}
+              {/* TEMPAT TANGGAL  */}
               <p className="mr-7 font-medium">
                 {tempatTanggal || `Malang, .................................... 2026`}
               </p>
@@ -532,7 +532,7 @@ export default function EditPengajuan({
                   }
                   onChange={(e) => {
                     const value = e.target.value;
-                    console.log("✏️ Mengubah nama perusahaan menjadi:", value);
+                    console.log("Mengubah nama perusahaan menjadi:", value);
                     setEditableSurat({
                       ...editableSurat,
                       nama_perusahaan: value,

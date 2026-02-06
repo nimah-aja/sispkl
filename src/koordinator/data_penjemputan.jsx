@@ -28,7 +28,7 @@ export default function DataPeserta() {
   const [query, setQuery] = useState("");
   const [peserta, setPeserta] = useState([]);
 
-  const [mode, setMode] = useState("list"); // list | add | edit
+  const [mode, setMode] = useState("list");
   const [editData, setEditData] = useState(null);
   const [pendingData, setPendingData] = useState(null);
 
@@ -45,7 +45,7 @@ export default function DataPeserta() {
     role: "Koordinator",
   };
 
-  // ================= DUMMY DATA =================
+  //  DUMMY DATA 
   useEffect(() => {
     const dummyPeserta = [
       {
@@ -95,7 +95,7 @@ export default function DataPeserta() {
     setPeserta(dummyPeserta);
   }, []);
 
-  // ================= FILTER =================
+  //  FILTER 
   const filteredPeserta = peserta.filter(
     (item) =>
       item.penerima.toLowerCase().includes(query.toLowerCase()) ||
@@ -106,7 +106,7 @@ export default function DataPeserta() {
     setCurrentPage(1);
   }, [query]);
 
-  // ================= PAGINATION =================
+  //  PAGINATION 
   const totalPages = Math.ceil(filteredPeserta.length / itemsPerPage);
   const paginatedData = filteredPeserta.slice(
     (currentPage - 1) * itemsPerPage,
@@ -141,7 +141,7 @@ export default function DataPeserta() {
 };
 
 
-  // ================= TABLE COLUMNS =================
+  //  TABLE COLUMNS 
   const columns = [
   { label: "No Surat", key: "noSurat" },
   { label: "Penerima", key: "penerima" },
@@ -164,7 +164,7 @@ export default function DataPeserta() {
 ];
 
 
-  // ================= EXPORT =================
+  //  EXPORT 
   const exportData = filteredPeserta.map((item, i) => ({
     No: i + 1,
     "No Surat": item.noSurat,
@@ -196,7 +196,7 @@ export default function DataPeserta() {
     doc.save("surat_penjemputan.pdf");
   };
 
-  // ================= FORM FIELDS =================
+  //  FORM FIELDS 
   const inputFields = [
     { label: "No Surat", name: "noSurat", width: "half" },
     { label: "Penerima", name: "penerima", width: "half" },
@@ -215,7 +215,7 @@ export default function DataPeserta() {
     return errors;
   };
 
-  // ================= ADD / EDIT =================
+  //  ADD / EDIT 
   if (mode === "add" || (mode === "edit" && editData)) {
     return (
       <>
@@ -268,7 +268,7 @@ export default function DataPeserta() {
     );
   }
 
-  // ================= LIST =================
+  //  LIST 
   return (
     <div className="flex min-h-screen bg-white">
       <Sidebar active={active} setActive={setActive} />

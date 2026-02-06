@@ -76,9 +76,9 @@ export default function JurusanPage() {
   const validateJurusan = (data) => {
     const errors = {};
     if (!data.kode || data.kode.length < 2)
-      errors.kode = `Kolom Kode Jurusan minimal 2 karakter. Tambahkan ${2 - (data.kode?.length || 0)} karakter lagi.`;
+      errors.kode = `Kolom Kode Konsentrasi Keahlian minimal 2 karakter. Tambahkan ${2 - (data.kode?.length || 0)} karakter lagi.`;
     if (!data.nama || data.nama.length < 10)
-      errors.nama = `Kolom Nama Jurusan minimal 10 karakter. Tambahkan ${10 - (data.nama?.length || 0)} karakter lagi.`;
+      errors.nama = `Kolom Nama Konsentrasi Keahlian minimal 10 karakter. Tambahkan ${10 - (data.nama?.length || 0)} karakter lagi.`;
     return errors;
   };
 
@@ -120,8 +120,8 @@ export default function JurusanPage() {
 
 
   const inputFields = [
-    { label: "Kode Jurusan", name: "kode", width: "full", minLength: 2, unique: true },
-    { label: "Nama Jurusan", name: "nama", width: "full", minLength: 10 },
+    { label: "Kode Konsentrasi Keahlian", name: "kode", width: "full", minLength: 2, unique: true },
+    { label: "Nama Konsentrasi Keahlian", name: "nama", width: "full", minLength: 10 },
     {
       label: "Kepala Program (Kaprog)",
       name: "kaprog_guru_id",
@@ -139,8 +139,8 @@ export default function JurusanPage() {
 
     return {
       No: i + 1,
-      "Kode Jurusan": j.kode,
-      "Nama Jurusan": j.nama,
+      "Kode Konsentrasi Keahlian": j.kode,
+      "Nama Konsentrasi Keahlian": j.nama,
       Kaprog: guru ? guru.nama : "-",
     };
   });
@@ -149,36 +149,36 @@ export default function JurusanPage() {
     const doc = new jsPDF();
 
     doc.setFontSize(14);
-    doc.text("Data Jurusan", 14, 15);
+    doc.text("Data Konsentrasi Keahlian", 14, 15);
 
     autoTable(doc, {
       startY: 20,
       head: [[
         "No",
-        "Kode Jurusan",
-        "Nama Jurusan",
+        "Kode Konsentrasi Keahlian",
+        "Nama Konsentrasi Keahlian",
         "Kaprog",
       ]],
       body: exportData.map((row) => [
         row.No,
-        row["Kode Jurusan"],
-        row["Nama Jurusan"],
+        row["Kode Konsentrasi Keahlian"],
+        row["Nama Konsentrasi Keahlian"],
         row.Kaprog,
       ]),
       styles: { fontSize: 10 },
       headStyles: { fillColor: [100, 30, 33] },
     });
 
-    doc.save("data-jurusan.pdf");
+    doc.save("data-konsentrasi-keahlian.pdf");
   };
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Jurusan");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Konsentrasi Keahlian");
 
-    XLSX.writeFile(workbook, "data-jurusan.xlsx");
+    XLSX.writeFile(workbook, "data-konsentrasi-keahlian.xlsx");
   };
 
   // nutup otomatis
@@ -204,7 +204,7 @@ export default function JurusanPage() {
     return (
       <>
         <Add
-          title="Tambah Data Jurusan"
+          title="Tambah Data Konsentrasi Keahlian"
           fields={inputFields}
           image={guruImg}
           existingData={jurusan}
@@ -235,13 +235,13 @@ export default function JurusanPage() {
         <SaveConfirmationModal
           isOpen={isConfirmSaveOpen}
           title="Konfirmasi Simpan"
-          message="Apakah kamu yakin ingin menyimpan data jurusan ini?"
+          message="Apakah kamu yakin ingin menyimpan data konsentrasi keahlian ini?"
           onClose={() => setIsConfirmSaveOpen(false)}
           onSave={async () => {
             try {
               await createJurusan(pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil ditambahkan");
+              toast.success("Data konsentrasi keahlian berhasil ditambahkan");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -249,7 +249,7 @@ export default function JurusanPage() {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal menambahkan data");
               }
@@ -266,7 +266,7 @@ export default function JurusanPage() {
     return (
       <>
         <Add
-          title="Ubah Data Jurusan"
+          title="Ubah Data Konsentrasi Keahlian"
           fields={inputFields}
           image={editGrafik}
           existingData={jurusan.filter((j) => j.id !== selectedRow.id)}
@@ -302,7 +302,7 @@ export default function JurusanPage() {
             try {
               await updateJurusan(selectedRow.id, pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil diperbarui");
+              toast.success("Data konsentrasi keahlian berhasil diperbarui");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -310,7 +310,7 @@ export default function JurusanPage() {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal memperbarui data");
               }
@@ -445,7 +445,7 @@ export default function JurusanPage() {
             try {
               await deleteJurusan(selectedRow.id);
               await fetchData();
-              toast.success("Data jurusan berhasil dihapus");
+              toast.success("Data konsentrasi keahlian berhasil dihapus");
               setIsDeleteOpen(false);
             } catch (err) {
               console.error(err);

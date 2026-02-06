@@ -1,6 +1,6 @@
 import axios from "../../axiosInstance";
 
-/* ================= LIST INDUSTRI BIMBINGAN GURU ================= */
+/*  LIST INDUSTRI BIMBINGAN GURU  */
 export const getGuruIndustri = async () => {
   try {
     const res = await axios.get("/api/pkl/guru/industri");
@@ -11,7 +11,7 @@ export const getGuruIndustri = async () => {
   }
 };
 
-/* ================= LIST SISWA BIMBINGAN GURU ================= */
+/*  LIST SISWA BIMBINGAN GURU  */
 export const getGuruSiswa = async () => {
   try {
     const res = await axios.get("/api/pkl/guru/siswa");
@@ -22,7 +22,7 @@ export const getGuruSiswa = async () => {
   }
 };
 
-/* ================= LIST TASK GURU ================= */
+/*  LIST TASK GURU  */
 export const getGuruTasks = async () => {
   try {
     const res = await axios.get("/api/pkl/guru/tasks");

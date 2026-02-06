@@ -100,7 +100,7 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
     time: item.time,
     onClick: item.onClick,
 
-    // ⬇️ INI YANG HILANG
+    // INI YANG HILANG
     actions: item.actions,
 
     icon:

@@ -46,12 +46,9 @@ export default function StatusPengajuanPKL() {
         return "-";
     }
   };
-
-
-
-  // ====================================
+  
   // GET DATA PENGAJUAN
-  // ====================================
+  
   useEffect(() => {
     const fetchPKL = async () => {
       try {
@@ -66,9 +63,9 @@ export default function StatusPengajuanPKL() {
     fetchPKL();
   }, []);
 
-  // ====================================
+  
   // GET INDUSTRI DAN PEMBIMBING
-  // ====================================
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -80,13 +77,13 @@ export default function StatusPengajuanPKL() {
 
         const allGuru = await getGuru();
 
-        // 🔹 Pembimbing
+        // Pembimbing
         const pembimbing = allGuru.find(
           (g) => g.id === dataPKL.pembimbing_guru_id
         );
         setNamaPembimbing(pembimbing ? pembimbing.nama : "-");
 
-        // 🔹 Kaprog (SAMA CARANYA)
+        //  Kaprog 
         const kaprog = allGuru.find(
           (g) => g.id === dataPKL.processed_by
         );
@@ -101,9 +98,8 @@ export default function StatusPengajuanPKL() {
     if (dataPKL) fetchData();
   }, [dataPKL]);
 
-  // ====================================
-  // TIDAK ADA DATA
-  // ====================================
+  
+  
   if (!dataPKL) {
     return (
       <div className="p-10 bg-white border-[#6e0f0f] rounded-2xl border-2 text-center flex flex-col items-center w-[575px]">
@@ -124,9 +120,9 @@ export default function StatusPengajuanPKL() {
     );
   }
 
-  // ====================================
+  
   // FORMAT TANGGAL
-  // ====================================
+  
   const formatTanggal = (t) => {
     if (!t) return "-";
     return new Intl.DateTimeFormat("id-ID", {
@@ -140,9 +136,7 @@ export default function StatusPengajuanPKL() {
 
   return (
     <div className="w-[575px] bg-white rounded-2xl shadow-sm border border-[#6e0f0f] p-6 font-sans">
-      {/* ====================== */}
       {/* STATUS BOX */}
-      {/* ====================== */}
       <div
         className={`rounded-xl p-5 border flex items-start gap-3 mb-6 
           ${
@@ -194,9 +188,7 @@ export default function StatusPengajuanPKL() {
 
       <h3 className="font-semibold text-lg mb-3">Pengajuan PKL :</h3>
 
-      {/* ====================== */}
       {/* VIEW KHUSUS PENDING */}
-      {/* ====================== */}
       {status === "pending" && (
         <div className="text-sm space-y-3">
 
@@ -246,9 +238,7 @@ export default function StatusPengajuanPKL() {
 
       )}
 
-      {/* ====================== */}
       {/* VIEW APPROVED / REJECTED */}
-      {/* ====================== */}
       {(status === "approved" || status === "rejected") && (
         <div className="text-sm space-y-3">
           <div className="flex justify-between items-center">
@@ -325,7 +315,7 @@ export default function StatusPengajuanPKL() {
           initialData={{
             ...dataPKL,
 
-            // ⬇️ FORMAT TANGGAL DI SINI
+            // FORMAT TANGGAL DI SINI
             tanggal_permohonan: formatTanggal(dataPKL.tanggal_permohonan),
             tanggal_mulai: formatTanggal(dataPKL.tanggal_mulai),
             tanggal_selesai: formatTanggal(dataPKL.tanggal_selesai),
@@ -388,73 +378,73 @@ export default function StatusPengajuanPKL() {
       )} */}
 
       {openDetail &&
-  createPortal(
-    <Detail
-      size="half"
-      title="Detail Pengajuan PKL"
-      onClose={() => setOpenDetail(false)}
-      initialData={{
-        ...dataPKL,
-        tanggal_permohonan: formatTanggal(dataPKL.tanggal_permohonan),
-        tanggal_mulai: formatTanggal(dataPKL.tanggal_mulai),
-        tanggal_selesai: formatTanggal(dataPKL.tanggal_selesai),
-        nama_industri: namaIndustri,
-        nama_pembimbing: namaPembimbing,
-        status: statusLabel(status),
-        nama_kaprog: namaKaprog,
-      }}
-      fields={[
-        {
-          name: "nama_industri",
-          label: "Industri",
-          icon: <Building2 size={16} />,
-          full: true,
-        },
-        {
-          name: "kaprog_note",
-          label: "Catatan Kaprog",
-          icon: <MessageSquareText size={16} />,
-        },
-        {
-          name: "status",
-          label: "Status",
-          icon: <CircleDot size={16} />,
-        },
-        {
-          name: "tanggal_permohonan",
-          label: "Tanggal Permohonan",
-          icon: <CalendarDays size={16} />,
-        },
-        {
-          name: "tanggal_mulai",
-          label: "Tanggal Mulai",
-          icon: <CalendarRange size={16} />,
-        },
-        {
-          name: "tanggal_selesai",
-          label: "Tanggal Selesai",
-          icon: <CalendarCheck size={16} />,
-        },
-        {
-          name: "nama_pembimbing",
-          label: "Pembimbing",
-          icon: <UserCheck size={16} />,
-        },
-        {
-          name: "nama_kaprog",
-          label: "Diproses Oleh",
-          icon: <UserCog size={16} />,
-        },
-        {
-          name: "catatan",
-          label: "Catatan",
-          icon: <NotebookText size={16} />,
-        },
-      ]}
-    />,
-    document.body
-  )
-}
+        createPortal(
+          <Detail
+            size="half"
+            title="Detail Pengajuan PKL"
+            onClose={() => setOpenDetail(false)}
+            initialData={{
+              ...dataPKL,
+              tanggal_permohonan: formatTanggal(dataPKL.tanggal_permohonan),
+              tanggal_mulai: formatTanggal(dataPKL.tanggal_mulai),
+              tanggal_selesai: formatTanggal(dataPKL.tanggal_selesai),
+              nama_industri: namaIndustri,
+              nama_pembimbing: namaPembimbing,
+              status: statusLabel(status),
+              nama_kaprog: namaKaprog,
+            }}
+            fields={[
+              {
+                name: "nama_industri",
+                label: "Industri",
+                icon: <Building2 size={16} />,
+                full: true,
+              },
+              {
+                name: "kaprog_note",
+                label: "Catatan Kaprog",
+                icon: <MessageSquareText size={16} />,
+              },
+              {
+                name: "status",
+                label: "Status",
+                icon: <CircleDot size={16} />,
+              },
+              {
+                name: "tanggal_permohonan",
+                label: "Tanggal Permohonan",
+                icon: <CalendarDays size={16} />,
+              },
+              {
+                name: "tanggal_mulai",
+                label: "Tanggal Mulai",
+                icon: <CalendarRange size={16} />,
+              },
+              {
+                name: "tanggal_selesai",
+                label: "Tanggal Selesai",
+                icon: <CalendarCheck size={16} />,
+              },
+              {
+                name: "nama_pembimbing",
+                label: "Pembimbing",
+                icon: <UserCheck size={16} />,
+              },
+              {
+                name: "nama_kaprog",
+                label: "Diproses Oleh",
+                icon: <UserCog size={16} />,
+              },
+              {
+                name: "catatan",
+                label: "Catatan",
+                icon: <NotebookText size={16} />,
+              },
+            ]}
+          />,
+          document.body
+        )
+      }
 
 
 

@@ -86,16 +86,16 @@ export default function SiswaPage() {
   const formatDateToDDMMYYYY = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    if (isNaN(d)) return dateStr; // kalau bukan tanggal valid, balikin apa adanya
-    return d.toLocaleDateString("id-ID"); // otomatis jadi dd/mm/yyyy
+    if (isNaN(d)) return dateStr; 
+    return d.toLocaleDateString("id-ID"); 
   };
 
   // YYYY.MM.DD
   const formatDateToYYYYMMDD = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    if (isNaN(d)) return ""; // kalau invalid
-    return d.toISOString().split("T")[0]; // hasil: yyyy-MM-dd
+    if (isNaN(d)) return ""; 
+    return d.toISOString().split("T")[0]; 
   };
 
   // reset halaman
@@ -115,7 +115,7 @@ export default function SiswaPage() {
     ),
   ];
   
-  // Filter data berdasarkan nama kelas, bukan id
+  // Filter data berdasarkan nama kelas
   const filteredData = siswa.filter((k) => {
     const s = search.toLowerCase();
 
@@ -146,7 +146,7 @@ export default function SiswaPage() {
     return {
       ...item,
       no: i + 1,
-      kelas_id: kelas ? kelas.nama : "-", // kalau ga ada, tampilkan "-"
+      kelas_id: kelas ? kelas.nama : "-", 
       tanggal_lahir: formatDateToDDMMYYYY(item.tanggal_lahir), 
     };
   });
@@ -264,7 +264,7 @@ const handleImportExcel = async (file) => {
         );
       });
 
-      return; // STOP, jangan buka modal import
+      return; 
     }
 
     // kalau ada sebagian invalid
@@ -367,13 +367,13 @@ const handleImportExcel = async (file) => {
         <SaveConfirmationModal
           isOpen={isConfirmSaveOpen}
           title="Konfirmasi Simpan"
-          message="Apakah kamu yakin ingin menyimpan data jurusan ini?"
+          message="Apakah kamu yakin ingin menyimpan data siswa ini?"
           onClose={() => setIsConfirmSaveOpen(false)}
           onSave={async () => {
             try {
               await createSiswa(pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil ditambahkan");
+              toast.success("Data siswa berhasil ditambahkan");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -381,7 +381,7 @@ const handleImportExcel = async (file) => {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal menambahkan data");
               }
@@ -485,7 +485,7 @@ const handleImportExcel = async (file) => {
             try {
               await updateSiswa(selectedRow.id, pendingData);
               await fetchData();
-              toast.success("Data jurusan berhasil diperbarui");
+              toast.success("Data siswa berhasil diperbarui");
               setIsConfirmSaveOpen(false);
               setMode("list");
             } catch (err) {
@@ -493,7 +493,7 @@ const handleImportExcel = async (file) => {
               const rawMessage = apiError?.message || "";
 
               if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode jurusan ini sudah ada.");
+                toast.error("Kode konsentrasi keahlian ini sudah ada.");
               } else {
                 toast.error(apiError?.message || "Gagal memperbarui data");
               }
@@ -679,7 +679,7 @@ const handleImportExcel = async (file) => {
             const file = e.target.files[0];
             if (file) {
               handleImportExcel(file);
-              e.target.value = ""; // reset biar bisa upload file sama lagi
+              e.target.value = ""; 
             }
           }}
         />

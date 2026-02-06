@@ -57,7 +57,7 @@ export default function Detail({
     });
 
     if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors); // 🔥 trigger error UI
+      setFieldErrors(errors); 
       return;
     }
 
@@ -136,7 +136,7 @@ export default function Detail({
                       <span>{field.label}</span>
                     </div>
 
-                    {/* ✨ TAMPILKAN IMAGE JIKA ARRAY URL */}
+                    {/* TAMPILKAN IMAGE JIKA ARRAY URL */}
                     {Array.isArray(initialData[field.name]) && initialData[field.name].every(val => typeof val === "string" && val.startsWith("http")) ? (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {initialData[field.name].map((url, idx) => (
@@ -170,7 +170,7 @@ export default function Detail({
                     value={formData[field.name]} 
                     required={field.required}
                     error={fieldErrors[field.name]}
-                    options={field.options}   // 🔥 INI PENTING
+                    options={field.options}   
                     onChange={(val) =>
                       setFormData((prev) => ({
                         ...prev,

@@ -47,7 +47,7 @@ export default function HeaderKoordinator({
     navigate("/");
   };
 
-  // 🔁 Mapping data Aktivitas → PopupNotifikasi
+  //  Mapping data Aktivitas → PopupNotifikasi
   const popupNotifications = notifications.map((item) => ({
     tab: item.type, // submit | approved | rejected
     title: item.title,

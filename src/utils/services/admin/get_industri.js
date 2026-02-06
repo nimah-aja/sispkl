@@ -6,7 +6,7 @@ export const getIndustri = async () => {
   });
 
   const industriList = res.data.data.data;
-  industriList.sort((a, b) => a.nama.localeCompare(b.nama));   //sort A-Z
+  industriList.sort((a, b) => a.nama.localeCompare(b.nama));  
 
   return industriList;
 };

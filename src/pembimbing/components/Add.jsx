@@ -25,8 +25,8 @@ export default function Add({
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
   leftContent,
-  submitText = "Simpan",   // ⬅️ BARU
-  cancelText = "Batal",    // ⬅️ BARU
+  submitText = "Simpan",   
+  cancelText = "Batal",    
   submitButtonProps = {},
 }) {
   const navigate = useNavigate();

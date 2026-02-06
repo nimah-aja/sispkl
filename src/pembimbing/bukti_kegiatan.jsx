@@ -32,7 +32,7 @@ export default function DataRealisasiKegiatan() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // 🔥 DETAIL STATE
+  // DETAIL STATE
   const [openDetail, setOpenDetail] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
 
@@ -41,9 +41,7 @@ export default function DataRealisasiKegiatan() {
     role: "Pembimbing",
   };
 
-  // =========================
   // FETCH + JOIN DATA
-  // =========================
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -71,7 +69,7 @@ export default function DataRealisasiKegiatan() {
           }
 
           return {
-            // === UNTUK TABLE ===
+            //  UNTUK TABLE 
             kegiatan: kegiatanNama,
             industri: industriNama,
             tanggal_realisasi: dayjs(r.tanggal_realisasi).format("DD-MM-YYYY"),
@@ -79,7 +77,7 @@ export default function DataRealisasiKegiatan() {
             status: r.status,
             bukti: r.bukti_foto_urls?.length || 0,
 
-            // === UNTUK DETAIL ===
+            //  UNTUK DETAIL 
             raw: {
               ...r,
               kegiatan_nama: kegiatanNama,
@@ -106,9 +104,7 @@ export default function DataRealisasiKegiatan() {
     "Penjemputan",
   ];
 
-  // =========================
   // FILTER + PAGINATION
-  // =========================
   const filteredData = data.filter((item) => {
     const matchSearch =
       item.kegiatan.toLowerCase().includes(query.toLowerCase()) ||
@@ -133,10 +129,7 @@ export default function DataRealisasiKegiatan() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  // =========================
   // TABLE COLUMNS
-  // =========================
   const columns = [
     { label: "Kegiatan", key: "kegiatan" },
     { label: "Industri", key: "industri" },
@@ -163,9 +156,7 @@ export default function DataRealisasiKegiatan() {
   },
   ];
 
-  // =========================
-  // DETAIL FIELDS
-  // =========================
+  // DETAIL FIELDS\
   const detailFields = [
     { name: "kegiatan_nama", label: "Nama Kegiatan", type: "text" },
     { name: "industri_nama", label: "Industri", type: "text" },
@@ -179,10 +170,8 @@ export default function DataRealisasiKegiatan() {
     },
     { name: "created_at", label: "Dibuat Pada", type: "text" },
   ];
-
-  // =========================
+ 
   // EXPORT
-  // =========================
   const exportData = filteredData.map((item, i) => ({
     No: i + 1,
     Kegiatan: item.kegiatan,
@@ -219,9 +208,7 @@ export default function DataRealisasiKegiatan() {
     setOpenExport(false);
   };
 
-  // =========================
   // RENDER
-  // =========================
   return (
     <div className="bg-white min-h-screen w-full">
       <Header user={user} />

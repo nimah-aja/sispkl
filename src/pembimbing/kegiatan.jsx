@@ -37,7 +37,7 @@ const TugasTerbaruPage = () => {
     role: "Pembimbing",
   };
 
-  // ==================== STATE UNTUK MODAL SURAT TUGAS ====================
+  //  STATE UNTUK MODAL SURAT TUGAS
   const [showSuratTugasModal, setShowSuratTugasModal] = useState(false);
   const [selectedTugas, setSelectedTugas] = useState(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
@@ -55,12 +55,12 @@ const TugasTerbaruPage = () => {
     nipKepsek: "19700210 199802 2009"
   });
 
-  // State untuk guru yang ditugaskan - AWALNYA HANYA 1 BARIS
+  // State untuk guru yang ditugaskan 
   const [guruPenugasan, setGuruPenugasan] = useState([
     { id: Date.now(), nama: "Inasni Dyah Rahmatika, S.Pd.", jabatan: "Guru", dinas: "SMK Negeri 2 Singosari" }
   ]);
 
-  // State untuk form input - AWALNYA HANYA GURU 1
+  // State untuk form input 
   const [formData, setFormData] = useState({
     nomorSurat: "800/123/SMK.2/2024",
     keperluan: "Pengantaran Siswa Praktik Kerja Lapangan (PKL)",
@@ -71,7 +71,6 @@ const TugasTerbaruPage = () => {
     tanggalDibuat: "1 Juli 2024",
     namaKepsek: "SUMIAH, S.PD., M.SI.",
     nipKepsek: "19700210 199802 2009",
-    // Hanya guru1 untuk awal
     guru1: { nama: "Inasni Dyah Rahmatika, S.Pd.", jabatan: "Guru", dinas: "SMK Negeri 2 Singosari" }
   });
 
@@ -91,7 +90,7 @@ const TugasTerbaruPage = () => {
 
   // Fungsi untuk tambah baris guru
 const handleTambahGuru = () => {
-  const newId = Date.now() + Math.random(); // ID unik
+  const newId = Date.now() + Math.random(); 
   const guruCount = guruPenugasan.length + 1;
   
   // Tambah ke guruPenugasan
@@ -183,7 +182,7 @@ const handleHapusGuru = (index) => {
   const openPopup = (type, payload, e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setPopupPos({
-      top: rect.top + window.scrollY - 10, // Posisikan di atas ikon
+      top: rect.top + window.scrollY - 10, 
       left: rect.left + window.scrollX,
     });
     setPopup({ type, data: payload });
@@ -207,7 +206,7 @@ const handleHapusGuru = (index) => {
     });
   };
 
-  // ==================== FUNGSI UNTUK MODAL SURAT TUGAS ====================
+  // FUNGSI UNTUK MODAL SURAT TUGAS 
 // Handle perubahan input form umum
 const handleInputChange = (e) => {
   const { name, value } = e.target;
@@ -279,7 +278,6 @@ const handleOpenSuratTugasModal = (item) => {
 };
 
 // Fungsi untuk generate dan print PDF
-// Fungsi untuk generate dan print PDF
 const handlePrintPDF = () => {
   setGeneratingPDF(true);
 
@@ -299,7 +297,7 @@ const handlePrintPDF = () => {
     const pageWidth = 210;
     let yPosition = 20;
 
-    // ===== KOP SURAT =====
+    //  KOP SURAT
     // Logo (jika ada)
     if (logoSmk) {
       try {
@@ -334,7 +332,7 @@ const handlePrintPDF = () => {
     // Spasi
     yPosition += 10;
 
-    // ===== JUDUL SURAT TUGAS =====
+    // JUDUL SURAT TUGAS 
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("SURAT TUGAS", pageWidth / 2, yPosition, { align: 'center' });
@@ -354,7 +352,7 @@ const handlePrintPDF = () => {
 
     yPosition += 15;
 
-    // ===== ISI SURAT =====
+    // ISI SURAT 
     doc.setFontSize(11);
     doc.text("Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang", marginLeft, yPosition);
     yPosition += 6;
@@ -405,7 +403,7 @@ const handlePrintPDF = () => {
     let finalY = doc.lastAutoTable?.finalY || yPosition + 50;
     yPosition = finalY + 10;
 
-    // ===== DATA PELAKSANAAN =====
+    // DATA PELAKSANAAN 
     doc.setFontSize(11);
 
     // Keperluan
@@ -443,14 +441,14 @@ const handlePrintPDF = () => {
 
     yPosition += 15;
 
-    // ===== PENUTUP SURAT =====
+    //  PENUTUP SURAT
     doc.text("Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya", marginLeft, yPosition);
     yPosition += 6;
     doc.text("dan melaporkan hasilnya kepada kepala sekolah.", marginLeft, yPosition);
 
     yPosition += 20;
 
-    // ===== TANDA TANGAN =====
+    // TANDA TANGAN 
     doc.text(`Singosari, ${dataSuratTugas.tanggalDibuat}`, pageWidth - marginRight, yPosition, { align: 'right' });
     yPosition += 20;
     doc.text("Kepala SMK Negeri 2 Singosari", pageWidth - marginRight, yPosition, { align: 'right' });
@@ -464,7 +462,7 @@ const handlePrintPDF = () => {
     doc.setFontSize(10);
     doc.text(`NIP. ${dataSuratTugas.nipKepsek}`, pageWidth - marginRight, yPosition, { align: 'right' });
 
-    // ===== AUTO PRINT =====
+    //  AUTO PRINT
     doc.autoPrint({ variant: 'non-conform' });
 
     // Buka PDF di tab baru dan langsung print
@@ -480,7 +478,7 @@ const handlePrintPDF = () => {
     }, 500);
 
   } catch (error) {
-    console.error("❌ Error generating PDF:", error);
+    console.error(" Error generating PDF:", error);
     toast.error("Gagal membuat PDF. Silakan coba lagi.");
   } finally {
     setGeneratingPDF(false);
@@ -594,7 +592,7 @@ const handlePrintPDF = () => {
       alamat: item.alamat,
       jumlah_siswa: item.jumlahSiswa,
 
-      // 🔥 INI YANG PENTING
+      //  INI YANG PENTING
       siswa: item.siswa?.length
         ? item.siswa.map(s => s.nama).join(", ")
         : "-",
@@ -801,7 +799,6 @@ const handlePrintPDF = () => {
                           </div>
                         </div>
 
-                        {/* KANAN - Tombol Upload */}
                         {/* KANAN - Tombol Upload & Print */}
                         <div className="flex items-center gap-2">
                           <button 
@@ -821,7 +818,7 @@ const handlePrintPDF = () => {
                             Unggah
                           </button>
 
-                          {/* BUTTON PRINT - Buka Modal */}
+                          {/* BUTTON PRINT */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -846,7 +843,7 @@ const handlePrintPDF = () => {
         </main>
       </div>
 
-      {/* POPUP SISWA - DIPOSISIKAN DI ATAS IKON */}
+      {/* POPUP SISWA  */}
       {popup && (
         <div
           className="fixed inset-0 z-[9999]"
@@ -855,7 +852,7 @@ const handlePrintPDF = () => {
           <div
             className="absolute bg-white border border-gray-300 rounded-xl shadow-lg p-4 w-[320px] max-h-[400px]"
             style={{ 
-              top: Math.max(10, popupPos.top - 320), // Pastikan tidak keluar dari atas layar
+              top: Math.max(10, popupPos.top - 320), 
               left: Math.min(popupPos.left, window.innerWidth - 340)
             }}
             onClick={(e) => e.stopPropagation()}
@@ -915,379 +912,377 @@ const handlePrintPDF = () => {
         </div>
       )}
 
-      {/* ==================== MODAL SURAT TUGAS ==================== */}
-{showSuratTugasModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-    {/* Overlay */}
-    <div
-      className="absolute inset-0 bg-black/50"
-      onClick={() => setShowSuratTugasModal(false)}
-    />
-
-    {/* Modal Content */}
-    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden animate-scale-in">
-      {/* Modal Header */}
-      <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Surat Tugas</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Untuk: {selectedTugas?.industri_nama || "Industri"}
-          </p>
-        </div>
-        <button
-          onClick={() => setShowSuratTugasModal(false)}
-          className="!bg-transparent text-gray-500 hover:text-gray-700 text-2xl"
-        >
-          <X size={24} />
-        </button>
-      </div>
-
-      {/* Modal Body - Split Layout */}
-      <div className="flex h-[calc(90vh-80px)]">
-        {/* KOLOM KIRI: PREVIEW SURAT */}
-        <div className="w-1/2 border-r border-gray-200 overflow-y-auto p-6">
-          <div className="sticky -top-7 bg-white pb-4 z-10">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Preview Surat Tugas</h3>
-            <p className="text-sm text-gray-600">Preview akan otomatis update saat Anda menyimpan perubahan</p>
-          </div>
-
-          <div className="bg-white p-6 border border-gray-200 rounded-lg mt-4">
-
-             <div className="mr-6 -ml-3">
-                                <img 
-                                  src={logoSmk} 
-                                  alt="Logo SMK Negeri 2 Singosari" 
-                                  className="w-20 h-20 object-contain"
-                                />
-                              </div>
-            {/* KOP SURAT */}
-            <div className="text-center mb-6 -mt-22">
-              <p className="font-bold text-lg">PEMERINTAH PROVINSI JAWA TIMUR</p>
-              <p className="font-bold text-lg">DINAS PENDIDIKAN</p>
-              <p className="font-bold text-lg">SMK NEGERI 2 SINGOSARI</p>
-              <p className="text-sm mt-2">
-                Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Malang, Jawa Timur, 65153<br />
-                Telepon (0341) 4345127
-              </p>
-            </div>
-
-            <div className="border border-black my-4 -mt-2"></div>
-            <div className="border border-black my-4 -mt-3.5"></div>
-
-            {/* JUDUL */}
-            <div className="text-center mb-8">
-              <p className="font-bold text-xl underline">SURAT TUGAS</p>
-              <p className="text-sm">Nomor : {dataSuratTugas.nomorSurat}</p>
-            </div>
-
-            {/* PENUGASAN */}
-            <div className="mb-6">
-              <p>Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang</p>
-              <p>menugaskan kepada :</p>
-            </div>
-
-            {/* TABEL GURU */}
-            {/* TABEL GURU */}
-            <table className="w-full border-collapse border border-black mb-6">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-black p-2 text-center">NO</th>
-                  <th className="border border-black p-2 text-center">NAMA</th>
-                  <th className="border border-black p-2 text-center">JABATAN</th>
-                  <th className="border border-black p-2 text-center">DINAS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {guruPenugasan.map((guru, index) => (
-                  <tr key={guru.id || index}>
-                    <td className="border border-black p-2 text-center">{index + 1}</td>
-                    <td className="border border-black p-2">{guru.nama || "-"}</td>
-                    <td className="border border-black p-2">{guru.jabatan || "-"}</td>
-                    <td className="border border-black p-2">{guru.dinas || "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* DETAIL PELAKSANAAN */}
-            <div className="space-y-2 mb-8">
-              <p><span className="font-semibold">Keperluan</span> : {dataSuratTugas.keperluan}</p>
-              <p><span className="font-semibold">Hari / Tanggal</span> : {dataSuratTugas.hariTanggal}</p>
-              <p><span className="font-semibold">Waktu</span> : {dataSuratTugas.waktu}</p>
-              <p><span className="font-semibold">Tempat</span> : {dataSuratTugas.tempat}</p>
-              <p><span className="font-semibold">Alamat</span> : {dataSuratTugas.alamat}</p>
-            </div>
-
-            {/* PENUTUP */}
-            <div className="mb-8">
-              <p>Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya</p>
-              <p>dan melaporkan hasilnya kepada kepala sekolah.</p>
-            </div>
-
-            {/* TANDA TANGAN */}
-            <div className="text-right mt-12">
-              <p>Singosari, {dataSuratTugas.tanggalDibuat}</p>
-              <p className="mt-8">Kepala SMK Negeri 2 Singosari</p>
-              <p className="mt-16 font-bold">{dataSuratTugas.namaKepsek}</p>
-              <p className="text-sm">NIP. {dataSuratTugas.nipKepsek}</p>
-            </div>
-          </div>
-
-          {/* TOMBOL CETAK */}
-          <div className="mt-6">
-            <button
-              onClick={handlePrintPDF}
-              disabled={generatingPDF}
-              className="w-full !bg-green-600 text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Printer size={20} />
-              {generatingPDF ? "Memproses..." : "Cetak Surat Tugas"}
-            </button>
-          </div>
-        </div>
-
-        {/* KOLOM KANAN: FORM EDIT */}
-        <div className="w-1/2 overflow-y-auto p-6">
-          <div className="sticky -top-7 bg-white pb-4 z-10">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Form Edit Data</h3>
-            <p className="text-sm text-gray-600">Edit data di sini, lalu klik "Simpan Perubahan" untuk update preview</p>
-          </div>
-
-          <div className="space-y-6 pt-4">
-            {/* DATA UMUM */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-700 mb-3">Data Surat</h4>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nomor Surat *
-                  </label>
-                  <input
-                    type="text"
-                    name="nomorSurat"
-                    value={formData.nomorSurat}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="Contoh: 800/123/SMK.2/2024"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Keperluan *
-                  </label>
-                  <textarea
-                    name="keperluan"
-                    value={formData.keperluan}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    rows="3"
-                    placeholder="Contoh: Pengantaran Siswa Praktik Kerja Lapangan (PKL)"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hari / Tanggal *
-                    </label>
-                    <input
-                      type="text"
-                      name="hariTanggal"
-                      value={formData.hariTanggal}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Contoh: Senin, 1 Juli 2024"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Waktu *
-                    </label>
-                    <input
-                      type="text"
-                      name="waktu"
-                      value={formData.waktu}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Contoh: 08.00 - Selesai"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tempat *
-                  </label>
-                  <input
-                    type="text"
-                    name="tempat"
-                    value={formData.tempat}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="Contoh: BACAMALANG.COM"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Alamat *
-                  </label>
-                  <textarea
-                    name="alamat"
-                    value={formData.alamat}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    rows="3"
-                    placeholder="Contoh: JL. MOROJANTEK NO. 87 B, PANGENTAN, KEC. SINGOSARI, KAB. MALANG"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tanggal Dibuat Surat *
-                  </label>
-                  <input
-                    type="text"
-                    name="tanggalDibuat"
-                    value={formData.tanggalDibuat}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="Contoh: 1 Juli 2024"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* DATA GURU */}
-            {/* DATA GURU */}
-<div className="bg-gray-50 p-4 rounded-lg">
-  <div className="flex justify-between items-center mb-3">
-    <h4 className="font-semibold text-gray-700">Data Guru yang Ditugaskan</h4>
-    <button
-      type="button"
-      onClick={handleTambahGuru}
-      className="!bg-green-600 text-white px-3 py-1.5 text-sm rounded-md hover:bg-green-700 transition flex items-center gap-1"
-    >
-      <span className="text-lg">+</span>
-      Tambah Guru
-    </button>
-  </div>
-
-  {guruPenugasan.map((guru, index) => (
-    <div key={index} className="mb-4 p-3 bg-white rounded border border-gray-200 relative">
-      <div className="flex justify-between items-center mb-2">
-        <h5 className="font-medium text-gray-600">Guru {index + 1}</h5>
-        {guruPenugasan.length > 1 && (
-          <button
-            type="button"
-            onClick={() => handleHapusGuru(index)}
-            className="!bg-transparent text-red-600 hover:text-red-800 text-sm"
-          >
-            Hapus
-          </button>
-        )}
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Nama *</label>
-          <input
-            type="text"
-            value={formData[`guru${index + 1}`]?.nama || ""}
-            onChange={(e) => handleGuruInputChange(index, 'nama', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="Contoh: Inasni Dyah Rahmatika, S.Pd."
+      {/*  MODAL SURAT TUGAS  */}
+      {showSuratTugasModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowSuratTugasModal(false)}
           />
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Jabatan *</label>
-            <input
-              type="text"
-              value={formData[`guru${index + 1}`]?.jabatan || ""}
-              onChange={(e) => handleGuruInputChange(index, 'jabatan', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Contoh: Guru"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Dinas *</label>
-            <input
-              type="text"
-              value={formData[`guru${index + 1}`]?.dinas || ""}
-              onChange={(e) => handleGuruInputChange(index, 'dinas', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Contoh: SMK Negeri 2 Singosari"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
-
-            {/* DATA KEPALA SEKOLAH */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-700 mb-3">Data Kepala Sekolah</h4>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nama Kepala Sekolah *
-                  </label>
-                  <input
-                    type="text"
-                    name="namaKepsek"
-                    value={formData.namaKepsek}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="Contoh: SUMIAH, S.PD., M.SI."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    NIP Kepala Sekolah *
-                  </label>
-                  <input
-                    type="text"
-                    name="nipKepsek"
-                    value={formData.nipKepsek}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="Contoh: 19700210 199802 2009"
-                  />
-                </div>
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden animate-scale-in">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Surat Tugas</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Untuk: {selectedTugas?.industri_nama || "Industri"}
+                </p>
               </div>
-            </div>
-
-            {/* TOMBOL SIMPAN */}
-            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowSuratTugasModal(false)}
-                className="!bg-gray-500 text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-gray-600 transition"
+                className="!bg-transparent text-gray-500 hover:text-gray-700 text-2xl"
               >
-                Tutup
+                <X size={24} />
               </button>
-              <button
-                onClick={handleSaveSuratTugas}
-                className="!bg-blue-600 text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-blue-700 transition flex items-center gap-2"
-              >
-                <Save size={20} />
-                Simpan Perubahan
-              </button>
+            </div>
+
+            {/* Modal Body - Split Layout */}
+            <div className="flex h-[calc(90vh-80px)]">
+              {/* KOLOM KIRI: PREVIEW SURAT */}
+              <div className="w-1/2 border-r border-gray-200 overflow-y-auto p-6">
+                <div className="sticky -top-7 bg-white pb-4 z-10">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Preview Surat Tugas</h3>
+                  <p className="text-sm text-gray-600">Preview akan otomatis update saat Anda menyimpan perubahan</p>
+                </div>
+
+                <div className="bg-white p-6 border border-gray-200 rounded-lg mt-4">
+
+                  <div className="mr-6 -ml-3">
+                                      <img 
+                                        src={logoSmk} 
+                                        alt="Logo SMK Negeri 2 Singosari" 
+                                        className="w-20 h-20 object-contain"
+                                      />
+                                    </div>
+                  {/* KOP SURAT */}
+                  <div className="text-center mb-6 -mt-22">
+                    <p className="font-bold text-lg">PEMERINTAH PROVINSI JAWA TIMUR</p>
+                    <p className="font-bold text-lg">DINAS PENDIDIKAN</p>
+                    <p className="font-bold text-lg">SMK NEGERI 2 SINGOSARI</p>
+                    <p className="text-sm mt-2">
+                      Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Malang, Jawa Timur, 65153<br />
+                      Telepon (0341) 4345127
+                    </p>
+                  </div>
+
+                  <div className="border border-black my-4 -mt-2"></div>
+                  <div className="border border-black my-4 -mt-3.5"></div>
+
+                  {/* JUDUL */}
+                  <div className="text-center mb-8">
+                    <p className="font-bold text-xl underline">SURAT TUGAS</p>
+                    <p className="text-sm">Nomor : {dataSuratTugas.nomorSurat}</p>
+                  </div>
+
+                  {/* PENUGASAN */}
+                  <div className="mb-6">
+                    <p>Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang</p>
+                    <p>menugaskan kepada :</p>
+                  </div>
+
+                  {/* TABEL GURU */}
+                  <table className="w-full border-collapse border border-black mb-6">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-black p-2 text-center">NO</th>
+                        <th className="border border-black p-2 text-center">NAMA</th>
+                        <th className="border border-black p-2 text-center">JABATAN</th>
+                        <th className="border border-black p-2 text-center">DINAS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {guruPenugasan.map((guru, index) => (
+                        <tr key={guru.id || index}>
+                          <td className="border border-black p-2 text-center">{index + 1}</td>
+                          <td className="border border-black p-2">{guru.nama || "-"}</td>
+                          <td className="border border-black p-2">{guru.jabatan || "-"}</td>
+                          <td className="border border-black p-2">{guru.dinas || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* DETAIL PELAKSANAAN */}
+                  <div className="space-y-2 mb-8">
+                    <p><span className="font-semibold">Keperluan</span> : {dataSuratTugas.keperluan}</p>
+                    <p><span className="font-semibold">Hari / Tanggal</span> : {dataSuratTugas.hariTanggal}</p>
+                    <p><span className="font-semibold">Waktu</span> : {dataSuratTugas.waktu}</p>
+                    <p><span className="font-semibold">Tempat</span> : {dataSuratTugas.tempat}</p>
+                    <p><span className="font-semibold">Alamat</span> : {dataSuratTugas.alamat}</p>
+                  </div>
+
+                  {/* PENUTUP */}
+                  <div className="mb-8">
+                    <p>Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya</p>
+                    <p>dan melaporkan hasilnya kepada kepala sekolah.</p>
+                  </div>
+
+                  {/* TANDA TANGAN */}
+                  <div className="text-right mt-12">
+                    <p>Singosari, {dataSuratTugas.tanggalDibuat}</p>
+                    <p className="mt-8">Kepala SMK Negeri 2 Singosari</p>
+                    <p className="mt-16 font-bold">{dataSuratTugas.namaKepsek}</p>
+                    <p className="text-sm">NIP. {dataSuratTugas.nipKepsek}</p>
+                  </div>
+                </div>
+
+                {/* TOMBOL CETAK */}
+                <div className="mt-6">
+                  <button
+                    onClick={handlePrintPDF}
+                    disabled={generatingPDF}
+                    className="w-full !bg-green-600 text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <Printer size={20} />
+                    {generatingPDF ? "Memproses..." : "Cetak Surat Tugas"}
+                  </button>
+                </div>
+              </div>
+
+              {/* KOLOM KANAN: FORM EDIT */}
+              <div className="w-1/2 overflow-y-auto p-6">
+                <div className="sticky -top-7 bg-white pb-4 z-10">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Form Edit Data</h3>
+                  <p className="text-sm text-gray-600">Edit data di sini, lalu klik "Simpan Perubahan" untuk update preview</p>
+                </div>
+
+                <div className="space-y-6 pt-4">
+                  {/* DATA UMUM */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-700 mb-3">Data Surat</h4>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nomor Surat *
+                        </label>
+                        <input
+                          type="text"
+                          name="nomorSurat"
+                          value={formData.nomorSurat}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Contoh: 800/123/SMK.2/2024"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Keperluan *
+                        </label>
+                        <textarea
+                          name="keperluan"
+                          value={formData.keperluan}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          rows="3"
+                          placeholder="Contoh: Pengantaran Siswa Praktik Kerja Lapangan (PKL)"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Hari / Tanggal *
+                          </label>
+                          <input
+                            type="text"
+                            name="hariTanggal"
+                            value={formData.hariTanggal}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder="Contoh: Senin, 1 Juli 2024"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Waktu *
+                          </label>
+                          <input
+                            type="text"
+                            name="waktu"
+                            value={formData.waktu}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder="Contoh: 08.00 - Selesai"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tempat *
+                        </label>
+                        <input
+                          type="text"
+                          name="tempat"
+                          value={formData.tempat}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Contoh: BACAMALANG.COM"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Alamat *
+                        </label>
+                        <textarea
+                          name="alamat"
+                          value={formData.alamat}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          rows="3"
+                          placeholder="Contoh: JL. MOROJANTEK NO. 87 B, PANGENTAN, KEC. SINGOSARI, KAB. MALANG"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tanggal Dibuat Surat *
+                        </label>
+                        <input
+                          type="text"
+                          name="tanggalDibuat"
+                          value={formData.tanggalDibuat}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Contoh: 1 Juli 2024"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DATA GURU */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-semibold text-gray-700">Data Guru yang Ditugaskan</h4>
+                      <button
+                        type="button"
+                        onClick={handleTambahGuru}
+                        className="!bg-green-600 text-white px-3 py-1.5 text-sm rounded-md hover:bg-green-700 transition flex items-center gap-1"
+                      >
+                        <span className="text-lg">+</span>
+                        Tambah Guru
+                      </button>
+                    </div>
+
+                    {guruPenugasan.map((guru, index) => (
+                      <div key={index} className="mb-4 p-3 bg-white rounded border border-gray-200 relative">
+                        <div className="flex justify-between items-center mb-2">
+                          <h5 className="font-medium text-gray-600">Guru {index + 1}</h5>
+                          {guruPenugasan.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleHapusGuru(index)}
+                              className="!bg-transparent text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Hapus
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm text-gray-600 mb-1">Nama *</label>
+                            <input
+                              type="text"
+                              value={formData[`guru${index + 1}`]?.nama || ""}
+                              onChange={(e) => handleGuruInputChange(index, 'nama', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                              placeholder="Contoh: Inasni Dyah Rahmatika, S.Pd."
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-sm text-gray-600 mb-1">Jabatan *</label>
+                              <input
+                                type="text"
+                                value={formData[`guru${index + 1}`]?.jabatan || ""}
+                                onChange={(e) => handleGuruInputChange(index, 'jabatan', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Contoh: Guru"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm text-gray-600 mb-1">Dinas *</label>
+                              <input
+                                type="text"
+                                value={formData[`guru${index + 1}`]?.dinas || ""}
+                                onChange={(e) => handleGuruInputChange(index, 'dinas', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Contoh: SMK Negeri 2 Singosari"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* DATA KEPALA SEKOLAH */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-700 mb-3">Data Kepala Sekolah</h4>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nama Kepala Sekolah *
+                        </label>
+                        <input
+                          type="text"
+                          name="namaKepsek"
+                          value={formData.namaKepsek}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Contoh: SUMIAH, S.PD., M.SI."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          NIP Kepala Sekolah *
+                        </label>
+                        <input
+                          type="text"
+                          name="nipKepsek"
+                          value={formData.nipKepsek}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Contoh: 19700210 199802 2009"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TOMBOL SIMPAN */}
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => setShowSuratTugasModal(false)}
+                      className="!bg-gray-500 text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-gray-600 transition"
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      onClick={handleSaveSuratTugas}
+                      className="!bg-blue-600 text-white px-6 py-3 rounded-lg !text-md font-semibold hover:bg-blue-700 transition flex items-center gap-2"
+                    >
+                      <Save size={20} />
+                      Simpan Perubahan
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* MODAL DETAIL */}
       {openDetail &&

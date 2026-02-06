@@ -44,7 +44,7 @@ export default function DataPerizinanSiswa() {
     return <Clock className="w-6 h-6 text-orange-500" />;
   };
 
-  // ================= DUMMY DATA =================
+  //  DUMMY DATA 
   const dummyDataPerizinan = [
     {
       nama: "Firli Zulfa Azzahra",
@@ -88,7 +88,7 @@ export default function DataPerizinanSiswa() {
     },
   ];
 
-  // ================= LOAD DATA =================
+  //  LOAD DATA 
   useEffect(() => {
     setDataPerizinan(dummyDataPerizinan);
   }, []);
@@ -98,13 +98,13 @@ export default function DataPerizinanSiswa() {
     setCurrentPage(1);
   }, [search, statusFilter, dateFilter]);
 
-  // ================= HELPER =================
+  //  HELPER 
   const parseDate = (dateStr) => {
     const [day, month, year] = dateStr.split("/");
     return new Date(`${year}-${month}-${day}`);
   };
 
-  // ================= FILTER DATA =================
+  //  FILTER DATA 
   const filteredData = dataPerizinan.filter((item) => {
     const q = search.toLowerCase();
 
@@ -136,7 +136,7 @@ export default function DataPerizinanSiswa() {
     currentPage * itemsPerPage
   );
 
-  // ================= TABLE =================
+  //  TABLE 
   const columns = [
     { label: "Nama", key: "nama" },
     { label: "Kelas", key: "kelas" },

@@ -27,7 +27,6 @@ export default function PopupNotifikasi({
   const navigate = useNavigate(); 
 
 
-  // 🔁 Sync activeTab kalau tabs / defaultTab berubah
   useEffect(() => {
     if (tabs.length === 0) return;
 
@@ -38,7 +37,7 @@ export default function PopupNotifikasi({
 
   if (!isOpen) return null;
 
-  // 🔍 Filter notifications
+  // Filter notifications
   const filteredNotifications =
     activeTab === "all" || !activeTab
       ? notifications

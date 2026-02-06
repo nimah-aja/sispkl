@@ -6,10 +6,10 @@ import { removeTokens } from "../../utils/authHelper";
 import LogoutModal from "./Logout";
 
 // assets
-import profileIcon from "../../assets/PersonCircle.png";   // ICON USER TANPA BG
+import profileIcon from "../../assets/PersonCircle.png";   
 import logoutIcon from "../../assets/logout.svg";
 import logoutImage from "../../assets/logout.jpg";
-import bell from "../../assets/loncengnew.png";               // ICON BEL TANPA BG
+import bell from "../../assets/loncengnew.png";           
 
 export default function Header({ query, setQuery, user: propUser }) {
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ export default function Header({ query, setQuery, user: propUser }) {
         {/* Right Section */}
         <div className="flex items-center space-x-6">
 
-          {/* 🔔 Notification Icon */}
+          {/* Notification Icon */}
           <button className="relative cursor-pointer">
             <img
               src={bell}

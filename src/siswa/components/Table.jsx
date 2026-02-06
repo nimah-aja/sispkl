@@ -54,7 +54,7 @@ export default function Table({
 
   // handle klik header untuk sorting
   const handleSort = (key, isNumeric) => {
-    if (isNumeric) return; // skip kolom angka
+    if (isNumeric) return;
     setSortConfig((prev) => {
       if (prev.key === key && prev.direction === "asc") {
         return { key, direction: "desc" };

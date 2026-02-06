@@ -36,7 +36,7 @@ export default function DataPembimbingKaprog() {
     { label: "No. Telepon", key: "no_telp" },
   ];
 
-  // ================= FETCH DATA =================
+  //  FETCH DATA
   useEffect(() => {
     const fetchPembimbing = async () => {
       try {
@@ -75,7 +75,7 @@ export default function DataPembimbingKaprog() {
     };
   }, [openExport]);
 
-  // ================= FILTER + PAGINATION =================
+  //  FILTER + PAGINATION 
   const filteredData = data.filter((item) =>
     Object.values(item)
       .join(" ")
@@ -95,7 +95,7 @@ export default function DataPembimbingKaprog() {
     currentPage * itemsPerPage
   );
 
-  // ================= EXPORT DATA =================
+  // EXPORT DATA
   const exportData = filteredData.map((item, i) => ({
     No: i + 1,
     "Nama Pembimbing": item.nama,

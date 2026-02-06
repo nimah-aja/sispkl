@@ -1,6 +1,6 @@
 import axios from "../../axiosInstance";
 
-/* ================= LIST ACTIVE KEGIATAN ================= */
+/*  LIST ACTIVE KEGIATAN  */
 export const getActiveKegiatanPKL = async () => {
   try {
     const res = await axios.get("/api/kegiatan-pkl/active");
@@ -11,7 +11,7 @@ export const getActiveKegiatanPKL = async () => {
   }
 };
 
-/* ================= GET KEGIATAN BY ID ================= */
+/*  GET KEGIATAN BY ID  */
 export const getKegiatanPKLById = async (id) => {
   try {
     const res = await axios.get(`/api/kegiatan-pkl/${id}`);

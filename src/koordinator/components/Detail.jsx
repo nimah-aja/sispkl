@@ -56,7 +56,7 @@ export default function Detail({
     });
 
     if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors); // 🔥 trigger error UI
+      setFieldErrors(errors); 
       return;
     }
 
@@ -145,7 +145,7 @@ export default function Detail({
                     value={formData[field.name]} 
                     required={field.required}
                     error={fieldErrors[field.name]}
-                    options={field.options}   // 🔥 INI PENTING
+                    options={field.options}   
                     onChange={(val) =>
                       setFormData((prev) => ({
                         ...prev,

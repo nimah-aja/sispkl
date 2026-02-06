@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 
 export default function PKLProgressCircle({ startDate, endDate }) {
 
-  // 🔒 Kalau tanggal belum ada / invalid
+  //  Kalau tanggal belum ada / invalid
   if (!startDate || !endDate) {
     return (
       <ProgressView percentage={0} remainingDays={0} />
@@ -20,7 +20,7 @@ export default function PKLProgressCircle({ startDate, endDate }) {
   let remainingDays = 0;
   let percentage = 0;
 
-  // 🔒 Jika total hari 0 atau negatif (anti NaN)
+  //  Jika total hari 0 atau negatif (anti NaN)
   if (totalDays <= 0) {
     percentage = 0;
     remainingDays = 0;
@@ -47,7 +47,7 @@ export default function PKLProgressCircle({ startDate, endDate }) {
   );
 }
 
-/* 🔹 Komponen tampilan dipisah (lebih rapi & aman) */
+/*  Komponen tampilan dipisah (lebih rapi & aman) */
 function ProgressView({ percentage, remainingDays }) {
   const radius = 78;
   const strokeWidth = 30;

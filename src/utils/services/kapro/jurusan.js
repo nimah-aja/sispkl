@@ -1,4 +1,3 @@
-// utils/services/kapro/jurusan.js
 import axios from "../../axiosInstance";
 
 export const getJurusanKaprodi = async () => {
