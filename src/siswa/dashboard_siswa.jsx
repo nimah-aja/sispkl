@@ -17,6 +17,8 @@ import {getIndustri} from "../utils/services/admin/get_industri";
 import {getGuru} from "../utils/services/admin/get_guru";
 import { createPortal } from "react-dom";
 import Detail from "./components/Detail";
+import IzinCard from "./components/DetailIzin";
+
 
 import { connectWS, disconnectWS } from "../utils/webSocket";
 
@@ -47,6 +49,7 @@ export default function DashboardSiswa() {
   const [user] = useState(
     JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "Siswa" }
   );
+  const [izinData, setIzinData] = useState(null);
 
   const [dashboardData, setDashboardData] = useState([
     { title: "Status PKL", value: "-", icon: userIcon },
@@ -113,6 +116,7 @@ useEffect(() => {
   
     return t.format("DD MMMM YYYY • HH:mm");
   };
+
 
 
   const fetchPKL = async () => {
@@ -241,6 +245,16 @@ useEffect(() => {
         setActivePKLData(data);
 
         if (data) {
+          setIzinData({
+            nama_pembimbing: guruMap[data.processed_by] || "Nikama S.Pd",
+            tanggal: dayjs(data.tanggal_permohonan).format("DD/MM/YYYY"),
+            jenis: data.jenis || "SAKIT",
+            bukti: data.bukti_foto?.[0]?.url || "",
+          });
+        }
+
+
+        if (data) {
           const today = dayjs().startOf("day");
           const endDate = dayjs(data.tanggal_selesai).startOf("day");
 
@@ -279,6 +293,18 @@ useEffect(() => {
     fetchPKL();
   }, []);
 
+  const today = dayjs().startOf("day");
+
+  const isPKLActive =
+    activePKLData &&
+    activePKLData.status === "Approved" &&
+    today.isBefore(
+      dayjs(activePKLData.tanggal_selesai).startOf("day")
+    );
+
+
+  
+
   const safeValue = (value) => {
     if (value === null || value === undefined || value === "" || value === "Invalid Date") {
       return "-";
@@ -300,26 +326,43 @@ useEffect(() => {
         {/* MAIN CONTENT */}
         <main className="p-6 overflow-auto">
           {/* Grid Status & Jadwal */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-  <div className="space-y-6 min-h-0">
-    <StatusPengajuanPKL dataPKL={activePKLData} />
-  </div>
-  <div className="space-y-6 min-h-0">
-    <JadwalPKLCard dataPKL={activePKLData} />
-  </div>
-</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
 
+          {/* KIRI */}
+          <div className="space-y-6">
+
+            <StatusPengajuanPKL dataPKL={activePKLData} />
+          </div>
+
+          {/* KANAN */}
+          <div>
+            <JadwalPKLCard dataPKL={activePKLData} />
+          </div>
+
+        </div>
+
+
+          {/* IZIN PKL - FULL WIDTH PALING ATAS */}
+          {izinData && (
+            <div className="mb-6 mt-7">
+              <IzinCard
+                data={izinData}
+                onDetail={() => setOpenDetail(true)}
+              />
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="mt-6">
             <QuickActions
-              pklStatus={activePKLData?.status?.toLowerCase()}
-              onAction={(key) => {
-                if (key === "pengajuan_pkl") {
-                  navigate("/siswa/pengajuan_pkl");
-                }
-              }}
-            />
+  isPKLActive={isPKLActive}
+  onAction={(key) => {
+    if (key === "pengajuan_pkl") {
+      navigate("/siswa/pengajuan_pkl");
+    }
+  }}
+/>
+
           </div>
 
           {/* Kalender */}

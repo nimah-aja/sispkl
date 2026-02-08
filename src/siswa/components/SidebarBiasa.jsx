@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 // assets
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
+import envelope from "../../assets/envelopenew.svg";
 import pengajuan_PKL from "../../assets/pengajuan_PKL.svg";
 import logo from "../../assets/logo.png";
 import sidebarCorporate from "../../assets/sidebarCorporate.svg";
@@ -29,6 +30,9 @@ export default function Sidebar({ active, setActive }) {
       route: "/siswa/industri",
       key: "industri",
     },
+    { title: "Riwayat Perizinan", 
+          icon: envelope, 
+          route: "/siswa/riwayat_perizinan", key: "riwayat_perizinan" },
   ];
 
   // main

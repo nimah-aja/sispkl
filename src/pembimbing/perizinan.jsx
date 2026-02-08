@@ -1,433 +1,241 @@
 import React, { useEffect, useState } from "react";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
-import { useRef } from "react";
+import { createPortal } from "react-dom";
+import dayjs from "dayjs";
+import "dayjs/locale/id";
+dayjs.locale("id");
+
 import { CheckCircle, XCircle, Clock } from "lucide-react";
-import Detail from "./components/Detail";
-import editGrafik from "../assets/editGrafik.svg";
-import Add from "./components/Add";
 
-
-
-// Components
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
-import Table from "./components/Table";
 import SearchBar from "./components/Search";
-import Pagination from "./components/Pagination";
+import Detail from "./components/Detail";
+import toast from "react-hot-toast";
+
+import { getIzinPembimbing, decideIzin } from "../utils/services/pembimbing/izin";
+import { getSiswa } from "../utils/services/admin/get_siswa";
+import { getKelas } from "../utils/services/admin/get_kelas";
 
 export default function DataPerizinanSiswa() {
-  const exportRef = useRef(null);
-  const [mode, setMode] = useState("list");
-  const [openExport, setOpenExport] = useState(false);
-
-  const [active, setActive] = useState("perizinan");
+  const [active] = useState("perizinan");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
-  const [dataPerizinan, setDataPerizinan] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [detailMode, setDetailMode] = useState("view");
+  const [data, setData] = useState([]);
 
-  const itemsPerPage = 10;
+  const [filterJenis, setFilterJenis] = useState("");
+  const [filterKelas, setFilterKelas] = useState("");
+
+  const [openDetail, setOpenDetail] = useState(false);
+  const [detailMode, setDetailMode] = useState("view");
+  const [detailData, setDetailData] = useState(null);
 
   const user = {
-    name: localStorage.getItem("nama_guru") || "Guru SMK",
+    name: localStorage.getItem("nama_guru") || "Guru",
     role: "Pembimbing",
   };
 
-  const getStatusIcon = (status) => {
-    if (status === "Disetujui")
-      return <CheckCircle className="w-6 h-6 text-green-600" />;
-    if (status === "Ditolak")
-      return <XCircle className="w-6 h-6 text-red-600" />;
-    return <Clock className="w-6 h-6 text-orange-500" />;
+  const fetchData = async () => {
+    const izin = await getIzinPembimbing();
+    const siswa = await getSiswa();
+    const kelas = await getKelas();
+
+    const siswaMap = {};
+    siswa.forEach((s) => (siswaMap[s.id] = s));
+
+    const kelasMap = {};
+    kelas.forEach((k) => (kelasMap[k.id] = k.nama));
+
+    const mapped = izin.map((i) => {
+      const s = siswaMap[i.siswa_id];
+      const waktu = i.created_at || i.tanggal;
+      const status = (i.status || "pending").toLowerCase();
+
+      return {
+        id: i.id,
+        nama: s?.nama_lengkap || "-",
+        kelas: kelasMap[s?.kelas_id] || "-",
+
+        waktu,
+        tanggal: dayjs(waktu).format("DD MMMM YYYY"),
+        jam: dayjs(waktu).format("HH:mm"),
+
+        // ✅ keputusan
+        decided_at: i.decided_at,
+        tanggal_putus: i.decided_at
+          ? dayjs(i.decided_at).format("DD MMMM YYYY")
+          : "-",
+        jam_putus: i.decided_at
+          ? dayjs(i.decided_at).format("HH:mm")
+          : "-",
+
+        alasan: i.jenis,
+        keterangan: i.keterangan || "-",
+        status,
+        statusLabel:
+          status === "approved"
+            ? "Disetujui"
+            : status === "rejected"
+            ? "Ditolak"
+            : "Proses",
+
+        rejection_reason: i.rejection_reason || "",
+        bukti: i.bukti_foto_urls || [],
+        pembimbing: i.pembimbing_nama || "-",
+      };
+    });
+
+    mapped.sort((a, b) => new Date(b.waktu) - new Date(a.waktu));
+    setData(mapped);
   };
 
-  //  DUMMY DATA 
-  const dummyDataPerizinan = [
-    {
-      nama: "Firli Zulfa Azzahra",
-      kelas: "XII",
-      tanggal: "01/05/2025",
-      alasan: "SAKIT",
-      lampiran: "Ada",
-      status: "Proses",
-    },
-    {
-      nama: "Andi Pratama",
-      kelas: "XI RPL 2",
-      tanggal: "15/11/2025",
-      alasan: "SAKIT",
-      lampiran: "Ada",
-      status: "Disetujui",
-    },
-    {
-      nama: "Dewi Lestari",
-      kelas: "XII",
-      tanggal: "22/11/2025",
-      alasan: "Urusan Pribadi",
-      lampiran: "Ada",
-      status: "Ditolak",
-    },
-    {
-      nama: "Maya Anggraini",
-      kelas: "XII",
-      tanggal: "28/11/2025",
-      alasan: "Acara Keluarga",
-      lampiran: "Ada",
-      status: "Proses",
-    },
-    {
-      nama: "Putri Maharani",
-      kelas: "XI RPL 2",
-      tanggal: "05/12/2025",
-      alasan: "SAKIT",
-      lampiran: "Ada",
-      status: "Disetujui",
-    },
-  ];
-
-  //  LOAD DATA 
   useEffect(() => {
-    setDataPerizinan(dummyDataPerizinan);
+    fetchData();
   }, []);
 
-  // reset pagination jika filter berubah
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter, dateFilter]);
-
-  //  HELPER 
-  const parseDate = (dateStr) => {
-    const [day, month, year] = dateStr.split("/");
-    return new Date(`${year}-${month}-${day}`);
+  const handleSubmitDetail = async (_, payload) => {
+    try {
+      await decideIzin(detailData.id, payload.status, payload.rejection_reason);
+      toast.success("Berhasil memproses izin");
+      setOpenDetail(false);
+      fetchData();
+    } catch {
+      toast.error("Gagal memproses izin");
+    }
   };
 
-  //  FILTER DATA 
-  const filteredData = dataPerizinan.filter((item) => {
-    const q = search.toLowerCase();
+  const getStatusIcon = (s) =>
+    s === "approved" ? (
+      <CheckCircle className="text-green-600" />
+    ) : s === "rejected" ? (
+      <XCircle className="text-red-600" />
+    ) : (
+      <Clock className="text-orange-500" />
+    );
+
+  const jenisOptions = [...new Set(data.map((d) => d.alasan))];
+  const kelasOptions = [...new Set(data.map((d) => d.kelas))];
+
+  const filtered = data.filter((i) => {
+    const s = search.toLowerCase();
 
     const matchSearch =
-      item.nama.toLowerCase().includes(q) ||
-      item.kelas.toLowerCase().includes(q) ||
-      item.alasan.toLowerCase().includes(q);
+      (i.nama + i.kelas + i.alasan).toLowerCase().includes(s);
 
-    const matchStatus = statusFilter ? item.status === statusFilter : true;
+    const matchJenis = filterJenis ? i.alasan === filterJenis : true;
+    const matchKelas = filterKelas ? i.kelas === filterKelas : true;
 
-    const matchDate = dateFilter
-      ? parseDate(item.tanggal).toDateString() ===
-        new Date(dateFilter).toDateString()
-      : true;
-
-    return matchSearch && matchStatus && matchDate;
+    return matchSearch && matchJenis && matchKelas;
   });
 
-  // nomor urut
-  const dataWithNo = filteredData.map((item, i) => ({
-    ...item,
-    no: i + 1,
-  }));
+  const groupedByDate = filtered.reduce((acc, item) => {
+    if (!acc[item.tanggal]) acc[item.tanggal] = [];
+    acc[item.tanggal].push(item);
+    return acc;
+  }, {});
 
-  // pagination
-  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
-  const paginatedData = dataWithNo.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const handleChangeMode = (newMode) => {
+    setDetailData((prev) => ({
+      ...prev,
+      status: newMode === "approve" ? "approved" : "rejected",
+    }));
 
-  //  TABLE 
-  const columns = [
-    { label: "Nama", key: "nama" },
-    { label: "Kelas", key: "kelas" },
-    { label: "Tanggal", key: "tanggal" },
-    { label: "Alasan", key: "alasan" },
-    { label: "Lampiran", key: "lampiran" },
-    { label: "Status", key: "status" },
-  ];
-
-  const statusOptions = [...new Set(dataPerizinan.map((d) => d.status))];
-
-  const exportData = filteredData.map((item, i) => ({
-    No: i + 1,
-    Nama: item.nama,
-    Kelas: item.kelas,
-    Tanggal: item.tanggal,
-    Alasan: item.alasan,
-    Lampiran: item.lampiran,
-    Status: item.status,
-  }));
-
-  const handleExportExcel = () => {
-    if (!exportData.length) return;
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Perizinan Siswa");
-    XLSX.writeFile(wb, "data_perizinan_siswa.xlsx");
+    setDetailMode(newMode);
   };
-
-  const handleExportPDF = () => {
-    if (!exportData.length) return;
-    const doc = new jsPDF();
-    doc.text("Data Perizinan Peserta Didik", 14, 15);
-    autoTable(doc, {
-      startY: 20,
-      head: [Object.keys(exportData[0])],
-      body: exportData.map((d) => Object.values(d)),
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [100, 30, 33] },
-    });
-    doc.save("data_perizinan_siswa.pdf");
-  };
-
-  const addFields = [
-      {
-      name: "nama_siswa",
-      label: "Nama Siswa",
-      type: "text",
-      width: "half",
-      required: true,
-    },
-    {
-      name: "kelas",
-      label: "Kelas",
-      type: "text",
-      width: "half",
-      required: true,
-    },
-    {
-      name: "tanggal",
-      label: "Tanggal",
-      type: "date",
-      width: "full",
-      required: true,
-    },
-    {
-      name: "alasan",
-      label: "Alasan",
-      type: "textarea",
-      width: "full",
-      required: true,
-    },
-    {
-      name: "surat_dokter",
-      label: "Upload Surat Dokter",
-      type: "file",
-      width: "full",
-      required: true,
-      accept: ".pdf,.jpg,.png",
-      onChange: (e) => setFile(e.target.files[0]),
-    },
-    ];
-  
-    if (mode === "add") {
-    return (
-      <Add
-        title="Tambah Perizinan Siswa"
-        fields={addFields}
-        image={editGrafik}
-        onSubmit={(formData) => {
-          const raw = Object.fromEntries(formData);
-  
-          if (!raw.masalah) return;
-  
-          setDataPermasalahan(prev => [
-            {
-              pelapor: "Pembimbing",
-              tanggal: new Date().toLocaleDateString("id-ID"),
-              status: "Proses",
-              ...raw,
-            },
-            ...prev,
-          ]);
-  
-          setMode("list");
-        }}
-        onCancel={() => setMode("list")}
-      />
-    );
-  }
-
 
   return (
-    <div className="bg-white min-h-screen w-full">
+    <div className="bg-white min-h-screen">
       <Header user={user} />
 
       <div className="flex">
-        <div className="hidden md:block">
-          <Sidebar active={active} setActive={setActive} />
-        </div>
+        <Sidebar active={active} />
 
-        <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
-          <div className="flex items-center mb-6 gap-1 w-full relative">
-            <h2 className="text-white font-bold text-lg">
-              Data Perizinan 
-            </h2>
-
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setOpenExport(!openExport)}
-                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
-              >
-                <Download size={18} />
-              </button>
-
-              {openExport && (
-                <div className="absolute left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
-                  <button
-                    onClick={() => {
-                      handleExportExcel();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileSpreadsheet size={16} className="text-green-600" />
-                    Excel
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      handleExportPDF();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileText size={16} className="text-red-600" />
-                    PDF
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-
-          {/* SEARCH & FILTER */}
+        <main className="flex-1 p-10 bg-[#641E21] rounded-l-3xl">
           <SearchBar
-            onAddClick={() => setMode("add")}
             query={search}
             setQuery={setSearch}
-            placeholder="Cari nama / kelas / alasan"
             filters={[
               {
-                label: "Status",
-                value: statusFilter,
-                options: statusOptions,
-                onChange: setStatusFilter,
+                label: "Jenis",
+                value: filterJenis,
+                options: jenisOptions,
+                onChange: setFilterJenis,
               },
               {
-                label: "Tanggal",
-                type: "date",
-                value: dateFilter,
-                onChange: setDateFilter,
+                label: "Kelas",
+                value: filterKelas,
+                options: kelasOptions,
+                onChange: setFilterKelas,
               },
             ]}
           />
 
-          <div className="mt-6 space-y-3">
-            {filteredData.map((item, index) => (
-              <div
-                key={index}
-                onClick={() => {
-                  setSelectedItem(item);
-                  setDetailMode("view");
-                }}
-                className="bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
-              >
+          {Object.entries(groupedByDate).map(([tanggal, items]) => (
+            <div key={tanggal}>
+              <h2 className="text-white font-semibold mb-3 mt-6">{tanggal}</h2>
 
-                {/* HEADER */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100">
-                      {getStatusIcon(item.status)}
-                    </div>
+              <div className="space-y-3">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-white p-4 rounded-lg cursor-pointer"
+                    onClick={() => {
+                      setDetailData(item);
+                      setDetailMode("view");
+                      setOpenDetail(true);
+                    }}
+                  >
+                    <div className="flex justify-between">
+                      <div className="flex gap-3">
+                        {getStatusIcon(item.status)}
 
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-base">
-                        {item.nama} | {item.kelas}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {item.alasan} • Lampiran: {item.lampiran}
-                      </p>
+                        <div>
+                          <h3 className="font-bold">
+                            {item.nama} | {item.kelas}
+                          </h3>
+
+                          <p className="text-sm">
+                            {item.alasan} • {item.statusLabel}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="text-sm">{item.jam}</span>
                     </div>
                   </div>
-
-                  <span className="text-sm text-gray-500">
-                    {item.tanggal}
-                  </span>
-                </div>
-
-                {/* ACTION BUTTON */}
-                {item.status === "Proses" && (
-                  <div className="flex gap-2 ml-14">
-                    <button
-                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-                      style={{ backgroundColor: "#BC2424" }}
-                    >
-                      Tolak
-                    </button>
-
-                    <button
-                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-                      style={{ backgroundColor: "#EC933A" }}
-                    >
-                      Terima
-                    </button>
-                  </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
-
-          
-                    {totalPages > 1 && (
-                                <div className="flex justify-between items-center mt-4 text-white">
-                                  <span>
-                                    Halaman {currentPage} dari {totalPages}
-                                  </span>
-                                  <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={setCurrentPage}
-                                  />
-                                </div>
-                              )}
+            </div>
+          ))}
         </main>
-        {selectedItem && (
-          <Detail
-            title="Detail Perizinan Siswa"
-            initialData={selectedItem}
-            mode={detailMode}
-            onClose={() => setSelectedItem(null)}
-            onChangeMode={setDetailMode}
-            onSubmit={(mode, data) => {
-              console.log(mode, data);
-
-              // contoh update status
-              setDataPerizinan((prev) =>
-                prev.map((d) =>
-                  d.nama === data.nama
-                    ? { ...d, status: mode === "approve" ? "Disetujui" : "Ditolak" }
-                    : d
-                )
-              );
-
-              setSelectedItem(null);
-            }}
-            fields={[
-              { name: "nama", label: "Nama Siswa" },
-              { name: "kelas", label: "Kelas" },
-              { name: "tanggal", label: "Tanggal" },
-              { name: "alasan", label: "Alasan" },
-              { name: "lampiran", label: "Lampiran" },
-              { name: "status", label: "Status" },
-            ]}
-          />
-        )}
-
       </div>
+
+      {openDetail &&
+        createPortal(
+          <Detail
+            mode={detailMode}
+            onChangeMode={handleChangeMode}
+            onSubmit={handleSubmitDetail}
+            onClose={() => setOpenDetail(false)}
+            title="Detail Izin"
+            initialData={detailData}
+            fields={[
+              { name: "nama", label: "Nama" },
+              { name: "kelas", label: "Kelas" },
+              { name: "tanggal", label: "Tanggal Pengajuan" },
+              { name: "jam", label: "Jam Pengajuan" },
+
+              // ✅ keputusan
+              { name: "tanggal_putus", label: "Tanggal Diputuskan" },
+              { name: "jam_putus", label: "Jam Diputuskan" },
+
+              { name: "alasan", label: "Jenis" },
+              { name: "keterangan", label: "Keterangan" },
+              { name: "statusLabel", label: "Status" },
+              { name: "rejection_reason", label: "Alasan Ditolak" },
+              { name: "bukti", label: "Bukti Foto" },
+            ]}
+          />,
+          document.body
+        )}
     </div>
   );
 }

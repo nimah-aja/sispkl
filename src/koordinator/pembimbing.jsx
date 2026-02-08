@@ -186,7 +186,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
   return (
     <>
       <Add
-        title={mode === "add" ? "Tambah Peserta PKL" : "Edit Peserta PKL"}
+        title={mode === "add" ? "Tambah Pembimbing" : "Edit Pembimbing"}
         fields={inputFields}
         image={addImg}
         existingData={peserta.filter((p) => p.nip !== (editData?.nip || ""))}
@@ -210,7 +210,7 @@ if (mode === "add" || (mode === "edit" && editData)) {
       <SaveConfirmationModal
         isOpen={isConfirmSaveOpen}
         title="Konfirmasi Simpan"
-        message="Apakah kamu yakin ingin menyimpan data peserta ini?"
+        message="Apakah kamu yakin ingin menyimpan data pembimbing ini?"
         onClose={() => setIsConfirmSaveOpen(false)}
         onSave={() => {
           if (mode === "add") {
@@ -229,8 +229,8 @@ if (mode === "add" || (mode === "edit" && editData)) {
 
       <DeleteConfirmation
         isOpen={isDeleteOpen}
-        title="Hapus Data Peserta"
-        message="Apakah kamu yakin ingin menghapus data peserta ini?"
+        title="Hapus Data Pembimbing"
+        message="Apakah kamu yakin ingin menghapus data pembimbing ini?"
         onClose={() => setIsDeleteOpen(false)}
         onDelete={() => {
           setPeserta((prev) =>

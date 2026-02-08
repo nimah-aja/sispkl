@@ -2,12 +2,9 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 
 export default function PKLProgressCircle({ startDate, endDate }) {
-
-  //  Kalau tanggal belum ada / invalid
+  // Kalau tanggal belum ada / invalid
   if (!startDate || !endDate) {
-    return (
-      <ProgressView percentage={0} remainingDays={0} />
-    );
+    return <ProgressView percentage={0} remainingTime={formatRemainingTime(0)} />;
   }
 
   const start = dayjs(startDate).startOf("day");
@@ -20,7 +17,7 @@ export default function PKLProgressCircle({ startDate, endDate }) {
   let remainingDays = 0;
   let percentage = 0;
 
-  //  Jika total hari 0 atau negatif (anti NaN)
+  // Jika total hari 0 atau negatif (anti NaN)
   if (totalDays <= 0) {
     percentage = 0;
     remainingDays = 0;
@@ -39,16 +36,46 @@ export default function PKLProgressCircle({ startDate, endDate }) {
     percentage = Math.round((passedDays / totalDays) * 100);
   }
 
+  // Format sisa hari menjadi bulan, minggu, hari
+  const remainingTime = formatRemainingTime(remainingDays);
+
   return (
     <ProgressView
       percentage={percentage}
-      remainingDays={remainingDays}
+      remainingTime={remainingTime}
     />
   );
 }
 
-/*  Komponen tampilan dipisah (lebih rapi & aman) */
-function ProgressView({ percentage, remainingDays }) {
+/* Fungsi untuk mengubah jumlah hari menjadi format: X bulan Y minggu Z hari */
+function formatRemainingTime(days) {
+  if (days <= 0) return { text: "Selesai", displayText: "Selesai" };
+
+  const months = Math.floor(days / 30);
+  const remainingAfterMonths = days % 30;
+  const weeks = Math.floor(remainingAfterMonths / 7);
+  const remainingDays = remainingAfterMonths % 7;
+
+  let parts = [];
+  
+  if (months > 0) {
+    parts.push(`${months} bulan`);
+  }
+  if (weeks > 0) {
+    parts.push(`${weeks} minggu`);
+  }
+  if (remainingDays > 0 || parts.length === 0) {
+    parts.push(`${remainingDays} hari`);
+  }
+
+  return {
+    text: parts.join(" "),
+    displayText: parts.length > 1 ? parts.join(" ") : parts[0]
+  };
+}
+
+/* Komponen tampilan dipisah (lebih rapi & aman) */
+function ProgressView({ percentage, remainingTime }) {
   const radius = 78;
   const strokeWidth = 30;
   const circumference = 2 * Math.PI * radius;
@@ -97,7 +124,7 @@ function ProgressView({ percentage, remainingDays }) {
             {animatedPercent}%
           </span>
           <span className="text-sm text-gray-600 mt-1">
-            Sisa {remainingDays} hari
+            Sisa {remainingTime.displayText}
           </span>
         </div>
       </div>
