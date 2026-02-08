@@ -44,6 +44,8 @@ export default function Add({
   const [dropdownState, setDropdownState] = useState({});
   const [searchQueries, setSearchQueries] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [fileName, setFileName] = useState("");
+
 
   // Date
   const DateInput = React.forwardRef(
@@ -639,6 +641,27 @@ export default function Add({
                         }
                       />
                     </div>
+                                    ) : field.type === "file" ? (
+                    <div className=" mt-5 file-upload-wrapper">
+                      <label className="file-label w-20 h-10 !bg-[#EC933A] pl-2 pr-2 pt-2 pb-2 rounded-md !text-white mr-3">
+                        Pilih File
+                        <input
+                          type="file"
+                          name={field.name}
+                          accept={field.accept}
+                          required={field.required}
+                          hidden
+                          onChange={(e) => {
+                            field.onChange?.(e);
+                            setFileName(e.target.files[0]?.name || "");
+                          }}
+                        />
+                      </label>
+
+                      <span className="file-name">
+                        {fileName || "Belum ada file dipilih"}
+                      </span>
+                    </div>
                   ) : (
                     <input
                       name={field.name}
@@ -652,7 +675,8 @@ export default function Add({
                           : "border-gray-300 focus:ring-orange-500"
                       }`}
                     />
-                  )}
+                  )
+}
 
                   {fieldErrors[field.name] && (
                     <p className="text-red-500 text-xs mt-1">{fieldErrors[field.name]}</p>

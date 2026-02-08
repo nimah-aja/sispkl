@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+
 import {
   FilePlus,
   ArrowLeftRight,
@@ -7,9 +9,49 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-export default function QuickActions({ onAction, pklStatus }) {
-  const navigate = useNavigate();
+import { getIzinMe } from "../../utils/services/siswa/izin";
 
+export default function QuickActions({ onAction, isPKLActive }) {
+  const navigate = useNavigate();
+  const [todayIzin, setTodayIzin] = useState(null);
+
+  useEffect(() => {
+    const fetchIzin = async () => {
+      try {
+        const res = await getIzinMe();
+
+        // ⚠️ samakan dengan struktur API kamu
+        const data = res?.data?.data || res || [];
+
+        const today = dayjs().format("YYYY-MM-DD");
+
+        const izinHariIni = data.find(
+          (i) => dayjs(i.tanggal).format("YYYY-MM-DD") === today
+        );
+
+        setTodayIzin(izinHariIni || null);
+      } catch (err) {
+        console.error("Gagal mengambil izin:", err);
+        setTodayIzin(null);
+      }
+    };
+
+    fetchIzin();
+  }, []);
+
+  // ===============================
+  // 🔑 LOGIC DISABLE IZIN PKL (FINAL)
+  // ===============================
+  const hasIzinToday = !!todayIzin;
+  const izinStatus = todayIzin?.status?.toLowerCase();
+
+  // Disable jika hari ini ADA izin & status Pending / Approved
+  const izinDisabled =
+    hasIzinToday && ["pending", "approved"].includes(izinStatus);
+
+  // ===============================
+  // ACTION LIST
+  // ===============================
   const actions = [
     {
       label: "Pengajuan PKL",
@@ -17,25 +59,26 @@ export default function QuickActions({ onAction, pklStatus }) {
       icon: <FilePlus size={28} className="text-blue-600" />,
       bg: "bg-blue-100",
       key: "pengajuan_pkl",
-      disabled: pklStatus === "pending" || pklStatus === "approved",
+      disabled: isPKLActive
     },
     {
-      onClick : () => navigate("/siswa/pengajuan_pindah_pkl"),
       label: "Pengajuan Pindah PKL",
+      onClick: () => navigate("/siswa/pengajuan_pindah_pkl"),
       icon: <ArrowLeftRight size={28} className="text-green-600" />,
       bg: "bg-green-100",
       key: "pindah_pkl",
     },
     {
-      onClick : () => navigate("/siswa/perizinan_pkl"),
       label: "Izin PKL",
+      onClick: () => navigate("/siswa/perizinan_pkl"),
       icon: <CalendarX size={28} className="text-purple-600" />,
       bg: "bg-purple-100",
       key: "izin_pkl",
+      disabled: izinDisabled,
     },
     {
-      onClick : () => navigate("/siswa/bukti_terima"),
       label: "Kirim Bukti Diterima",
+      onClick: () => navigate("/siswa/bukti_terima"),
       icon: <CheckCircle size={28} className="text-orange-600" />,
       bg: "bg-orange-100",
       key: "bukti_diterima",
@@ -55,14 +98,9 @@ export default function QuickActions({ onAction, pklStatus }) {
               key={item.key}
               onClick={() => {
                 if (isDisabled) return;
-
-                if (item.onClick) {
-                  item.onClick();
-                } else {
-                  onAction?.(item.key);
-                }
+                item.onClick?.();
+                onAction?.(item.key);
               }}
-
               className={`
                 border border-[#6e0f0f] rounded-xl p-4
                 flex flex-col items-center justify-center
@@ -86,10 +124,16 @@ export default function QuickActions({ onAction, pklStatus }) {
                 {item.label}
               </p>
 
-              {/* OPTIONAL LABEL */}
+              {/* INFO LABEL */}
               {isDisabled && item.key === "pengajuan_pkl" && (
-                <span className="text-xs text-gray-500 mt-1">
-                  Pengajuan sedang aktif
+                <span className="text-xs text-gray-500 mt-1 text-center">
+                  Pengajuan PKL sedang aktif
+                </span>
+              )}
+
+              {isDisabled && item.key === "izin_pkl" && (
+                <span className="text-xs text-gray-500 mt-1 text-center">
+                  Izin hari ini sudah diajukan
                 </span>
               )}
             </div>

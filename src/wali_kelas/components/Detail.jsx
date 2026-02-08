@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
 import { X } from "lucide-react";
-
 
 export default function Detail({
   title = "Detail Pengajuan PKL",
@@ -10,15 +9,14 @@ export default function Detail({
   size = "half", // "full" | "half"
 }) {
   const isFull = size === "full";
+  const [previewImage, setPreviewImage] = useState(null);
 
   return (
     <div className="fixed inset-0 z-[10000000] flex items-center justify-end">
-      
-      {/* BACKDROP / PORTAL */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      {/* BACKDROP */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+
+      {/* CLOSE BUTTON */}
       <div
         onClick={onClose}
         className="
@@ -50,7 +48,6 @@ export default function Detail({
           ${isFull ? "w-[calc(100%-3rem)]" : "w-full max-w-3xl"}
         `}
       >
-        
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="!text-2xl font-bold">{title}</h2>
@@ -72,32 +69,77 @@ export default function Detail({
               >
                 <div className="flex items-center gap-2 text-sm text-gray-800 mb-1">
                   {field.icon && (
-                    <span className="text-gray-400">
-                      {field.icon}
-                    </span>
+                    <span className="text-gray-400">{field.icon}</span>
                   )}
                   <span>{field.label}</span>
                 </div>
 
-                <p className="font-semibold text-gray-800">
-                  {initialData[field.name] || "-"}
-                </p>
+                {/* IMAGE ARRAY SUPPORT */}
+                {Array.isArray(initialData[field.name]) ? (
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    {initialData[field.name]?.length ? (
+                      initialData[field.name].map((url, i) => (
+                        <img
+                          key={i}
+                          src={url}
+                          alt={`img-${i}`}
+                          className="w-32 h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                          onClick={() => setPreviewImage(url)}
+                        />
+                      ))
+                    ) : (
+                      <p>-</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="font-semibold text-gray-800">
+                    {initialData[field.name] || "-"}
+                  </p>
+                )}
               </div>
             ))}
           </div>
         </div>
-
-        {/* FOOTER */}
-        {/* <div className="border-gray-200 border-t px-6 py-4">
-          <button
-            onClick={onClose}
-            className="w-full !bg-[#EC933A] hover:bg-[#EC933A]-900 text-white py-2.5 rounded-xl transition"
-          >
-            Tutup
-          </button>
-        </div> */}
-
       </div>
+
+      {/* IMAGE PREVIEW MODAL */}
+      {previewImage && (
+        <div
+          className="
+            fixed inset-0
+            bg-black/80
+            z-[99999999]
+            flex items-center justify-center
+          "
+          onClick={() => setPreviewImage(null)}
+        >
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="
+              max-w-[90vw]
+              max-h-[90vh]
+              rounded-xl
+              shadow-2xl
+            "
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="
+              absolute top-6 right-6
+              !bg-white/20
+              hover:bg-white/30
+              text-white
+              rounded-full
+              p-2
+            "
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

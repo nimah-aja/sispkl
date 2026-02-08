@@ -466,12 +466,12 @@ export default function PKLDashboard() {
         value: 0,
         description: "Belum ada data"
       },
-      {
-        title: "Permasalahan",
-        icon: timeIcon,
-        value: 0,
-        description: "Belum ada data"
-      },
+      // {
+      //   title: "Permasalahan",
+      //   icon: timeIcon,
+      //   value: 0,
+      //   description: "Belum ada data"
+      // },
     ];
     
     console.log("Dashboard cards updated:", results);
@@ -555,10 +555,10 @@ export default function PKLDashboard() {
                     navigate("/guru/realisasi");
                   else if (item.title.includes("Perizinan"))
                     navigate("/guru/pembimbing/perizinan");
-                  else if (item.title.includes("Permasalahan"))
-                    navigate("/guru/pembimbing/permasalahan");
-                  else if (item.title.includes("Perpindahan PKL"))
-                    navigate("/guru/pembimbing/perpindahan");
+                  // else if (item.title.includes("Permasalahan"))
+                  //   navigate("/guru/pembimbing/permasalahan");
+                  // else if (item.title.includes("Perpindahan PKL"))
+                  //   navigate("/guru/pembimbing/perpindahan");
                 }}
               />
             ))}

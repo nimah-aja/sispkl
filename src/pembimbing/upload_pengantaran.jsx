@@ -495,7 +495,7 @@ export default function UploadBuktiPengantaran() {
   return (
     <Add
   key={formKey}
-  title="Upload Bukti Pengantaran"
+  title="Upload Bukti Kegiatan"
   fields={fields}
   submitText={loading ? "Mengirim..." : "Kirim"}
   cancelText="Reset"

@@ -50,6 +50,20 @@ export default function DataPeserta() {
     role: "Pembimbing" 
   };
 
+  const mapStatus = (status) => {
+    switch (status) {
+      case "Approved":
+        return "Diterima";
+      case "Pending":
+        return "Diproses";
+      case "Rejected":
+        return "Ditolak";
+      default:
+        return status;
+    }
+  };
+
+
 
   const navigate = useNavigate();
 
@@ -106,7 +120,7 @@ export default function DataPeserta() {
             kelas: taskSiswa?.kelas || "-",    
             tanggal_mulai: dayjs(item.tanggal_mulai).format("DD-MM-YYYY"),
             tanggal_selesai: dayjs(item.tanggal_selesai).format("DD-MM-YYYY"),
-            status: item.status,
+            status: mapStatus(item.status),
           };
         });
 
@@ -156,7 +170,7 @@ export default function DataPeserta() {
     Industri: item.industri,
     Tanggal_Mulasi : item.tanggal_mulai,
     Tanggal_Selesai : item.tanggal_selesai,
-    Status: item.status,
+    status: mapStatus(item.status),
   }));
 
 

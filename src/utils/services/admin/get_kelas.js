@@ -10,3 +10,12 @@ export const getKelas = async () => {
 
   return jurusanList;
 };
+
+export const getKelasById = async (id) => {
+  try {
+    const res = await axiosInstance.get(`/api/kelas/${id}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};

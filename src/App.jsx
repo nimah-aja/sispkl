@@ -63,9 +63,11 @@ import DashboardSiswa from "./siswa/dashboard_siswa";
 import FormPengajuan from "./siswa/pengajuan_pkl";
 import FormPengajuanPindah from "./siswa/pengajuan_perpindahan_pkl";
 import FormPerizinan from "./siswa/perizinan_pkl";
+import UbahPerizinan from "./siswa/edit_perizinan_pkl"
 import FormDiterima from "./siswa/bukti_terima";
 import RiwayatPengajuan from "./siswa/data_pengajuan";
 import Industri from "./siswa/industri";
+import RiwayatPerizinan from "./siswa/riwayat_perizinan";
 
 
 function AppContent() {
@@ -165,6 +167,8 @@ function AppContent() {
         <Route path="/siswa/bukti_terima" element={<FormDiterima />} />
         <Route path="/siswa/riwayat_pengajuan" element={<RiwayatPengajuan />} />
         <Route path="/siswa/industri" element={<Industri />} />
+        <Route path="/siswa/ubah_perizinan_pkl" element={<UbahPerizinan />} />
+        <Route path="/siswa/riwayat_perizinan" element={<RiwayatPerizinan />} />
       </Routes>
     </>
   );
