@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 
 export default function Detail({
-  title = "Detail Pengajuan PKL",
+  title = "Rincian Pengajuan PKL",
   fields = [],
   initialData = {},
   onClose,

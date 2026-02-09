@@ -699,7 +699,7 @@ export default function Add({
               "--btn-text": "white",
             }}
           >
-            Reset
+            Atur Ulang
           </button>
 
           <button

@@ -231,7 +231,7 @@ export default function StatusPengajuanPKL() {
                       flex items-center justify-center gap-1 transition-all duration-300 
                       hover:bg-[#b96927]"
           >
-            Detail
+            Rincian
             <ArrowUpRight size={16} />
           </button>
         </div>
@@ -286,7 +286,7 @@ export default function StatusPengajuanPKL() {
                         flex items-center justify-center gap-1
                         hover:!border hover:!border-[#EC933A] hover:!bg-transparent hover:!text-[#EC933A] transition"
             >
-              Detail
+              Rincian
               <ArrowUpRight size={16} />
             </button>
 

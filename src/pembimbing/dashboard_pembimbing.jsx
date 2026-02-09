@@ -24,6 +24,8 @@ import {
 } from "../utils/services/pembimbing/guru"; 
 import {getMyRealisasiKegiatan} from "../utils/services/pembimbing/realisasi"; 
 import {getActiveKegiatanPKL} from "../utils/services/pembimbing/kegiatan"; 
+import { getIzinPembimbing } from "../utils/services/pembimbing/izin";
+
 
 // Assets
 import userIcon from "../assets/sidebarUsers.svg";
@@ -33,8 +35,44 @@ import bellIcon from "../assets/bell-notification-social-media 1.png";
 import perpindahan from "../assets/pindahPKL.svg";
 
 export default function PKLDashboard() {
+  const [izinStats, setIzinStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
+
   const [active, setActive] = useState("sidebarDashboard");
+  const [totalPerizinan, setTotalPerizinan] = useState(0);
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const fetchPerizinan = async () => {
+      try {
+        const izin = await getIzinPembimbing();
+
+        const total = izin.length;
+        const pending = izin.filter(i => i.status === "pending").length;
+        const approved = izin.filter(i => i.status === "approved").length;
+        const rejected = izin.filter(i => i.status === "rejected").length;
+
+        setTotalPerizinan(total);
+        setIzinStats({
+          total,
+          pending,
+          approved,
+          rejected,
+        });
+
+      } catch (error) {
+        console.error("Gagal fetch perizinan:", error);
+        setTotalPerizinan(0);
+      }
+    };
+
+    fetchPerizinan();
+  }, []);
+
   const [dataDisplay, setDataDisplay] = useState([
     {
       title: "Data Siswa",
@@ -62,9 +100,9 @@ export default function PKLDashboard() {
     },
     {
       title: "Perizinan",
-      icon: perpindahan,
-      value: 0,
-      description: "Belum ada data"
+      icon: surrelIcon,
+      value: totalPerizinan,
+      description: `${totalPerizinan} pengajuan izin`,
     },
     {
       title: "Permasalahan",
@@ -463,8 +501,8 @@ export default function PKLDashboard() {
       {
         title: "Perizinan",
         icon: surrelIcon,
-        value: 0,
-        description: "Belum ada data"
+        value: totalPerizinan,
+        description: `${totalPerizinan} pengajuan izin`,
       },
       // {
       //   title: "Permasalahan",
@@ -477,7 +515,7 @@ export default function PKLDashboard() {
     console.log("Dashboard cards updated:", results);
     setDataDisplay(results);
     
-  }, [siswa, industriesData, tugasTerbaru, aktivitasItems]);
+  }, [siswa, industriesData, tugasTerbaru, aktivitasItems, totalPerizinan,]);
 
   // Get industri name for realisasi (saat detail realisasi dibuka)
   useEffect(() => {

@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+// src/pages/SiswaPage.jsx
+import React, { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
-import { useRef } from "react";
-
 
 // components
 import Header from "./components/HeaderBiasa";
@@ -12,6 +11,9 @@ import Sidebar from "./components/SidebarBiasa";
 import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Pagination from "./components/Pagination";
+
+// utils
+import { getDashboardWaliKelas } from "../utils/services/wakel/dashboard";
 
 export default function SiswaPage() {
   const exportRef = useRef(null);
@@ -24,48 +26,45 @@ export default function SiswaPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const itemsPerPage = 10;
+
   const user = {
-    name: localStorage.getItem("nama_guru") || "Guru SMK",
+    name: localStorage.getItem("nama_guru") || "Wali Kelas",
     role: "Wali Kelas",
   };
 
-  const dummyDataSiswa = [
-  {
-    nisn: "1234567890",
-    nama: "Firli Zulfa Azzahra",
-    industri: "Emran Digital",
-    guru: "Nimah Hidayah S.Pd",
-    status: "Aktif",
-    tanggalLahir: "01 Juli 2008",
-    kelas: "XI RPL 2",
-    alamat: "Sigura-gura",
-    noTelp: "0882-8298-298",
-  },
-  {
-    nisn: "2234567890",
-    nama: "Ahmad Fauzan",
-    industri: "Telkom Indonesia",
-    guru: "Siti Aminah S.Pd",
-    status: "Selesai",
-    tanggalLahir: "12 Mei 2007",
-    kelas: "XI RPL 1",
-    alamat: "Lowokwaru",
-    noTelp: "0812-3456-7890",
-  },
-  // dst...
-];
-
-  // load dummy data
+  // ================= FETCH DATA =================
   useEffect(() => {
-    setSiswa(dummyDataSiswa);
+    const fetchData = async () => {
+      try {
+        const res = await getDashboardWaliKelas();
+
+        const kelasNama = res.kelas_info?.nama || "-";
+
+        const mapped = (res.siswa_list || []).map((s) => ({
+          nisn: s.nisn,
+          nama: s.nama,
+          kelas: kelasNama,
+          industri: s.industri ?? "-",
+          pembimbing: s.pembimbing ?? "-",
+          status: s.status_pkl,
+          alamat: s.alamat_industri ?? "-",
+        }));
+
+        setSiswa(mapped);
+      } catch (err) {
+        console.error("Gagal ambil data siswa:", err);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  // reset pagination saat filter/search berubah
+  // reset page kalau search / filter berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filterStatus]);
 
-  // filter
+  // ================= FILTER =================
   const filteredData = siswa.filter((s) => {
     const q = search.toLowerCase();
     const matchSearch =
@@ -73,148 +72,123 @@ export default function SiswaPage() {
       s.nisn.includes(q) ||
       s.kelas.toLowerCase().includes(q);
 
-    const matchFilter = filterStatus ? s.status === filterStatus : true;
-    return matchSearch && matchFilter;
+    const matchStatus = filterStatus ? s.status === filterStatus : true;
+
+    return matchSearch && matchStatus;
   });
 
-  // tambah nomor
   const dataWithNo = filteredData.map((item, i) => ({
     ...item,
     no: i + 1,
   }));
 
-  // pagination
+  // ================= PAGINATION =================
   const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
   const paginatedData = dataWithNo.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // kolom tabel
+  // ================= TABLE COLUMN =================
   const columns = [
     { label: "NISN", key: "nisn" },
     { label: "Nama", key: "nama" },
     { label: "Kelas", key: "kelas" },
     { label: "Industri", key: "industri" },
-    { label: "Guru Pembimbing", key: "guru" },
-    { label: "Status", key: "status" },
+    { label: "Pembimbing", key: "pembimbing" },
+    { label: "Status PKL", key: "status" },
   ];
 
-  const exportData = filteredData.map((item, i) => ({
+  // ================= EXPORT =================
+  const exportData = filteredData.map((s, i) => ({
     No: i + 1,
-    NISN: item.nisn,
-    Nama: item.nama,
-    Kelas: item.kelas,
-    Industri: item.industri,
-    "Guru Pembimbing": item.guru,
-    Status: item.status,
+    NISN: s.nisn,
+    Nama: s.nama,
+    Kelas: s.kelas,
+    Industri: s.industri,
+    Pembimbing: s.pembimbing,
+    Status: s.status,
   }));
 
-  const handleExportExcel = () => {
-    if (!exportData.length) return;
+  const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Data Siswa");
-    XLSX.writeFile(wb, "data_siswa.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Siswa PKL");
+    XLSX.writeFile(wb, "data_siswa_pkl.xlsx");
   };
 
-  const handleExportPDF = () => {
-    if (!exportData.length) return;
+  const exportPDF = () => {
     const doc = new jsPDF();
-    doc.text("Data Peserta Didik", 14, 15);
+    doc.text("Data Siswa PKL", 14, 15);
     autoTable(doc, {
       startY: 20,
       head: [Object.keys(exportData[0])],
       body: exportData.map((d) => Object.values(d)),
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [100, 30, 33] },
     });
-    doc.save("data_siswa.pdf");
+    doc.save("data_siswa_pkl.pdf");
   };
 
-
+  // ================= UI =================
   return (
-    <div className="bg-white min-h-screen w-full">
+    <div className="bg-white min-h-screen">
       <Header user={user} />
       <div className="flex">
-        <div className="hidden md:block">
-          <Sidebar active={active} setActive={setActive} />
-        </div>
+        <Sidebar active={active} setActive={setActive} />
 
         <main className="flex-1 p-6 bg-[#641E21] rounded-l-3xl">
-          <div className="flex items-center mb-4 gap-1 w-full relative">
-          <h2 className="text-white font-bold text-lg">
-            Data Siswa
-          </h2>
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-white font-bold text-lg">Data Siswa PKL</h2>
 
-          <div className="relative" ref={exportRef}>
-            <button
-              onClick={() => setOpenExport(!openExport)}
-              className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
-            >
-              <Download size={18} />
-            </button>
+            <div className="relative" ref={exportRef}>
+              <button
+                onClick={() => setOpenExport(!openExport)}
+                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full "
+              >
+                <Download />
+              </button>
 
-            {openExport && (
-              <div className="absolute left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
-                <button
-                  onClick={() => {
-                    handleExportExcel();
-                    setOpenExport(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                >
-                  <FileSpreadsheet size={16} className="text-green-600" />
-                  Excel
-                </button>
-
-                <button
-                  onClick={() => {
-                    handleExportPDF();
-                    setOpenExport(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                >
-                  <FileText size={16} className="text-red-600" />
-                  PDF
-                </button>
-              </div>
-            )}
+              {openExport && (
+                <div className="absolute  mt-2 bg-white rounded-lg shadow-md p-2 z-50">
+                  <button
+                    onClick={exportExcel}
+                    className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600"/> Excel
+                  </button>
+                  <button
+                    onClick={exportPDF}
+                    className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100"
+                  >
+                    <FileText size={16} className="text-red-600"/> PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-
 
           <SearchBar
             query={search}
             setQuery={setSearch}
-            placeholder="Cari NISN / Nama / Kelas"
+            placeholder="Cari NISN / Nama"
             filters={[
               {
-                label: "Status",
+                label: "Status PKL",
                 value: filterStatus,
-                options: ["Aktif", "Selesai"],
+                options: ["Sedang PKL", "Belum PKL"],
                 onChange: setFilterStatus,
               },
             ]}
           />
 
-          <Table
-                      columns={columns}
-                      data={paginatedData}
-                    />
-          
-                    {totalPages > 1 && (
-                                <div className="flex justify-between items-center mt-4 text-white">
-                                  <span>
-                                    Halaman {currentPage} dari {totalPages}
-                                  </span>
-                                  <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={setCurrentPage}
-                                  />
-                                </div>
-                              )}
+          <Table columns={columns} data={paginatedData} />
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </main>
       </div>
     </div>
