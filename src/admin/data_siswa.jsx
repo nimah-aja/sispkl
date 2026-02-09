@@ -277,7 +277,7 @@ const handleImportExcel = async (file) => {
     }
 
     toast.success(
-      `Preview selesai. Valid: ${valid_count}, Invalid: ${error_count}`
+      `Preview selesai. Benar: ${valid_count}, Tidak benar: ${error_count}`
     );
 
     // hanya buka modal kalau ada data valid

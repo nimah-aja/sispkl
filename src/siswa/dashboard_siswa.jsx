@@ -395,7 +395,7 @@ useEffect(() => {
           createPortal(
             <Detail
               mode="view"
-              title="Detail PKL"
+              title="Rincian PKL"
               size="half"
               onClose={() => {
                 setOpenDetail(false);

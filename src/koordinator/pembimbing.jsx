@@ -6,6 +6,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Pagination from "./components/Pagination";
 
+import { getPembimbingList } from "../utils/services/kapro/pembimbing";
+
+
 // components
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
@@ -59,25 +62,31 @@ export default function DataPeserta() {
 
   // DUMMY DATA
   useEffect(() => {
-    setPeserta([
-      {
-        nip: "19820101",
-        namaPembimbing: "Firli Zulfa",
-        industri: "Emran Digital",
-        noTelp: "081234567890",
-        namaSiswa: "Aulia Rahmawati",
-        kelas: "X RPL 1",
-      },
-      {
-        nip: "19820102",
-        namaPembimbing: "Rama Yuda",
-        industri: "Telkom Indonesia",
-        noTelp: "082233445566",
-        namaSiswa: "Fajar Wicaksono",
-        kelas: "XI TKJ 1",
-      },
-    ]);
-  }, []);
+  const fetchPembimbing = async () => {
+    try {
+      const res = await getPembimbingList();
+
+      // API kamu langsung ARRAY, bukan { data: [...] }
+      const list = Array.isArray(res) ? res : res?.data || [];
+
+      const mapped = list.map((item) => ({
+        nip: item.nip || "-",
+        namaPembimbing: item.nama || "-",
+        industri: "-",        // memang tidak ada di API
+        noTelp: item.no_telp || "-",
+        namaSiswa: "-",       // memang tidak ada di API
+        kelas: "-",           // memang tidak ada di API
+      }));
+
+      setPeserta(mapped);
+    } catch (err) {
+      console.error("Gagal load data pembimbing:", err);
+    }
+  };
+
+  fetchPembimbing();
+}, []);
+
 
   // FILTER
   const filteredPeserta = peserta.filter(
@@ -101,18 +110,7 @@ export default function DataPeserta() {
   const columns = [
     { label: "NIP", key: "nip" },
     { label: "Nama Pembimbing", key: "namaPembimbing" },
-    { label: "Industri", key: "industri" },
     { label: "No. Telp", key: "noTelp" },
-    { label: "Kelas", key: "kelas" },
-    { label: "Nama Siswa", key: "namaSiswa" },
-    {
-      label: "Unggah",
-      render: () => (
-        <button className="!bg-transparent w-18">
-          <img src={unduh} />
-        </button>
-      ),
-    },
   ];
 
   // EXPORT DATA
@@ -120,9 +118,6 @@ export default function DataPeserta() {
     No: i + 1,
     NIP: item.nip,
     Pembimbing: item.namaPembimbing,
-    Industri: item.industri,
-    Siswa: item.namaSiswa,
-    Kelas: item.kelas,
     Telp: item.noTelp,
   }));
 
@@ -299,21 +294,21 @@ if (mode === "add" || (mode === "edit" && editData)) {
           <SearchBar
             query={query}
             setQuery={setQuery}
-            filters={filters}
+            // filters={filters}
             placeholder="Cari pembimbing..."
-            onAddClick={() => setMode("add")}
+            // onAddClick={() => setMode("add")}
           />
 
           <Table
             columns={columns}
             data={paginatedData}
-            showEdit
-            showDelete
-            onEdit={handleEdit}
-            onDelete={(row) => {
-              setSelectedRow(row);
-              setIsDeleteOpen(true);
-            }}
+            // showEdit
+            // showDelete
+            // onEdit={handleEdit}
+            // onDelete={(row) => {
+            //   setSelectedRow(row);
+            //   setIsDeleteOpen(true);
+            // }}
           />
 
           {totalPages > 1 && (

@@ -16,7 +16,7 @@ export default function AktivitasTerkini({
   const navigate = useNavigate();
 
   const ITEM_HEIGHT = 90;
-  const MAX_VISIBLE = 5;
+  const MAX_VISIBLE = 4;
 
   const getIconByType = (type) => {
     switch (type) {

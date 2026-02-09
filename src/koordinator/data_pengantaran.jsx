@@ -394,60 +394,68 @@ export default function SuratPengantaranPage() {
       const pageWidth = 210;
       let yPosition = 30;
 
-      //  KOP SURAT 
-      // Logo di kiri (ukuran lebih besar sesuai gambar)
+      //  KOP SURAT - SEPERTI GAMBAR
+      // Logo di kiri - DIPERBESAR seperti gambar
       if (logo.preview) {
         try {
-          // Logo lebih besar sesuai gambar
-          doc.addImage(logo.preview, "PNG", marginLeft, 15, 25, 35);
+          // Logo DIPERBESAR sesuai gambar: 35mm x 45mm
+          doc.addImage(logo.preview, "PNG", marginLeft, 12, 35, 45);
         } catch (err) {
           console.warn("Gagal menambahkan logo ke PDF:", err);
         }
       }
 
-      // Header teks 
-      const textStartX = marginLeft + 30; logo
+      // Header teks - DI TENGAH seperti gambar
+      // Jarak dari kiri diperbesar karena logo lebih besar
+      const textStartX = marginLeft + 40; 
 
-      // PEMERINTAH PROVINSI JAWA TIMUR
+      // PEMERINTAH PROVINSI JAWA TIMUR - DI TENGAH
       doc.setFont("times", "bold");
       doc.setFontSize(14);
       doc.text("PEMERINTAH PROVINSI JAWA TIMUR", pageWidth / 2, 25, {
         align: "center",
       });
 
-      // DINAS PENDIDIKAN
-      doc.text("DINAS PENDIDIKAN", pageWidth / 2, 32, { align: "center" });
+      // DINAS PENDIDIKAN - DI TENGAH
+      doc.text("DINAS PENDIDIKAN", pageWidth / 2, 33, { align: "center" });
 
-      // SMK NEGERI 2 SINGOSARI
+      // SMK NEGERI 2 SINGOSARI - FONT DIPERBESAR dan BOLD, DI TENGAH
+      doc.setFont("times", "bold");
       doc.setFontSize(16);
-      doc.text("SMK NEGERI 2 SINGOSARI", pageWidth / 2, 40, { align: "center" });
+      doc.text("SMK NEGERI 2 SINGOSARI", pageWidth / 2, 45, { align: "center" });
 
-      // Alamat 
+      // Alamat - DI TENGAH
       doc.setFont("times", "normal");
       doc.setFontSize(10);
       doc.text(
-        "Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153",
+        "Jalan Perusahaan No. 20, Kab. Malang, Jawa Timur, 65153",
         pageWidth / 2,
-        48,
+        53,
         { align: "center" },
       );
-      doc.text("Telepon (0341) 4346127", pageWidth / 2, 54, {
+      doc.text("Telepon (0341) 458823", pageWidth / 2, 59, {
         align: "center",
       });
 
-      yPosition = 60;
+      yPosition = 67;
 
-      // Garis pemisah tipis 
+      // Garis pemisah tipis - SEPERTI GAMBAR
       doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.2);
+      doc.setLineWidth(0.5);
       doc.line(marginLeft, yPosition, pageWidth - marginRight, yPosition);
 
-      yPosition += 15;
+      yPosition += 18;
 
-      //  JUDUL SURAT TUGAS 
+      //  JUDUL SURAT TUGAS - SEPERTI GAMBAR
       doc.setFont("times", "bold");
       doc.setFontSize(14);
-      doc.text("SURAT TUGAS", pageWidth / 2, yPosition, { align: "center" });
+      // Simulasi underline dengan garis
+      const judulWidth = doc.getTextWidth("SURAT TUGAS");
+      const judulX = (pageWidth - judulWidth) / 2;
+      doc.text("SURAT TUGAS", judulX, yPosition);
+      // Tambahkan garis bawah manual
+      doc.setLineWidth(0.3);
+      doc.line(judulX, yPosition + 1, judulX + judulWidth, yPosition + 1);
 
       // Nomor Surat
       yPosition += 10;
@@ -460,7 +468,7 @@ export default function SuratPengantaranPage() {
         { align: "center" },
       );
 
-      yPosition += 15;
+      yPosition += 18;
 
       //  ISI SURAT 
       doc.setFontSize(12);
@@ -472,7 +480,7 @@ export default function SuratPengantaranPage() {
 
       yPosition += 10;
 
-      // Tabel Guru yang Ditugaskan
+      // Tabel Guru yang Ditugaskan - SEPERTI GAMBAR
       const tableHeaders = [["NO", "NAMA", "JABATAN", "DINAS"]];
       const tableBody = guruPenugasan.map((guru, index) => [
         `${index + 1}`,
@@ -488,25 +496,28 @@ export default function SuratPengantaranPage() {
         margin: { left: marginLeft, right: marginRight },
         styles: {
           fontSize: 11,
-          cellPadding: 4,
+          font: "times",
+          fontStyle: "normal",
+          cellPadding: 5,
           lineColor: [0, 0, 0],
           lineWidth: 0.5,
           fillColor: [255, 255, 255],
           textColor: [0, 0, 0],
-          minCellHeight: 7,
+          minCellHeight: 8,
         },
         headStyles: {
           fillColor: [255, 255, 255],
           textColor: [0, 0, 0],
           fontStyle: "bold",
+          font: "times",
           halign: "center",
           lineWidth: 0.5,
           lineColor: [0, 0, 0],
           fontSize: 11,
         },
         columnStyles: {
-          0: { cellWidth: 20, halign: "center" },
-          1: { cellWidth: 55 },
+          0: { cellWidth: 15, halign: "center" },
+          1: { cellWidth: 60 },
           2: { cellWidth: 35 },
           3: { cellWidth: 75 },
         },
@@ -514,7 +525,7 @@ export default function SuratPengantaranPage() {
       });
 
       let finalY = doc.lastAutoTable?.finalY || yPosition + 20;
-      yPosition = finalY + 10;
+      yPosition = finalY + 12;
 
       //  DATA PELAKSANAAN 
       doc.setFontSize(12);
@@ -567,7 +578,7 @@ export default function SuratPengantaranPage() {
       doc.text(alamatLines, valueStartX, yPosition);
       yPosition += alamatLines.length * 5;
 
-      yPosition += 15;
+      yPosition += 18;
 
       //  PENUTUP SURAT 
       doc.setFontSize(12);
@@ -583,7 +594,7 @@ export default function SuratPengantaranPage() {
         yPosition,
       );
 
-      yPosition += 20;
+      yPosition += 25;
 
       //  TANDA TANGAN 
       const rightAlignX = pageWidth - marginRight;
@@ -597,7 +608,7 @@ export default function SuratPengantaranPage() {
       );
       
       // Jarak antara tanggal dan jabatan 
-      yPosition += 25; 
+      yPosition += 30; 
       
       // Jabatan
       doc.text(
@@ -608,9 +619,9 @@ export default function SuratPengantaranPage() {
       );
 
       // Jarak antara jabatan dan nama
-      yPosition += 40; 
+      yPosition += 45; 
       
-      // Nama Kepala Sekolah 
+      // Nama Kepala Sekolah - SEPERTI GAMBAR
       doc.setFont("times", "bold");
       doc.setFontSize(13);
       doc.text(dataSuratTugas.namaKepsek, rightAlignX, yPosition, {
@@ -706,90 +717,72 @@ export default function SuratPengantaranPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Preview Surat Tugas
+                  Pratinjau Surat Tugas
                 </h3>
                 <span className="text-sm text-gray-500">
                   Format sesuai contoh surat
                 </span>
               </div>
 
-              <div className="border border-gray-300 rounded-lg p-6 bg-gray-50 font-serif">
-                {/* KOP SURAT */}
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="flex-shrink-0">
-                    <img
-                      src={logo.preview}
-                      alt="Logo Provinsi Jawa Timur"
-                      className="w-20 h-24 object-contain"
-                    />
-                  </div>
-                  <div className="flex-1 text-center">
-                    <p className="font-bold text-base leading-tight tracking-tight">
-                      PEMERINTAH PROVINSI JAWA TIMUR
-                    </p>
-                    <p className="font-bold text-base leading-tight tracking-tight">
-                      DINAS PENDIDIKAN
-                    </p>
-                    <p className="font-bold text-lg leading-tight tracking-tight mt-1">
-                      SMK NEGERI 2 SINGOSARI
-                    </p>
-                    <div className="mt-2">
-                      <p className="text-xs leading-tight">
-                        Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153
-                      </p>
-                      <p className="text-xs leading-tight">
-                        Telepon (0341) 4346127
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <div className="border border-gray-300 rounded-lg p-6 bg-gray-50" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                {/* KOP SURAT - SEPERTI GAMBAR */}
+                <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
+                                <div className="flex-shrink-0 -mt-2 -ml-2">
+                                  <img src={logoProv} alt="Logo" className="w-24 h-auto object-contain" />
+                                </div>
+                                <div className="flex-1 text-center -ml-10">
+                                    <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
+                                    <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
+                                    <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
+                                    <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
+                                    <p className="text-[10px]">Telepon (0341) 4345127</p>
+                                </div>
+                              </div>
 
-                {/* Garis pemisah tipis seperti di gambar */}
-                <div className="border-t border-black my-4"></div>
 
-                {/* JUDUL  */}
-                <div className="text-center my-6">
-                  <p className="font-bold text-lg tracking-wide underline decoration-2">
+                {/* JUDUL - SEPERTI GAMBAR */}
+                <div className="text-center my-8">
+                  <p className="font-bold text-lg tracking-wide underline decoration-2 mb-2">
                     SURAT TUGAS
                   </p>
-                  <p className="text-sm mt-2">
+                  <p className="text-sm">
                     Nomor: {dataSuratTugas.nomorSurat}
                   </p>
                 </div>
 
-                {/* PENUGASAN  */}
-                <div className="mb-4 text-sm leading-relaxed">
+                {/* PENUGASAN */}
+                <div className="mb-6 text-sm leading-relaxed">
                   <p>
                     Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang menugaskan kepada :
                   </p>
                 </div>
 
-                {/* TABEL GURU  */}
-                <div className="mb-6">
-                  <table className="w-full border-collapse border border-black text-sm">
+                {/* TABEL GURU - SEPERTI GAMBAR */}
+                <div className="mb-8">
+                  <table className="w-full border-collapse border border-black text-sm" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                     <thead>
                       <tr>
-                        <th className="border border-black p-2 text-center font-bold bg-gray-50">NO</th>
-                        <th className="border border-black p-2 text-center font-bold bg-gray-50">NAMA</th>
-                        <th className="border border-black p-2 text-center font-bold bg-gray-50">JABATAN</th>
-                        <th className="border border-black p-2 text-center font-bold bg-gray-50">DINAS</th>
+                        <th className="border border-black p-2 text-center font-bold bg-gray-50" style={{ fontFamily: "'Times New Roman', Times, serif" }}>NO</th>
+                        <th className="border border-black p-2 text-center font-bold bg-gray-50" style={{ fontFamily: "'Times New Roman', Times, serif" }}>NAMA</th>
+                        <th className="border border-black p-2 text-center font-bold bg-gray-50" style={{ fontFamily: "'Times New Roman', Times, serif" }}>JABATAN</th>
+                        <th className="border border-black p-2 text-center font-bold bg-gray-50" style={{ fontFamily: "'Times New Roman', Times, serif" }}>DINAS</th>
                       </tr>
                     </thead>
                     <tbody>
                       {guruPenugasan.map((guru, index) => (
                         <tr key={guru.id || index} className="hover:bg-gray-50">
-                          <td className="border border-black p-2 text-center align-middle">{index + 1}</td>
-                          <td className="border border-black p-2 align-middle">{guru.nama || "-"}</td>
-                          <td className="border border-black p-2 align-middle">{guru.jabatan || "-"}</td>
-                          <td className="border border-black p-2 align-middle">{guru.dinas || "-"}</td>
+                          <td className="border border-black p-2 text-center align-middle" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{index + 1}</td>
+                          <td className="border border-black p-2 align-middle" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{guru.nama || "-"}</td>
+                          <td className="border border-black p-2 align-middle" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{guru.jabatan || "-"}</td>
+                          <td className="border border-black p-2 align-middle" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{guru.dinas || "-"}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
 
-                {/* DETAIL PELAKSANAAN  */}
-                <div className="space-y-2 mb-6 text-sm">
+                {/* DETAIL PELAKSANAAN */}
+                <div className="space-y-2 mb-8 text-sm" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                   <p>
                     <span className="font-bold inline-block w-32">Keperluan</span> 
                     <span className="inline-block w-4">:</span>
@@ -813,12 +806,12 @@ export default function SuratPengantaranPage() {
                   <p className="flex">
                     <span className="font-bold inline-block w-32 flex-shrink-0">Alamat</span> 
                     <span className="inline-block w-4 flex-shrink-0">:</span>
-                    <span className="ml-2">{dataSuratTugas.alamat}</span>
+                    <span className="ml-2 flex-1">{dataSuratTugas.alamat}</span>
                   </p>
                 </div>
 
                 {/* PENUTUP */}
-                <div className="mb-8 text-sm leading-relaxed">
+                <div className="mb-10 text-sm leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                   <p>
                     Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya
                   </p>
@@ -826,19 +819,19 @@ export default function SuratPengantaranPage() {
                 </div>
 
                 {/* TANDA TANGAN*/}
-                <div className="text-right text-sm">
-                  {/* Spasi untuk menurunkan tanggal  */}
-                  <div className="mb-8"></div> 
+                <div className="text-right text-sm" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                  {/* Spasi untuk menurunkan tanggal */}
+                  <div className="mb-10"></div> 
                   
-                  <p>Singosari, {dataSuratTugas.tanggalDibuat}</p>
+                  <p className="-mb-15">Singosari, {dataSuratTugas.tanggalDibuat}</p>
                   
                   {/* Jarak antara tanggal dan jabatan */}
-                  <div className="h-12"></div>
+                  <div className="h-16"></div>
                   
                   <p>Kepala SMK Negeri 2 Singosari</p>
                   
                   {/* Jarak antara jabatan dan nama */}
-                  <div className="h-24"></div> 
+                  <div className="h-28"></div> 
                   
                   <p className="font-bold text-base">{dataSuratTugas.namaKepsek}</p>
                   <p className="text-xs mt-1">{dataSuratTugas.pangkatGolongan}</p>
@@ -850,7 +843,7 @@ export default function SuratPengantaranPage() {
             {/* KOLOM KANAN: FORM EDIT */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Form Input Surat Tugas
+                Formulir Masukan Surat Tugas
               </h3>
 
               <div className="space-y-6">
@@ -1156,7 +1149,7 @@ export default function SuratPengantaranPage() {
                     className="flex items-center gap-2 px-6 py-3 !bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50"
                   >
                     <Download size={18} />
-                    {generatingPDF ? "Memproses..." : "Download PDF"}
+                    {generatingPDF ? "Memproses..." : "Unduh PDF"}
                   </button>
                 </div>
               </div>
