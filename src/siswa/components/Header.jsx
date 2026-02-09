@@ -75,7 +75,7 @@ export default function HeaderKoordinator({
       {/* TITLE */}
       <div>
         <h1 className="font-extrabold text-[#641E20]" style={{ fontSize: "40px" }}>
-          Beranda Peserta Didik
+          Beranda Siswa
         </h1>
         <p className="text-sm font-bold text-black mt-1">
           Selamat datang {user.name}!

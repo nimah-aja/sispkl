@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, Download, Upload, X } from 'lucide-react';
 import toast from "react-hot-toast";
 import jsPDF from 'jspdf';
-import logoSmk from "../assets/logoProv.png";
+import logoSmk from "../assets/LOGOPROV.png";
 
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";

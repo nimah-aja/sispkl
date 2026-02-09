@@ -98,7 +98,7 @@ export default function PKLManagementSystem() {
   const roles = ["Admin","Guru","Siswa"];
   const getInputConfig = () => {
     switch (activeRole) {
-      case "Admin": return { firstField: { label: "Username", placeholder: "Masukkan username admin", type: "text" }, secondField: { label: "Kata Sandi", placeholder: "Masukkan kata sandi", type: "password" } };
+      case "Admin": return { firstField: { label: "Nama Pengguna", placeholder: "Masukkan nama pengguna admin", type: "text" }, secondField: { label: "Kata Sandi", placeholder: "Masukkan kata sandi", type: "password" } };
       case "Guru": return { firstField: { label: "Kode Guru", placeholder: "Masukkan kode guru", type: "text" }, secondField: { label: "Kata Sandi", placeholder: "Masukkan kata sandi", type: "password" } };
       case "Siswa": return { firstField: { label: "Nama Lengkap", placeholder: "Masukkan nama lengkap", type: "text" }, secondField: { label: "NISN", placeholder: "Masukkan NISN", type: "text" } };
       default: return { firstField: { label: "Username", placeholder: "Masukkan username", type: "text" }, secondField: { label: "Password", placeholder: "Masukkan password", type: "password" } };

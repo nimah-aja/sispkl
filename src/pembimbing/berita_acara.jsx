@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { Printer, Save, Download, Calendar, Users, Building, MapPin, X, Plus, Trash2, FileText, Search, Upload } from 'lucide-react';
 import toast from "react-hot-toast";
 import jsPDF from 'jspdf';
@@ -37,14 +37,14 @@ export default function SuratBeritaAcaraPage() {
     judulPenjemputan: "PENJEMPUTAN PRAKTIK KERJA INDUSTRI (PKL)",
     tahun: "TAHUN 2025",
     catatanPembimbingIndustri: [
-      ".....................................................................",
-      ".....................................................................",
-      "....................................................................."
+      "..........................................................................................................................................",
+      "..........................................................................................................................................",
+      ".........................................................................................................................................."
     ],
     catatanPembimbingSekolah: [
-      ".....................................................................",
-      ".....................................................................",
-      "....................................................................."
+      "..........................................................................................................................................",
+      "..........................................................................................................................................",
+      ".........................................................................................................................................."
     ],
     namaPembimbingIndustri: "........................",
     jabatanPembimbingIndustri: "Pembimbing Industri",
@@ -268,7 +268,6 @@ const handleGeneratePDF = () => {
         console.warn("Gagal menambahkan logo:", err);
       }
     }
-
     // Header 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -502,18 +501,23 @@ const handleGeneratePDF = () => {
     // Catatan Pembimbing Industri
     doc.setFont("helvetica", "bold");
     doc.text("1. Catatan pembimbing Industri", marginLeft, yPosition);
-    yPosition += 6;
+    yPosition += 8;
+
     doc.setFont("helvetica", "normal");
-    
-    formData.catatanPembimbingIndustri.forEach((catatan, index) => {
-      if (index < 3) {
-        const catatanLines = doc.splitTextToSize(`- ${catatan}`, 170);
-        catatanLines.forEach(line => {
-          doc.text(line, marginLeft, yPosition);
-          yPosition += 5;
-        });
-      }
-    });
+
+    const titikPanjang = '.'.repeat(500);
+    const dottedLines = doc.splitTextToSize(
+      titikPanjang,
+      pageWidth - marginLeft - marginRight
+    );
+
+    // BARIS 1
+    doc.text(dottedLines[0], marginLeft, yPosition);
+    yPosition += 6;
+
+    // BARIS 2
+    doc.text(dottedLines[1], marginLeft, yPosition);
+    yPosition += 6;
 
     // Tambahan jika catatan kurang dari 3
     for (let i = formData.catatanPembimbingIndustri.length; i < 3; i++) {
@@ -526,25 +530,23 @@ const handleGeneratePDF = () => {
     // Catatan Pembimbing Sekolah
     doc.setFont("helvetica", "bold");
     doc.text("2. Catatan pembimbing sekolah", marginLeft, yPosition);
-    yPosition += 6;
+    yPosition += 8;
+
     doc.setFont("helvetica", "normal");
-    
-    if (formData.catatanPembimbingSekolah.length > 0) {
-      formData.catatanPembimbingSekolah.forEach((catatan, index) => {
-        if (index < 2) {
-          const catatanLines = doc.splitTextToSize(catatan, 170);
-          catatanLines.forEach(line => {
-            doc.text(line, marginLeft, yPosition);
-            yPosition += 5;
-          });
-        }
-      });
-    } else {
-      doc.text("Perpustakaan, disiplin, dan tanggung jawab untuk sekolah kerja di ...", marginLeft, yPosition);
-      yPosition += 5;
-      doc.text("...", marginLeft, yPosition);
-      yPosition += 5;
-    }
+
+    const titikPanjangSekolah = '.'.repeat(500);
+    const dottedLinesSekolah = doc.splitTextToSize(
+      titikPanjangSekolah,
+      pageWidth - marginLeft - marginRight
+    );
+
+    // BARIS 1
+    doc.text(dottedLinesSekolah[0], marginLeft, yPosition);
+    yPosition += 6;
+
+    // BARIS 2
+    doc.text(dottedLinesSekolah[1], marginLeft, yPosition);
+    yPosition += 6;
 
     yPosition += 25; 
 
@@ -653,7 +655,7 @@ const handleGeneratePDF = () => {
                   className="flex items-center gap-2 px-4 py-2 !bg-white !text-gray-700 rounded-lg hover:bg-gray-100"
                 >
                   <Upload size={18} />
-                  {logo.type === 'default' ? 'Upload Logo' : 'Ganti Logo'}
+                  {logo.type === 'default' ? 'Unggah Logo' : 'Ganti Logo'}
                 </button>
               </div>
             </div>
@@ -728,7 +730,7 @@ const handleGeneratePDF = () => {
             {/* KOLOM KIRI: PREVIEW SURAT */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Preview Berita Acara</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Pratinjau Berita Acara</h3>
                 <span className="text-sm text-gray-500">
                   Logo: {logo.type === 'default' ? 'Default' : 'Custom'}
                 </span>
@@ -775,7 +777,7 @@ const handleGeneratePDF = () => {
                 <div className="mb-6">
                   <div className="space-y-2 mb-4">
                     <p>
-                    <span className="">Hari ini : {formData.hari} Tanggal : {formData.tanggalMonitoring}Bulan: {formData.bulan} Tahun : {formData.tahun_surat}</span> </p>
+                    <span className="">Hari ini : {formData.hari} Tanggal : {formData.tanggalMonitoring} Bulan: {formData.bulan} Tahun : {formData.tahun_surat}</span> </p>
                     <p>Telah melaksanakan monitoring dan pembimbingan peserta didik PKL SMK Negeri 2 Singosari pada Industri/Lembaga :</p>
                     <p><span className="font-semibold">Nama Industri/Lembaga</span> : {formData.namaIndustri}</p>
                     <p><span className="font-semibold">Alamat Industri/Lembaga</span> : {formData.alamatIndustri}</p>
@@ -831,26 +833,24 @@ const handleGeneratePDF = () => {
                   <p className="font-bold mb-1 ">1. Catatan pembimbing Industri</p>
 
                   {formData.catatanPembimbingIndustri.length > 0 && (
-                    <ul className="list-disc pl-10">
+                    <p className="list-disc pl-10">
                       {formData.catatanPembimbingIndustri.map((catatan, index) => (
-                        <li key={index}>{catatan}</li>
+                        <p key={index}>{catatan}</p>
                       ))}
-                    </ul>
+                    </p>
                   )}
                 </div>
 
 
                   <div>
                     <p className="font-bold mb-1">2. Catatan pembimbing sekolah</p>
-                    <ul className="list-disc pl-5">
-                      {formData.catatanPembimbingSekolah.length > 0 && (
-                    <ul className="list-disc pl-5">
-                      {formData.catatanPembimbingSekolah.map((catatan, index) => (
-                        <li key={index}>{catatan}</li>
-                      ))}
-                    </ul>
-                  )}
-                    </ul>
+                    {formData.catatanPembimbingSekolah.length > 0 && (
+                      <p className="list-disc pl-10">
+                        {formData.catatanPembimbingSekolah.map((catatan, index) => (
+                          <p key={index}>{catatan}</p>
+                        ))}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -876,7 +876,7 @@ const handleGeneratePDF = () => {
 
             {/* KOLOM KANAN: FORM INPUT */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Form Input Berita Acara</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Formulir Masukan Berita Acara</h3>
               
               <div className="space-y-6">
                 {/* Data Umum */}

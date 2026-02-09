@@ -28,7 +28,7 @@ export default function Sidebar({ active, setActive }) {
     { title: "Penilaian", icon: monitoring, route: "/guru/koordinator/monitoring", key: "penilaian" },
     // kegiatan
     // { title: "Surat Penjemputan", icon: suratPenjemputan, route: "/guru/koordinator/suratPenjemputan", key: "suratPenjemputan" },
-    // { title: "Perpindahan PKL", icon: perpindahanPKL, route: "/guru/koordinator/perpindahanPKL", key: "perpindahanPKL" },
+    { title: "Perpindahan PKL", icon: perpindahanPKL, route: "/guru/koordinator/perpindahanPKL", key: "perpindahanPKL" },
     // { title: "Pembekalan", icon: pembekalan, route: "/guru/koordinator/pembekalan", key: "pembekalan" },
   ];
 

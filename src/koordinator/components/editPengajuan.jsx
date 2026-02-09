@@ -367,7 +367,6 @@ export default function EditPengajuan({
                     <p className="text-[10px]">Telepon (0341) 4345127</p>
                 </div>
               </div>
-              <div className="border-t border-gray-300 -mt-1 mb-2"></div>
 
               <div className="text-center my-4">
                 <p className="font-bold text-md underline">LEMBAR PERSETUJUAN</p>

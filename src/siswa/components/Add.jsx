@@ -27,6 +27,7 @@ export default function Add({
   initialData = {},
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
+  optionalFields = [], // Tambahkan prop baru untuk field opsional
 }) {
   const [modalText, setModalText] = useState({
     title: "Apakah Anda yakin untuk kembali?",
@@ -181,9 +182,10 @@ export default function Add({
       }
 
       const initialValue = initialData[field.name];
-      // VALIDASI REQUIRED
+      // VALIDASI REQUIRED - TAMBAHKAN KONDISI UNTUK OPTIONAL FIELDS
       if (
         field.required &&
+        !optionalFields.includes(field.name) && // Field tidak opsional
         (
           !value ||
           (Array.isArray(value) && value.length === 0)
@@ -380,6 +382,12 @@ export default function Add({
                 >
                   <label className="block mb-1 text-sm font-bold text-gray-700">
                     {field.label}
+                    {/* TAMBAHKAN INDIKATOR OPSIONAL */}
+                    {optionalFields.includes(field.name) && (
+                      <span className="text-gray-500 text-xs font-normal ml-1">
+                        (Opsional)
+                      </span>
+                    )}
                   </label>
 
                   {field.type === "select" ? (
@@ -387,7 +395,9 @@ export default function Add({
                       {/* Trigger */}
                       <div
                         onClick={() => toggleDropdown(field.name)}
-                        className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+                        className={`cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center ${
+                          !field.required && optionalFields.includes(field.name) ? "border-gray-300" : ""
+                        }`}
                       >
                         {selectedLabels[field.name] || `Pilih ${field.label}`}
                         <img
@@ -409,6 +419,24 @@ export default function Add({
                             value={searchQueries[field.name] || ""}
                             onChange={(e) => handleSearchChange(field.name, e.target.value)}
                           />
+
+                          {/* Tambahkan opsi kosong untuk field opsional */}
+                          {optionalFields.includes(field.name) && (
+                            <li
+                              onClick={() => {
+                                handleChange(field.name, "");
+                                setSelectedLabels((prev) => ({ ...prev, [field.name]: "" }));
+                                setDropdownState((prev) => ({
+                                  ...prev,
+                                  [field.name]: false,
+                                }));
+                                handleSearchChange(field.name, "");
+                              }}
+                              className="px-4 py-2 cursor-pointer hover:bg-orange-50 text-gray-500"
+                            >
+                              -- Tidak Dipilih --
+                            </li>
+                          )}
 
                           <ul className="max-h-48 overflow-y-auto">
                             {field.options
@@ -463,7 +491,9 @@ export default function Add({
                         className={`w-full p-3 border rounded-lg cursor-pointer bg-white flex flex-wrap gap-1 items-center ${
                           fieldErrors[field.name]
                             ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-orange-500"
+                            : optionalFields.includes(field.name) 
+                              ? "border-gray-300" 
+                              : "border-gray-300 focus:ring-orange-500"
                         }`}
                         onClick={() => setFocusedIdx(focusedIdx === idx ? null : idx)}
                       >
@@ -499,6 +529,7 @@ export default function Add({
                           
                           <span className="text-gray-400">
                             {field.placeholder || `Pilih ${field.label}`}
+                            {optionalFields.includes(field.name) && " (Opsional)"}
                           </span>
                         )}
                         
@@ -549,8 +580,11 @@ export default function Add({
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                         fieldErrors[field.name]
                           ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-orange-500"
+                          : optionalFields.includes(field.name) 
+                            ? "border-gray-300" 
+                            : "border-gray-300 focus:ring-orange-500"
                       }`}
+                      placeholder={optionalFields.includes(field.name) ? `(${field.label} - Opsional)` : field.placeholder}
                     />
                   ) : field.type === "password" ? (
                     <div className="relative w-full">
@@ -563,8 +597,11 @@ export default function Add({
                         className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                           fieldErrors[field.name]
                             ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-orange-500"
+                            : optionalFields.includes(field.name) 
+                              ? "border-gray-300" 
+                              : "border-gray-300 focus:ring-orange-500"
                         }`}
+                        placeholder={optionalFields.includes(field.name) ? `(${field.label} - Opsional)` : field.placeholder}
                       />
                       <button
                         type="button"
@@ -604,7 +641,7 @@ export default function Add({
                         ]}
                         withPortal
                         locale={id} 
-                        placeholderText={field.placeholder || `Pilih ${field.label}`}
+                        placeholderText={optionalFields.includes(field.name) ? `Pilih ${field.label} (Opsional)` : (field.placeholder || `Pilih ${field.label}`)}
                         customInput={
                           <DateInput
                             clearValue={() =>
@@ -649,7 +686,7 @@ export default function Add({
                           type="file"
                           name={field.name}
                           accept={field.accept}
-                          required={field.required}
+                          required={!optionalFields.includes(field.name) && field.required} // Ubah required berdasarkan optionalFields
                           hidden
                           onChange={(e) => {
                             field.onChange?.(e);
@@ -660,6 +697,7 @@ export default function Add({
 
                       <span className="file-name">
                         {fileName || "Belum ada file dipilih"}
+                        {optionalFields.includes(field.name) && " (Opsional)"}
                       </span>
                     </div>
                   ) : (
@@ -672,8 +710,11 @@ export default function Add({
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                         fieldErrors[field.name]
                           ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-orange-500"
+                          : optionalFields.includes(field.name) 
+                            ? "border-gray-300" 
+                            : "border-gray-300 focus:ring-orange-500"
                       }`}
+                      placeholder={optionalFields.includes(field.name) ? `(${field.label} - Opsional)` : field.placeholder}
                     />
                   )
 }
@@ -751,5 +792,3 @@ export default function Add({
   );
   
 }
-
-
