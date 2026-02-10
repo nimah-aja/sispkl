@@ -68,6 +68,7 @@ import FormDiterima from "./siswa/bukti_terima";
 import RiwayatPengajuan from "./siswa/data_pengajuan";
 import Industri from "./siswa/industri";
 import RiwayatPerizinan from "./siswa/riwayat_perizinan";
+import RiwayatPindahPKL from "./siswa/riwayat_pindah_pkl";
 
 
 function AppContent() {
@@ -169,6 +170,7 @@ function AppContent() {
         <Route path="/siswa/industri" element={<Industri />} />
         <Route path="/siswa/ubah_perizinan_pkl" element={<UbahPerizinan />} />
         <Route path="/siswa/riwayat_perizinan" element={<RiwayatPerizinan />} />
+        <Route path="/siswa/perpindahan" element={<RiwayatPindahPKL />} />
       </Routes>
     </>
   );

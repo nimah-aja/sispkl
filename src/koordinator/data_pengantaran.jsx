@@ -48,7 +48,7 @@ export default function SuratPengantaranPage() {
     tempat: "JOTUN SINGOSARI",
     alamat: "Jl. Panglima Sudirman No.148 Kavling E2, Pangetan, Kec. Singosari, Kab. Malang, Jawa Timur 65153",
     tanggalDibuat: "03 Desember 2025",
-    namaKepsek: "SUMIAH, S.Pd., M.Si.",
+    namaKepsek: "SUMIJAH, S.Pd., M.Si.",
     pangkatGolongan: "Pembina Utama Muda (IV/c)",
     nipKepsek: "19700210 199802 2009",
   });
@@ -73,7 +73,7 @@ export default function SuratPengantaranPage() {
     tempat: "JOTUN SINGOSARI",
     alamat: "Jl. Panglima Sudirman No.148 Kavling E2, Pangetan, Kec. Singosari, Kab. Malang, Jawa Timur 65153",
     tanggalDibuat: "03 Desember 2025",
-    namaKepsek: "SUMIAH, S.Pd., M.Si.",
+    namaKepsek: "SUMIJAH, S.Pd., M.Si.",
     pangkatGolongan: "Pembina Utama Muda (IV/c)",
     nipKepsek: "19700210 199802 2009",
     guru1: {
@@ -374,7 +374,7 @@ export default function SuratPengantaranPage() {
     toast.success("Surat tugas berhasil disimpan!");
   };
 
-  // Fungsi untuk generate dan print PDF 
+  // Fungsi untuk generate dan print PDF - DIUBAH TOTAL
   const handlePrintPDF = () => {
     setGeneratingPDF(true);
 
@@ -385,82 +385,85 @@ export default function SuratPengantaranPage() {
         format: "a4",
       });
 
-      // Set font Times New Roman
+      // Set font Times New Roman untuk semua teks
       doc.setFont("times", "normal");
-      doc.setFontSize(12);
 
       const marginLeft = 25;
       const marginRight = 25;
       const pageWidth = 210;
-      let yPosition = 30;
+      let yPosition = 25;
 
-      //  KOP SURAT - SEPERTI GAMBAR
-      // Logo di kiri - DIPERBESAR seperti gambar
+      // ============ KOP SURAT ============
+      // Logo di kiri - sama dengan preview
       if (logo.preview) {
         try {
-          // Logo DIPERBESAR sesuai gambar: 35mm x 45mm
-          doc.addImage(logo.preview, "PNG", marginLeft, 12, 35, 45);
+          // Logo: 28mm x 28mm seperti preview
+          doc.addImage(logo.preview, "PNG", marginLeft, yPosition, 28, 28);
         } catch (err) {
           console.warn("Gagal menambahkan logo ke PDF:", err);
         }
       }
 
-      // Header teks - DI TENGAH seperti gambar
-      // Jarak dari kiri diperbesar karena logo lebih besar
-      const textStartX = marginLeft + 40; 
+      // Teks kop surat - DI TENGAH
+      const textStartX = marginLeft + 35;
 
-      // PEMERINTAH PROVINSI JAWA TIMUR - DI TENGAH
+      // PEMERINTAH PROVINSI JAWA TIMUR
       doc.setFont("times", "bold");
       doc.setFontSize(14);
-      doc.text("PEMERINTAH PROVINSI JAWA TIMUR", pageWidth / 2, 25, {
+      doc.text("PEMERINTAH PROVINSI JAWA TIMUR", pageWidth / 2, yPosition + 10, {
         align: "center",
       });
 
-      // DINAS PENDIDIKAN - DI TENGAH
-      doc.text("DINAS PENDIDIKAN", pageWidth / 2, 33, { align: "center" });
+      // DINAS PENDIDIKAN
+      doc.text("DINAS PENDIDIKAN", pageWidth / 2, yPosition + 18, { align: "center" });
 
-      // SMK NEGERI 2 SINGOSARI - FONT DIPERBESAR dan BOLD, DI TENGAH
+      // SMK NEGERI 2 SINGOSARI
       doc.setFont("times", "bold");
       doc.setFontSize(16);
-      doc.text("SMK NEGERI 2 SINGOSARI", pageWidth / 2, 45, { align: "center" });
+      doc.text("SMK NEGERI 2 SINGOSARI", pageWidth / 2, yPosition + 28, { align: "center" });
 
-      // Alamat - DI TENGAH
+      // Alamat
       doc.setFont("times", "normal");
       doc.setFontSize(10);
       doc.text(
-        "Jalan Perusahaan No. 20, Kab. Malang, Jawa Timur, 65153",
+        "Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153",
         pageWidth / 2,
-        53,
+        yPosition + 36,
         { align: "center" },
       );
-      doc.text("Telepon (0341) 458823", pageWidth / 2, 59, {
+      doc.text("Telepon (0341) 4345127", pageWidth / 2, yPosition + 42, {
         align: "center",
       });
 
-      yPosition = 67;
+      yPosition += 50;
 
-      // Garis pemisah tipis - SEPERTI GAMBAR
+      // Garis pemisah tipis - DOUBLE LINE seperti preview
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.5);
+      // Garis pertama
       doc.line(marginLeft, yPosition, pageWidth - marginRight, yPosition);
-
-      yPosition += 18;
-
-      //  JUDUL SURAT TUGAS - SEPERTI GAMBAR
-      doc.setFont("times", "bold");
-      doc.setFontSize(14);
-      // Simulasi underline dengan garis
-      const judulWidth = doc.getTextWidth("SURAT TUGAS");
-      const judulX = (pageWidth - judulWidth) / 2;
-      doc.text("SURAT TUGAS", judulX, yPosition);
-      // Tambahkan garis bawah manual
+      // Garis kedua (untuk efek double)
       doc.setLineWidth(0.3);
-      doc.line(judulX, yPosition + 1, judulX + judulWidth, yPosition + 1);
+      doc.line(marginLeft, yPosition + 2, pageWidth - marginRight, yPosition + 2);
+
+      yPosition += 20;
+
+      // ============ JUDUL SURAT TUGAS ============
+      doc.setFont("times", "bold");
+      doc.setFontSize(16);
+      // JUDUL DENGAN UNDERLINE MANUAL
+      const judulText = "SURAT TUGAS";
+      const judulWidth = doc.getTextWidth(judulText);
+      const judulX = (pageWidth - judulWidth) / 2;
+      doc.text(judulText, judulX, yPosition);
+      // Garis bawah untuk underline
+      doc.setLineWidth(1);
+      doc.line(judulX, yPosition + 2, judulX + judulWidth, yPosition + 2);
 
       // Nomor Surat
       yPosition += 10;
       doc.setFont("times", "normal");
-      doc.setFontSize(11);
+      doc.setFontSize(12);
       doc.text(
         `Nomor: ${dataSuratTugas.nomorSurat}`,
         pageWidth / 2,
@@ -468,9 +471,9 @@ export default function SuratPengantaranPage() {
         { align: "center" },
       );
 
-      yPosition += 18;
+      yPosition += 20;
 
-      //  ISI SURAT 
+      // ============ ISI SURAT ============
       doc.setFontSize(12);
       doc.text(
         "Kepala SMK Negeri 2 Singosari Dinas Pendidikan Kabupaten Malang menugaskan kepada :",
@@ -478,9 +481,9 @@ export default function SuratPengantaranPage() {
         yPosition,
       );
 
-      yPosition += 10;
+      yPosition += 15;
 
-      // Tabel Guru yang Ditugaskan - SEPERTI GAMBAR
+      // ============ TABEL GURU ============
       const tableHeaders = [["NO", "NAMA", "JABATAN", "DINAS"]];
       const tableBody = guruPenugasan.map((guru, index) => [
         `${index + 1}`,
@@ -525,14 +528,13 @@ export default function SuratPengantaranPage() {
       });
 
       let finalY = doc.lastAutoTable?.finalY || yPosition + 20;
-      yPosition = finalY + 12;
+      yPosition = finalY + 10;
 
-      //  DATA PELAKSANAAN 
+      // ============ DETAIL PELAKSANAAN ============
       doc.setFontSize(12);
       doc.setFont("times", "normal");
 
-      // Label bold
-      const labelWidth = 40;
+      const labelWidth = 35;
       const colonWidth = 5;
       const valueStartX = marginLeft + labelWidth + colonWidth;
 
@@ -564,7 +566,7 @@ export default function SuratPengantaranPage() {
       doc.text(`: ${dataSuratTugas.tempat}`, valueStartX, yPosition);
       yPosition += 7;
 
-      // Alamat 
+      // Alamat
       doc.setFont("times", "bold");
       doc.text("Alamat", marginLeft, yPosition);
       doc.setFont("times", "normal");
@@ -578,9 +580,9 @@ export default function SuratPengantaranPage() {
       doc.text(alamatLines, valueStartX, yPosition);
       yPosition += alamatLines.length * 5;
 
-      yPosition += 18;
+      yPosition += 15;
 
-      //  PENUTUP SURAT 
+      // ============ PENUTUP SURAT ============
       doc.setFontSize(12);
       doc.text(
         "Demikian surat tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya",
@@ -594,22 +596,22 @@ export default function SuratPengantaranPage() {
         yPosition,
       );
 
-      yPosition += 25;
+      yPosition += 20;
 
-      //  TANDA TANGAN 
+      // ============ TANDA TANGAN ============
       const rightAlignX = pageWidth - marginRight;
 
-      // Tanggal
+      // Tanggal - POSISI DITURUNKAN
       doc.text(
         `Singosari, ${dataSuratTugas.tanggalDibuat}`,
         rightAlignX,
         yPosition,
         { align: "right" },
       );
-      
-      // Jarak antara tanggal dan jabatan 
-      yPosition += 30; 
-      
+
+      // Jarak untuk TTD
+      yPosition += 30;
+
       // Jabatan
       doc.text(
         "Kepala SMK Negeri 2 Singosari",
@@ -618,12 +620,12 @@ export default function SuratPengantaranPage() {
         { align: "right" },
       );
 
-      // Jarak antara jabatan dan nama
-      yPosition += 45; 
-      
-      // Nama Kepala Sekolah - SEPERTI GAMBAR
+      // Jarak untuk nama
+      yPosition += 40;
+
+      // Nama Kepala Sekolah - BOLD
       doc.setFont("times", "bold");
-      doc.setFontSize(13);
+      doc.setFontSize(14);
       doc.text(dataSuratTugas.namaKepsek, rightAlignX, yPosition, {
         align: "right",
       });
@@ -646,7 +648,7 @@ export default function SuratPengantaranPage() {
         { align: "right" },
       );
 
-      //  SAVE PDF 
+      // ============ SAVE PDF ============
       const fileName = `Surat_Tugas_${formData.nomorSurat.replace(/\//g, "_")}.pdf`;
       doc.save(fileName);
 
@@ -727,18 +729,17 @@ export default function SuratPengantaranPage() {
               <div className="border border-gray-300 rounded-lg p-6 bg-gray-50" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                 {/* KOP SURAT - SEPERTI GAMBAR */}
                 <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
-                                <div className="flex-shrink-0 -mt-2 -ml-2">
-                                  <img src={logoProv} alt="Logo" className="w-24 h-auto object-contain" />
-                                </div>
-                                <div className="flex-1 text-center -ml-10">
-                                    <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
-                                    <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
-                                    <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
-                                    <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
-                                    <p className="text-[10px]">Telepon (0341) 4345127</p>
-                                </div>
-                              </div>
-
+                  <div className="flex-shrink-0 -mt-2 -ml-2">
+                    <img src={logoProv} alt="Logo" className="w-28 h-28 object-contain" />
+                  </div>
+                  <div className="flex-1 text-center -ml-10">
+                    <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
+                    <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
+                    <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
+                    <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
+                    <p className="text-[10px]">Telepon (0341) 4345127</p>
+                  </div>
+                </div>
 
                 {/* JUDUL - SEPERTI GAMBAR */}
                 <div className="text-center my-8">
@@ -1092,7 +1093,7 @@ export default function SuratPengantaranPage() {
                         value={formData.namaKepsek}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Contoh: SUMIAH, S.Pd., M.Si."
+                        placeholder="Contoh: SUMIJAH, S.Pd., M.Si."
                         required
                       />
                       <p className="text-xs text-gray-500 mt-1">

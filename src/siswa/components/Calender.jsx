@@ -5,8 +5,6 @@ import calender from "../../assets/calendar.svg";
 import arrow from "../../assets/arrow.svg";
 import { Clock, Palette } from "lucide-react";
 
-
-
 dayjs.locale("id");
 
 const CalendarWrapper = ({ pklData }) => {
@@ -165,114 +163,92 @@ const CalendarPKL = ({ pklData }) => {
   const todayEvents = events.filter(
     (ev) => ev.date === dayjs().format("YYYY-MM-DD")
   );
+  const upcomingEvents = events
+  .filter((ev) =>
+    dayjs(ev.date).isAfter(dayjs(), "day")
+  )
+  .sort((a, b) => dayjs(a.date).diff(dayjs(b.date)))
+  .slice(0, 5);
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6">
       {/* LEFT SIDE */}
-      <div className="px-4 pb-4 pt-5 bg-white rounded-2xl shadow-sm border border-[#641E2]">
-        <div className="flex justify-between items-center mb-1">
-          <button
-            className="!text-4xl font-bold !bg-transparent leading-none"
-            onClick={prevMonth}
-          >
-            ‹
-          </button>
-          <h2 className="font-bold text-lg leading-none">
-            {currentMonth.format("MMMM YYYY")}
-          </h2>
-          <button
-            className="!text-4xl font-bold !bg-transparent leading-none"
-            onClick={nextMonth}
-          >
-            ›
-          </button>
-        </div>
+<div className="flex flex-col gap-6">
 
-        {/* HEADER HARI */}
-        <div className="grid grid-cols-7 text-center font-semibold mb-2">
-          {weekdayLabels.map((d, i) => (
+  {/* ===== ACARA HARI INI ===== */}
+  <div className="bg-white rounded-2xl shadow-sm border-2 border-[#641E21] p-5 min-h-[260px]">
+    <div className="flex justify-center items-center gap-2 mb-4">
+      <img src={calender} alt="Calendar Icon" className="w-5 h-5" />
+      <h3 className="font-bold text-lg text-center">Acara Hari Ini</h3>
+    </div>
+
+    <div className="space-y-5">
+      {todayEvents.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center">
+          Tidak ada acara hari ini.
+        </p>
+      ) : (
+        todayEvents.map((ev) => (
+          <div key={ev.id} className="flex gap-4 items-start">
             <div
-              key={d}
-              className={
-                i === mappedTodayIndex
-                  ? "font-extrabold text-purple-700"
-                  : "text-gray-700"
-              }
-            >
-              {d}
+              className="w-1.5 rounded-full"
+              style={{ backgroundColor: ev.color, minHeight: "3.5rem" }}
+            />
+
+            <div>
+              <p className="font-semibold">
+                {ev.title}
+                {ev.start && (
+                  <span className="text-sm font-normal ml-2">
+                    {ev.start} – {ev.end}
+                  </span>
+                )}
+              </p>
+
+              <p className="text-sm text-gray-600 mt-1">
+                {ev.description || "Tidak ada deskripsi acara."}
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
 
-        {/* DAYS */}
-        <div className="grid grid-cols-7 text-center gap-1">
-          {days.map((day, idx) => {
-            const isToday =
-              day.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
-            const dayEvent = events.find(
-              (ev) => ev.date === day.format("YYYY-MM-DD")
-            );
+  {/* ===== ACARA MENDATANG ===== */}
+  <div className="bg-white rounded-2xl shadow-sm border-2 border-[#641E21] p-5 min-h-[260px]">
+    <div className="flex justify-center items-center gap-2 mb-4">
+      <img src={calender} alt="Calendar Icon" className="w-5 h-5" />
+      <h3 className="font-bold text-lg text-center">Acara Mendatang</h3>
+    </div>
 
-            return (
-              <div
-                key={idx}
-                onClick={() => handleDayClick(day)}
-                className={`p-2 cursor-pointer transition w-10 h-10 mx-auto flex items-center justify-center
-                  rounded-full
-                  ${day.month() !== currentMonth.month() ? "text-gray-300" : ""}
-                  ${isToday ? "border-2 border-purple-600 font-bold" : "hover:bg-purple-200"}`}
-                style={{
-                  backgroundColor: !isToday && dayEvent ? dayEvent.color : "",
-                }}
-              >
-                {day.date()}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* BADGES */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {monthEvents.map((ev) => (
+    <div className="space-y-3">
+      {upcomingEvents.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center">
+          Tidak ada acara mendatang.
+        </p>
+      ) : (
+        upcomingEvents.map((ev) => (
+          <div key={ev.id} className="flex items-center gap-3">
             <span
-              key={ev.id}
-              className="px-3 py-1 text-sm text-white rounded-full"
+              className="w-2 h-2 rounded-full"
               style={{ backgroundColor: ev.color }}
-            >
-              {ev.title}
-            </span>
-          ))}
-        </div>
-
-        {/* ACARA HARI INI */}
-        <div className="mt-6 p-4 border rounded-xl bg-gray-50">
-          <div className="flex items-center gap-3 mb-3">
-            <img src={calender} alt="Calendar Icon" className="w-5 h-5" />
-            <h3 className="font-bold text-lg">Acara Hari Ini</h3>
+            />
+            <p className="text-sm">
+              <span className="font-semibold">{ev.title}</span>
+              <span className="ml-2 text-gray-600">
+                {dayjs(ev.date).format("DD MMM YYYY")}
+              </span>
+            </p>
           </div>
+        ))
+      )}
+    </div>
+  </div>
 
-          <div className="max-h-[8rem] overflow-y-auto pr-1">
-            {todayEvents.length === 0 ? (
-              <p className="text-gray-500 text-sm">Tidak ada acara hari ini.</p>
-            ) : (
-              todayEvents.map((ev) => (
-                <div key={ev.id} className="mb-3 flex items-start gap-2">
-                  <div
-                    className="w-1.5 rounded-lg"
-                    style={{ backgroundColor: ev.color, height: "2.2rem" }}
-                  ></div>
-                  <div>
-                    <p className="font-semibold truncate">{ev.title}</p>
-                    <p className="text-sm text-gray-600">
-                      {ev.start} – {ev.end}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+</div>
+
 
       {/* RIGHT SIDE */}
       <div className="p-4 pt-10 bg-white rounded-2xl shadow-sm border border-[#641E21]">

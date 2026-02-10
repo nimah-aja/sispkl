@@ -3,7 +3,7 @@ import React from "react";
 export default function SaveConfirmationModal({
   isOpen,
   onClose,
-  onSave,
+  onConfirm,
   imageSrc,
   title = "Apakah Anda yakin ingin menyimpan data ini?",
   subtitle = "Pastikan semua data sudah benar sebelum disimpan."
@@ -34,7 +34,7 @@ export default function SaveConfirmationModal({
             Batal
           </button>
           <button
-            onClick={onSave}
+            onClick={onConfirm}
             className="button-radius"
             style={{
               "--btn-bg": "#EC933A",

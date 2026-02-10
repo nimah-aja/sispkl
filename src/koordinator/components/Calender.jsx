@@ -23,31 +23,10 @@ const CalendarWrapper = ({ pklData }) => {
 
   return (
     <div>
-      <div
-        className="bg-white border border-[#641E21] rounded-xl p-4 
-                   shadow-sm cursor-pointer hover:bg-gray-50 transition"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="w-full flex justify-end">
-          <img
-            src={arrow}
-            alt="arrow icon"
-            className={`w-5 h-5 transition-transform duration-300 ${
-              expanded ? "rotate-180" : "rotate-0"
-            }`}
-          />
-        </div>
-        <p className="text-gray-700 -mt-4 font-medium">{today}</p>
-        <p className="text-sm text-gray-500 mt-1">
-          Klik untuk {expanded ? "menyembunyikan" : "melihat"} kalender lengkap
-        </p>
-      </div>
-
-      {expanded && (
         <div className="mt-4">
           <CalendarPKL pklData={pklData} />
         </div>
-      )}
+      
     </div>
   );
 };

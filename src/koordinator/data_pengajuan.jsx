@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPKLApplications } from "../utils/services/kapro/pengajuanPKL";
-import { X, Edit } from "lucide-react";
+import { Edit } from "lucide-react";
 import {
   fetchGuruById,
   getGuru as getAllGuru,
@@ -17,7 +17,6 @@ import SearchBar from "./components/Search";
 import EditPengajuan from "./components/editPengajuan";
 
 export default function DataPengajuan() {
-  const [showPreview, setShowPreview] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSurat, setSelectedSurat] = useState(null);
   const [active, setActive] = useState("pengajuanPKL");
@@ -27,42 +26,19 @@ export default function DataPengajuan() {
   const [guruList, setGuruList] = useState([]);
   const [guruDetail, setGuruDetail] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [pdfGuruDetail, setPdfGuruDetail] = useState(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
 
-  const previewRef = useRef(null);
-  const navigate = useNavigate();
   const namaGuru = localStorage.getItem("nama_guru") || "Guru SMK";
-
-  const user = {
-    name: namaGuru,
-    role: "Koordinator",
-  };
-
-  const kelasOptions = Array.from(
-    new Set(pengajuanList.map((item) => item.class)),
-  );
-
-  const filters = [
-    {
-      label: "Kelas",
-      value: kelas,
-      options: kelasOptions,
-      onChange: setKelas,
-    },
-  ];
+  const user = { name: namaGuru, role: "Koordinator" };
+  const kelasOptions = Array.from(new Set(pengajuanList.map((item) => item.class)));
+  const filters = [{ label: "Kelas", value: kelas, options: kelasOptions, onChange: setKelas }];
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [pklRes, guruRes] = await Promise.all([
-          getPKLApplications(),
-          getAllGuru(),
-        ]);
-
+        const [pklRes, guruRes] = await Promise.all([getPKLApplications(), getAllGuru()]);
         setGuruList(guruRes || []);
-
         const approvedList = (pklRes?.data || [])
           .filter((item) => item.application?.status === "Approved")
           .map((item) => ({
@@ -76,692 +52,220 @@ export default function DataPengajuan() {
             tanggal_selesai: item.application.tanggal_selesai,
             processed_by: item.application.processed_by,
             description: `PKL di ${item.industri_nama} telah disetujui`,
-            siswa_id: item.application.siswa_id,
-            siswa_names: item.siswa_username,
-            jumlah_siswa: 1,
             nama_perusahaan: item.industri_nama,
             alamat_perusahaan: item.industri_alamat || "Jl. Contoh No. 123",
-            kota_perusahaan: item.industri_kota || "Malang",
           }));
-
         setPengajuanList(approvedList);
-      } catch (err) {
-        console.error("Fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error("Fetch error:", err); } finally { setLoading(false); }
     };
-
     fetchData();
   }, []);
 
   useEffect(() => {
     if (!selectedSurat?.processed_by) return;
-
     const getGuruDetail = async () => {
       try {
         const data = await fetchGuruById(selectedSurat.processed_by);
         setGuruDetail(data);
-        setPdfGuruDetail(data);
-      } catch (err) {
-        console.error("Error fetching guru detail:", err);
-        setGuruDetail(null);
-        setPdfGuruDetail(null);
-      }
+      } catch (err) { setGuruDetail(null); }
     };
-
     getGuruDetail();
   }, [selectedSurat]);
-
-  const formatTanggal = (isoString) => {
-    if (!isoString) return "";
-    try {
-      const [year, month, day] = isoString.split("-");
-      return `${day}-${month}-${year}`;
-    } catch (err) {
-      return isoString;
-    }
-  };
-
-  const formatTanggalSurat = () => {
-    const now = new Date();
-    const options = { day: "numeric", month: "long", year: "numeric" };
-    return now.toLocaleDateString("id-ID", options);
-  };
 
   const getInitials = (name) => {
     if (!name) return "";
     const words = name.trim().split(" ");
-    return words.length === 1
-      ? words[0][0].toUpperCase()
-      : (words[0][0] + words[1][0]).toUpperCase();
+    return words.length === 1 ? words[0][0].toUpperCase() : (words[0][0] + words[1][0]).toUpperCase();
   };
 
   const handleEditClick = (item) => {
-    console.log(" Edit clicked for:", item.name, "ID:", item.id);
     setSelectedSurat(item);
     setShowEditModal(true);
-    setShowPreview(false);
   };
 
-  // Fungsi untuk handle export dari edit modal
-  const handleExportFromEdit = (
-    payload,
-    isGroupMode = false,
-    selectedStudents = [],
-  ) => {
-    console.log("=== DataPengajuan: handleExportFromEdit ===");
-
-    // Validasi payload
-    if (!payload) {
-      console.error("Payload tidak valid");
-      return;
-    }
-
-    // Untuk PDF lokal, langsung panggil fungsi generate
-    generateLembarPersetujuanPDF(payload, selectedStudents);
+  // ======================================================
+  // FUNGSI REUSABLE KOP SURAT
+  // ======================================================
+  const drawKopSurat = (doc, margin) => {
+    if (logoSmk) { doc.addImage(logoSmk, "PNG", margin, 10, 22, 22); }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("PEMERINTAH PROVINSI JAWA TIMUR", 45, 15);
+    doc.text("DINAS PENDIDIKAN", 45, 20);
+    doc.setFontSize(13);
+    doc.text("SMK NEGERI 2 SINGOSARI", 45, 25);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text("Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153", 45, 29);
+    doc.text("Telepon (0341) 4345127", 45, 33);
+    doc.setLineWidth(0.5);
+    doc.line(margin, 36, 195, 36);
   };
 
-  // Fungsi untuk update data setelah edit
-  const handleSaveEdit = (updatedData) => {
-    console.log("Menyimpan perubahan data:", updatedData);
+  // ======================================================
+  // FUNGSI SURAT 1 SAJA
+  // ======================================================
+  const generateSuratPermohonanOnly = (doc, data, margin) => {
+    drawKopSurat(doc, margin);
+    doc.setFontSize(10);
+    doc.text(data.tempat_tanggal || `Malang, .................... 2026`, 195, 42, { align: "right" });
 
-    // Update state dengan data yang sudah diedit
-    setPengajuanList((prev) =>
-      prev.map((item) =>
-        item.id === updatedData.id
-          ? {
-              ...item,
-              // Update semua field yang mungkin diubah
-              name: updatedData.name || item.name,
-              class: updatedData.class || item.class,
-              nisn: updatedData.nisn || item.nisn,
-              jurusan: updatedData.jurusan || item.jurusan,
-              nama_perusahaan:
-                updatedData.nama_perusahaan || item.nama_perusahaan,
-              industri: updatedData.industri || item.industri,
-              tanggal_mulai: updatedData.tanggal_mulai || item.tanggal_mulai,
-              tanggal_selesai:
-                updatedData.tanggal_selesai || item.tanggal_selesai,
-              periode: updatedData.periode || item.periode,
-            }
-          : item,
-      ),
-    );
+    let y = 48;
+    doc.text(`Nomor      : ${data.nomor_surat || "400.3 /      / 101.6.9.19 / 2025"}`, margin, y);
+    doc.text(`Lampiran   : -`, margin, y + 5);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Perihal      : Permohonan Praktik Kerja Lapangan (PKL)`, margin, y + 10);
 
-    // Update juga selectedSurat jika sedang diedit
-    if (selectedSurat?.id === updatedData.id) {
-      setSelectedSurat((prev) => ({
-        ...prev,
-        ...updatedData,
-      }));
-    }
+    y += 20;
+    doc.setFont("helvetica", "normal");
+    doc.text("Kepada Yth,", margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Pimpinan ${data.nama_perusahaan}`, margin, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.text("Di Tempat", margin, y + 10);
 
-    setShowEditModal(false);
+    y += 22;
+    const textIsi = `Dengan ini kami sampaikan bahwa kegiatan Praktik Kerja Lapangan (PKL) siswa-siswi SMK Negeri 2 Singosari akan dilaksanakan sekitar tanggal .......................... Adapun siswa-siswi yang kami ajukan adalah sebagai berikut:`;
+    doc.text(doc.splitTextToSize(textIsi, 180), margin, y);
+
+    autoTable(doc, {
+      startY: y + 12,
+      head: [["NO", "NAMA", "KELAS", "JURUSAN"]],
+      body: data.students.map((s, i) => [i + 1, s.nama, s.kelas, s.jurusan]),
+      theme: "grid",
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 2 }
+    });
+
+    y = doc.lastAutoTable.finalY + 15;
+    doc.text("Kepala SMK Negeri 2 Singosari,", 140, y);
+    y += 20;
+    doc.setFont("helvetica", "bold");
+    doc.text(data.nama_kepala_sekolah || "Sumijah, S.Pd., M.Si.", 140, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(`NIP. ${data.nip_kepala_sekolah || "19700210 199802 2 009"}`, 140, y + 4);
   };
 
-  // Fungsi untuk generate PDF Lembar Persetujuan menggunakan jsPDF dengan autoTable
-  const generateLembarPersetujuanPDF = async (data, selectedStudents = []) => {
+  // ======================================================
+  // FUNGSI SURAT 2 SAJA
+  // ======================================================
+  const generateLembarPersetujuanOnly = (doc, data, margin) => {
+    drawKopSurat(doc, margin);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("LEMBAR PERSETUJUAN", 105, 48, { align: "center" });
+    doc.setLineWidth(0.5);
+    doc.line(75, 49, 135, 49);
+
+    const siswaList = data.students.map((s, i) => `${i + 1}. ${s.nama}`).join("\n");
+    const tableBody = [[
+      "1",
+      `Permohonan pelaksanaan Pembelajaran Praktik Industri (PJBL) untuk ${data.students.length} orang siswa, atas nama:\n${siswaList}`,
+      `Nama:\n...........................................................\n\nTanggal:\n...........................................................\n\nParaf:\n\n\nCatatan:\n1. Mulai PKL pada tanggal:\n........................................................ s/d\n...........................................................\n2. Diterima sebanyak ......... Siswa.`,
+      `Telah disetujui Siswa Siswi SMK NEGERI 2 SINGOSARI untuk melaksanakan PKL di ${data.nama_perusahaan}.`,
+    ]];
+
+    autoTable(doc, {
+      startY: 55,
+      head: [["NO", "Perihal", "Disetujui Oleh Pihak DU/DI", "Keterangan"]],
+      body: tableBody,
+      theme: "grid",
+      styles: { fontSize: 9, cellPadding: 3, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.4 },
+      headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontStyle: "bold", halign: "center", lineWidth: 0.4 },
+      columnStyles: { 0: { cellWidth: 12, halign: "center" }, 1: { cellWidth: 55 }, 2: { cellWidth: 65 }, 3: { cellWidth: 50 } },
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(11);
+    doc.text(data.tempat_tanggal || `Malang, .................... 2026`, 195, finalY, { align: "right" });
+    doc.text("Bapak / Ibu Pimpinan", 195, finalY + 7, { align: "right" });
+    doc.text("( ................................................................ )", 195, finalY + 35, { align: "right" });
+  };
+
+  // ======================================================
+  // FUNGSI GABUNGAN UNTUK TOMBOL UTAMA
+  // ======================================================
+  const generateDokumenLengkapPDF = (data) => {
     if (!data) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const margin = 15;
 
-    setGeneratingPDF(true);
+    generateSuratPermohonanOnly(doc, data, margin);
+    doc.addPage();
+    generateLembarPersetujuanOnly(doc, data, margin);
 
-    try {
-      console.log(" Membuat PDF dengan jsPDF untuk:", data.nama_perusahaan);
-
-      // Buat PDF baru
-      const doc = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      // Set background putih untuk seluruh dokumen
-      doc.setFillColor(255, 255, 255);
-      doc.rect(0, 0, 210, 297, "F"); // Mengisi seluruh halaman dengan putih
-
-      // Set font dan ukuran
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-
-      const margin = 15;
-      let yPosition = margin;
-
-      // KOP SURAT - Layout sama dengan editPengajuan.jsx
-      yPosition = 10;
-
-      // Logo di kiri (dikecilkan)
-      if (logoSmk) {
-        try {
-          doc.addImage(logoSmk, "PNG", margin, yPosition, 28, 28); // Dikecilkan dari 35x35 menjadi 28x28
-        } catch (err) {
-          console.warn("Gagal menambahkan logo:", err);
-        }
-      }
-
-      // Teks di kanan (diset agar sejajar dengan logo)
-      const textStartX = margin + 35; // Disesuaikan dengan logo yang dikecilkan
-      yPosition = 15; // Posisi awal teks sejajar dengan logo
-
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(0, 0, 0);
-      doc.text("PEMERINTAH PROVINSI JAWA TIMUR", textStartX, yPosition);
-      yPosition += 6;
-      doc.text("DINAS PENDIDIKAN", textStartX, yPosition);
-      yPosition += 6;
-      doc.text("SMK NEGERI 2 SINGOSARI", textStartX, yPosition);
-      
-      yPosition += 8; // Spasi tambahan
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text("Jalan Perusahaan No. 20, Kab. Malang, Jawa Timur, 65153", textStartX, yPosition);
-      yPosition += 5;
-      doc.text("Telepon (0341) 458823", textStartX, yPosition);
-
-      // Garis pemisah di bawah kop surat
-      yPosition += 10;
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
-      doc.line(margin, yPosition, 210 - margin, yPosition);
-
-      // Judul LEMBAR PERSETUJUAN
-      yPosition += 15;
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("LEMBAR PERSETUJUAN", 105, yPosition, { align: "center" });
-
-      // Tambahkan garis underline
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
-      const titleWidth =
-        (doc.getStringUnitWidth("LEMBAR PERSETUJUAN") * 14) /
-        doc.internal.scaleFactor;
-      const titleX = 105 - titleWidth / 2;
-      doc.line(titleX, yPosition + 2, titleX + titleWidth, yPosition + 2);
-
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-
-      // Tabel utama
-      yPosition = yPosition + 15;
-
-      // Header tabel
-      const tableHeaders = [
-        [" NO ", "PERIHAL", "DISETUJUI OLEH PIHAK DU/DI", "KETERANGAN"],
-      ];
-
-      // Konten tabel
-      const siswaList =
-        data.students
-          ?.map(
-            (student, index) =>
-              `${index + 1}. ${student.nama || student.name?.toUpperCase() || "NAMA SISWA"}`,
-          )
-          .join("\n") || "1. NAMA SISWA";
-
-      const tableBody = [
-        [
-          "1.",
-          `Permohonan pelaksanaan Pembelajaran Praktik Industri (PJBL)\n\nuntuk ${data.students?.length || 1} orang siswa, atas nama:\n\n${siswaList}`,
-          `Nama :\n.......................................................\nTanggal :\n.......................................................\nParaf :\n\n\nCatatan :\n1. Mulai PKL pada tanggal :\n.................................................sd........................................................\n2. Diterima Sebanyak ……… siswa.`,
-          `Telah disetujui Siswa Siswi SMK NEGERI 2 SINGOSARI\nuntuk melaksanakan PKL di ${data.nama_perusahaan || "JTV MALANG"}`,
-        ],
-      ];
-
-      // Buat tabel menggunakan autoTable
-      autoTable(doc, {
-        startY: yPosition,
-        head: tableHeaders,
-        body: tableBody,
-        margin: { left: margin, right: margin },
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          lineColor: [0, 0, 0],
-          lineWidth: 0.1,
-          fillColor: [255, 255, 255],
-          textColor: [0, 0, 0],
-          minCellHeight: 8,
-        },
-        headStyles: {
-          fillColor: [255, 255, 255],
-          textColor: [0, 0, 0],
-          fontStyle: "bold",
-          halign: "center",
-          lineWidth: 0.1,
-          lineColor: [0, 0, 0],
-        },
-        columnStyles: {
-          0: {
-            cellWidth: 15,
-            halign: "center",
-            fillColor: [255, 255, 255],
-          },
-          1: {
-            cellWidth: "auto",
-            fillColor: [255, 255, 255],
-          },
-          2: {
-            cellWidth: 55,
-            fillColor: [255, 255, 255],
-          },
-          3: {
-            cellWidth: 55,
-            fillColor: [255, 255, 255],
-          },
-        },
-        bodyStyles: {
-          valign: "top",
-          fillColor: [255, 255, 255],
-          textColor: [0, 0, 0],
-          lineColor: [0, 0, 0],
-          lineWidth: 0.1,
-        },
-        theme: "grid",
-      });
-
-      // Footer (tempat dan tanggal) - Gunakan format dengan titik-titik
-      const finalY = doc.lastAutoTable?.finalY || yPosition + 80;
-      yPosition = finalY + 20;
-
-      doc.setFontSize(11);
-      doc.setTextColor(0, 0, 0);
-      
-      // Semua elemen footer di-align kanan dengan posisi X yang sama
-      const footerX = 195; // Posisi X yang sama untuk semua
-      
-      doc.text(
-        data.tempat_tanggal || `Malang, .................................... 2026`,
-        footerX,
-        yPosition,
-        { align: "right" },
-      );
-      yPosition += 7;
-      doc.text("Bapak / Ibu Pimpinan", footerX, yPosition, { align: "right" });
-
-      // Tanda tangan - di bawah dengan jarak yang sesuai
-      yPosition += 40;
-      doc.text(
-        "( ................................................................ )",
-        footerX,
-        yPosition,
-        { align: "right" },
-      );
-
-      // AUTO PRINT - Langsung buka dialog print
-      doc.autoPrint({ variant: "non-conform" });
-
-      // Buka PDF di tab baru dan langsung trigger print dialog
-      const pdfBlob = doc.output("blob");
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      const printWindow = window.open(pdfUrl, "_blank");
-
-      // Set timeout untuk memastikan PDF sudah terbuka
-      setTimeout(() => {
-        if (printWindow) {
-          // Focus ke window print
-          printWindow.focus();
-
-          // Set timeout tambahan untuk memastikan PDF siap
-          setTimeout(() => {
-            printWindow.print();
-          }, 500);
-        }
-      }, 500);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-    } finally {
-      setGeneratingPDF(false);
-    }
+    window.open(URL.createObjectURL(doc.output("blob")), "_blank");
   };
 
-  // Fungsi untuk generate Lembar Persetujuan langsung dari card
-  const handleExportLembarPersetujuan = async (
-    surat,
-    printDirectly = false,
-  ) => {
-    if (!surat) return;
+  const handleExportFromEdit = (payload) => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const margin = 15;
 
-    setGeneratingPDF(true);
-
-    try {
-      console.log("Mencetak Lembar Persetujuan untuk:", surat.name);
-
-      const payload = {
-        school_info: {
-          nama_sekolah: "SMK NEGERI 2 SINGOSARI",
-          logo_url:
-            "https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_SMKN_2_Singosari.png",
-        },
-        students: [
-          {
-            nama: surat.name.toUpperCase(),
-            nisn: surat.nisn || "",
-            kelas: surat.class || "",
-            jurusan: surat.jurusan || "",
-          },
-        ],
-        nama_perusahaan:
-          surat.nama_perusahaan || surat.industri || "JTV MALANG",
-        tempat_tanggal: `Malang, .................................... 2026`, // Format dengan titik-titik
-        nama_kaprog: guruDetail?.nama || namaGuru,
-        nip_kaprog: guruDetail?.nip || "",
-      };
-
-      await generateLembarPersetujuanPDF(payload, [], printDirectly);
-    } catch (error) {
-      console.error("Error generating Lembar Persetujuan:", error);
-      setGeneratingPDF(false);
+    // Logika Filter: Cetak berdasarkan button mana yang diklik di modal
+    if (payload.jenis_surat === "surat1") {
+      generateSuratPermohonanOnly(doc, payload, margin);
+    } else if (payload.jenis_surat === "surat2") {
+      generateLembarPersetujuanOnly(doc, payload, margin);
+    } else {
+      // Fallback gabungan jika tidak ada flag spesifik
+      generateSuratPermohonanOnly(doc, payload, margin);
+      doc.addPage();
+      generateLembarPersetujuanOnly(doc, payload, margin);
     }
+
+    window.open(URL.createObjectURL(doc.output("blob")), "_blank");
   };
 
-  // Fungsi untuk generate Surat Tugas dengan jsPDF
-  const handleGenerateSuratTugas = async (surat, printDirectly = false) => {
-    if (!surat) return;
-
-    setGeneratingPDF(true);
-
-    try {
-      const doc = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      // Set background putih
-      doc.setFillColor(255, 255, 255);
-      doc.rect(0, 0, 210, 297, "F");
-
-      // Set font
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(12);
-
-      const margin = 20;
-      let yPosition = margin;
-
-      // KOP SURAT dengan layout yang sama
-      yPosition = 15;
-
-      // Logo di kiri (dikecilkan)
-      if (logoSmk) {
-        try {
-          doc.addImage(logoSmk, "PNG", margin, yPosition, 28, 28); // Dikecilkan
-        } catch (err) {
-          console.warn("Gagal menambahkan logo:", err);
-        }
-      }
-
-      // Teks di kanan
-      const textStartX = margin + 35; // Disesuaikan
-      yPosition = 20;
-
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("PEMERINTAH PROVINSI JAWA TIMUR", textStartX, yPosition);
-      yPosition += 6;
-      doc.text("DINAS PENDIDIKAN", textStartX, yPosition);
-      yPosition += 6;
-      doc.text("SMK NEGERI 2 SINGOSARI", textStartX, yPosition);
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      yPosition += 8;
-      doc.text(
-        "Jalan Perusahaan No. 20, Kab. Malang, Jawa Timur, 65153",
-        textStartX,
-        yPosition,
-      );
-      yPosition += 5;
-      doc.text("Telepon (0341) 458823", textStartX, yPosition);
-
-      // Garis pemisah
-      yPosition += 8;
-      doc.setLineWidth(0.5);
-      doc.line(margin, yPosition, 210 - margin, yPosition);
-
-      // Judul SURAT TUGAS
-      yPosition += 15;
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("SURAT TUGAS", 105, yPosition, { align: "center" });
-
-      // Nomor surat
-      yPosition += 8;
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        `Nomor: ST/${new Date().getFullYear()}/${String(surat.id).padStart(3, "0")}`,
-        105,
-        yPosition,
-        { align: "center" },
-      );
-
-      // Isi surat
-      yPosition += 15;
-      doc.setFontSize(12);
-      doc.text("Yang bertanda tangan di bawah ini:", margin, yPosition);
-
-      yPosition += 10;
-      doc.text("Nama", margin, yPosition);
-      doc.text(":", margin + 35, yPosition);
-      doc.text(surat.name || "NAMA SISWA", margin + 40, yPosition);
-
-      yPosition += 7;
-      doc.text("NISN", margin, yPosition);
-      doc.text(":", margin + 35, yPosition);
-      doc.text(surat.nisn || "-", margin + 40, yPosition);
-
-      yPosition += 7;
-      doc.text("Kelas/Kompetensi Keahlian", margin, yPosition);
-      doc.text(":", margin + 35, yPosition);
-      doc.text(
-        `${surat.class || ""} / ${surat.jurusan || "Teknik Komputer dan Jaringan"}`,
-        margin + 40,
-        yPosition,
-      );
-
-      yPosition += 7;
-      doc.text("Untuk melaksanakan", margin, yPosition);
-      doc.text(":", margin + 35, yPosition);
-      doc.text("Praktik Kerja Lapangan (PKL)", margin + 40, yPosition);
-
-      yPosition += 7;
-      doc.text("Di", margin, yPosition);
-      doc.text(":", margin + 35, yPosition);
-      doc.text(
-        surat.nama_perusahaan || surat.industri || "JTV MALANG",
-        margin + 40,
-        yPosition,
-      );
-
-      yPosition += 7;
-      doc.text("Alamat", margin, yPosition);
-      doc.text(":", margin + 35, yPosition);
-      doc.text(
-        surat.alamat_perusahaan || "Jl. Contoh No. 123, Malang",
-        margin + 40,
-        yPosition,
-      );
-
-      yPosition += 7;
-      doc.text("Waktu Pelaksanaan", margin, yPosition);
-      doc.text(":", margin + 35, yPosition);
-      doc.text(
-        `${surat.tanggal_mulai ? formatTanggal(surat.tanggal_mulai) : ""} s/d ${surat.tanggal_selesai ? formatTanggal(surat.tanggal_selesai) : ""}`,
-        margin + 40,
-        yPosition,
-      );
-
-      // Penutup
-      yPosition += 20;
-      doc.text(
-        "Demikian surat tugas ini dibuat untuk dapat dilaksanakan dengan sebaik-baiknya.",
-        margin,
-        yPosition,
-      );
-
-      // Tanda tangan dengan format tanggal titik-titik
-      yPosition += 30;
-      doc.text(
-        `Malang, .................................... 2026`,
-        160,
-        yPosition,
-        {
-          align: "right",
-        },
-      );
-
-      yPosition += 20;
-      doc.text("Kepala SMK Negeri 2 Singosari,", 160, yPosition, {
-        align: "right",
-      });
-
-      yPosition += 30;
-      doc.setFont("helvetica", "bold");
-      doc.text(guruDetail?.nama || namaGuru, 160, yPosition, {
-        align: "right",
-      });
-
-      yPosition += 6;
-      doc.setFont("helvetica", "normal");
-      doc.text(`NIP. ${guruDetail?.nip || "-"}`, 160, yPosition, {
-        align: "right",
-      });
-
-      // Buat nama file dengan format: namaSiswa_namaIndustri_SuratTugas
-      const cleanSiswaName = surat.name
-        .replace(/[^a-zA-Z0-9\s]/g, "")
-        .replace(/\s+/g, "_")
-        .toUpperCase();
-      const cleanPerusahaanName = (
-        surat.nama_perusahaan ||
-        surat.industri ||
-        "JTV MALANG"
-      )
-        .replace(/[^a-zA-Z0-9\s]/g, "")
-        .replace(/\s+/g, "_")
-        .toUpperCase();
-
-      const fileName = `Surat_Tugas_${cleanSiswaName}_${cleanPerusahaanName}.pdf`;
-
-      if (printDirectly) {
-        // Untuk print langsung
-        const pdfBlob = doc.output("blob");
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        const printWindow = window.open(pdfUrl, "_blank");
-
-        setTimeout(() => {
-          if (printWindow) {
-            printWindow.focus();
-            printWindow.print();
-          }
-        }, 500);
-      } else {
-        // Simpan PDF ke file
-        doc.save(fileName);
-      }
-    } catch (error) {
-      console.error(" Error generating Surat Tugas:", error);
-    } finally {
-      setGeneratingPDF(false);
-    }
-  };
-
-  const handleCardClick = async (item) => {
-    setSelectedSurat(item);
-    setShowPreview(true);
+  const handleSaveEdit = (updatedData) => {
+    setPengajuanList((prev) => prev.map((item) => item.id === updatedData.id ? { ...item, ...updatedData } : item));
     setShowEditModal(false);
   };
-
-  const filteredPengajuan = pengajuanList.filter((item) => {
-    const searchText = query.toLowerCase();
-
-    const matchSearch =
-      item.name.toLowerCase().includes(searchText) ||
-      item.class.toLowerCase().includes(searchText) ||
-      item.description.toLowerCase().includes(searchText);
-
-    const matchKelas = kelas === "" || item.class === kelas;
-
-    return matchSearch && matchKelas;
-  });
 
   return (
     <div className="flex min-h-screen w-full bg-white">
       <Sidebar active={active} setActive={setActive} />
-
       <div className="flex flex-col flex-1">
         <Header user={user} />
-
         <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
           <h2 className="text-white font-bold mb-4">Data Persetujuan PKL</h2>
-
-          <SearchBar
-            query={query}
-            setQuery={setQuery}
-            filters={filters}
-            placeholder="Cari siswa..."
-          />
-
-          {loading ? (
-            <div className="text-white mt-4">Memuat data...</div>
-          ) : (
-            <div className="mt-6 space-y-4">
-              {filteredPengajuan.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleCardClick(item)}
-                  className="bg-white rounded-xl p-4 flex justify-between items-center shadow cursor-pointer hover:bg-gray-50 transition"
-                >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 mr-4 rounded-full bg-[#641E21] text-white flex items-center justify-center font-bold">
-                      {getInitials(item.name)}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-[#641E21]">
-                        {item.name} | {item.class}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {item.description}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Industri: {item.nama_perusahaan || item.industri}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(item);
-                      }}
-                      className="!bg-red-800 text-white px-4 py-1 rounded-md hover:bg-red-900 transition flex items-center gap-2"
-                    >
-                      <Edit size={16} />
-                      Edit Surat
-                    </button>
-
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        await handleExportLembarPersetujuan(item, false); // Simpan ke file
-                      }}
-                      disabled={generatingPDF}
-                      className="!bg-[#EC933A] text-white px-4 py-1 rounded-md hover:bg-orange-500 transition disabled:opacity-50 flex items-center gap-2"
-                    >
-                      Cetak Lembar Persetujuan
-                    </button>
+          <SearchBar query={query} setQuery={setQuery} filters={filters} placeholder="Cari siswa..." />
+          <div className="mt-6 space-y-4">
+            {pengajuanList.filter(i => i.name.toLowerCase().includes(query.toLowerCase())).map((item) => (
+              <div key={item.id} className="bg-white rounded-xl p-4 flex justify-between items-center shadow cursor-pointer hover:bg-gray-50 transition">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 mr-4 rounded-full bg-[#641E21] text-white flex items-center justify-center font-bold">{getInitials(item.name)}</div>
+                  <div>
+                    <h3 className="font-semibold text-[#641E21]">{item.name} | {item.class}</h3>
+                    <p className="text-xs text-gray-500">Industri: {item.nama_perusahaan}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="flex gap-2">
+                  <button onClick={() => handleEditClick(item)} className="!bg-red-800 text-white px-4 py-1 rounded-md flex items-center gap-2">
+                    <Edit size={16} /> Ubah Surat
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const payload = {
+                        nama_perusahaan: item.nama_perusahaan,
+                        students: [{ nama: item.name.toUpperCase(), kelas: item.class, jurusan: item.jurusan }],
+                        tempat_tanggal: "Malang, .................... 2026",
+                        nomor_surat: "400.3 /      / 101.6.9.19 / 2025",
+                        nama_kepala_sekolah: "Sumijah, S.Pd., M.Si.",
+                        nip_kepala_sekolah: "19700210 199802 2 009"
+                      };
+                      generateDokumenLengkapPDF(payload);
+                    }} 
+                    className="!bg-[#EC933A] text-white px-4 py-1 rounded-md"
+                  >
+                    Cetak Surat
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </main>
       </div>
 
-      {/* MODAL EDIT */}
       {showEditModal && selectedSurat && (
         <EditPengajuan
           selectedSurat={selectedSurat}
@@ -770,202 +274,7 @@ export default function DataPengajuan() {
           onSave={handleSaveEdit}
           onClose={() => setShowEditModal(false)}
           onExportPDF={handleExportFromEdit}
-          onGenerateSuratTugas={handleGenerateSuratTugas}
         />
-      )}
-
-      {/* SIDE PANEL PREVIEW */}
-      {showPreview && selectedSurat && !showEditModal && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => {
-              setShowPreview(false);
-              setGuruDetail(null);
-              setPdfGuruDetail(null);
-            }}
-          />
-
-          <div
-            onClick={() => {
-              setShowPreview(false);
-              setGuruDetail(null);
-              setPdfGuruDetail(null);
-            }}
-            className="absolute top-4 right-[789px] z-50 w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-lg transition hover:bg-gray-100 cursor-pointer"
-          >
-            <X className="text-black w-5 h-5" />
-          </div>
-
-          <div className="relative bg-white h-full w-full max-w-3xl rounded-2xl shadow-2xl animate-slide-in-right overflow-y-auto">
-            <div className="p-8 text-black text-[12px] leading-relaxed">
-              <div className="bg-white rounded-lg shadow-sm text-[12px] leading-relaxed">
-                {/* KOP SURAT YANG SUDAH DIPERBAIKI */}
-                <div className="flex items-start justify-between border-b-2 border-black pb-4 mb-4">
-                  {/* Logo - Dikecilkan menjadi w-28 h-28 */}
-                  <div className="flex-shrink-0">
-                    <img
-                      src={logoSmk}
-                      alt="Logo SMK Negeri 2 Singosari"
-                      className="w-28 h-28 object-contain"
-                    />
-                  </div>
-
-                  {/* Teks - di Kanan */}
-                  <div className="flex-1 ml-4">
-                    <div className="text-center">
-                      <p className="font-bold text-lg uppercase tracking-tight mb-1">
-                        PEMERINTAH PROVINSI JAWA TIMUR
-                      </p>
-                      <p className="font-bold text-lg uppercase tracking-tight mb-1">
-                        DINAS PENDIDIKAN
-                      </p>
-                      <p className="font-bold text-lg uppercase tracking-tight mb-1">
-                        SMK NEGERI 2 SINGOSARI
-                      </p>
-                      <p className="text-xs leading-tight mt-2">
-                        Jalan Perusahaan No. 20, Kab. Malang, Jawa Timur, 65153
-                        <br />
-                        Telepon (0341) 458823
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Garis hitam tipis setelah kop surat */}
-                <div className="border-t border-gray-300 mt-2 mb-4"></div>
-
-                <div className="text-center my-4">
-                  <p className="font-bold text-lg underline mb-6">
-                    LEMBAR PERSETUJUAN
-                  </p>
-                </div>
-
-                {/* TABEL UTAMA */}
-                <div className="border border-black">
-                  <div className="flex border-b border-black">
-                    <div className="w-12 border-r border-black p-2 text-center font-bold">
-                      NO
-                    </div>
-                    <div className="flex-1 border-r border-black p-2 font-bold text-center">
-                      PERIHAL
-                    </div>
-                    <div className="w-1/3 border-r border-black p-2 font-bold text-center">
-                      DISETUJUI OLEH PIHAK DU/DI
-                    </div>
-                    <div className="w-1/3 p-2 font-bold text-center">
-                      KETERANGAN
-                    </div>
-                  </div>
-
-                  <div className="flex">
-                    <div className="w-12 border-r border-black p-2 text-center">
-                      1.
-                    </div>
-                    <div className="flex-1 border-r border-black p-2">
-                      <p>
-                        Permohonan pelaksanaan Pembelajaran Praktik Industri
-                        (PJBL)
-                      </p>
-                      <p className="mt-1">untuk 1 orang siswa, atas nama:</p>
-                      <p className="ml-4">
-                        1. {selectedSurat?.name?.toUpperCase() || "NAMA SISWA"}
-                      </p>
-                    </div>
-
-                    <div className="w-1/3 border-r border-black p-2">
-                      <p>Nama :</p>
-                      <p className="ml-2">
-                        ............................................................
-                      </p>
-                      <p>Tanggal : </p>
-                      <p className="ml-2">
-                        ............................................................
-                      </p>
-                      <p className="mt-2">Paraf : </p>
-                      <p className="ml-2">
-                        ............................................................
-                      </p>
-
-                      <p className="mt-4 font-semibold">Catatan : </p>
-                      <p className="text-sm">
-                        1. Mulai PKL pada tanggal :
-                        <span className="ml-1">
-                          ...................................................
-                          s/d
-                        </span>
-                      </p>
-                      <p className="ml-2">
-                        ...........................................................
-                      </p>
-                      <p className="text-sm mt-1">
-                        2. Diterima Sebanyak ……… siswa.
-                      </p>
-                    </div>
-
-                    <div className="w-1/3 p-2">
-                      <p>Telah disetujui Siswa Siswi SMK NEGERI 2 SINGOSARI</p>
-                      <p>
-                        untuk melaksanakan PKL di{" "}
-                        <span className="font-semibold">
-                          {selectedSurat?.nama_perusahaan ||
-                            selectedSurat?.industri ||
-                            "JTV MALANG"}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* FOOTER  */}
-                <div className="mt-12 w-full">
-                  <div className="flex justify-end">
-                    <div className="flex flex-col items-end w-[280px]">
-                      {/* Container untuk tanggal dan penerima */}
-                      <div className="w-full text-right">
-                        <p className="font-medium">
-                          Malang, .................................... 2026
-                        </p>
-                        <p className="mt-2">Bapak / Ibu Pimpinan</p>
-                      </div>
-                      
-                      {/* Spasi kosong untuk jarak */}
-                      <div className="h-16"></div>
-                      
-                      {/* Tanda tangan */}
-                      <div className="w-full text-right">
-                        <p className="whitespace-nowrap">
-                          ( ................................................................ )
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ACTION BUTTONS */}
-              <div className="mt-8 flex justify-start gap-4">
-                <button
-                  onClick={() => handleEditClick(selectedSurat)}
-                  className="!bg-red-800 text-white px-6 py-3 rounded-lg text-md font-semibold hover:bg-red-900 transition flex items-center gap-2"
-                >
-                  <Edit size={18} />
-                  Edit Surat
-                </button>
-
-                <button
-                  onClick={async () => {
-                    await handleExportLembarPersetujuan(selectedSurat, false); 
-                  }}
-                  disabled={generatingPDF}
-                  className="!bg-[#EC933A] text-white px-6 py-3 rounded-lg text-md font-semibold hover:bg-orange-500 transition disabled:opacity-50"
-                >
-                  {generatingPDF ? "Loading..." : "Cetak Lembar Persetujuan"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

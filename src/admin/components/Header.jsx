@@ -115,7 +115,7 @@ export default function Header({ query, setQuery, user: propUser }) {
                 >
                   <Settings className="w-5 h-5 text-gray-800" />
                   <span className="font-semibold text-gray-800">
-                    Setting
+                    Pengaturan
                   </span>
                 </button>
 

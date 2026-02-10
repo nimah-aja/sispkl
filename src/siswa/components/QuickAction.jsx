@@ -14,6 +14,7 @@ import { getIzinMe } from "../../utils/services/siswa/izin";
 export default function QuickActions({ onAction, isPKLActive }) {
   const navigate = useNavigate();
   const [todayIzin, setTodayIzin] = useState(null);
+  const [pengajuanPKLStatus, setPengajuanPKLStatus] = useState(null);
 
   useEffect(() => {
     const fetchIzin = async () => {
@@ -40,7 +41,25 @@ export default function QuickActions({ onAction, isPKLActive }) {
   }, []);
 
   // ===============================
-  // 🔑 LOGIC DISABLE IZIN PKL (FINAL)
+  // 🔑 AMBIL STATUS PENGAJUAN PKL (tambahkan ini)
+  // ===============================
+  useEffect(() => {
+    const fetchPengajuanPKL = async () => {
+      try {
+        // Ganti dengan API yang mengambil status pengajuan PKL
+        const response = await getPengajuanPKLStatus();
+        setPengajuanPKLStatus(response.status); // 'pending', 'approved', 'rejected', dll
+      } catch (error) {
+        console.error("Gagal mengambil status pengajuan PKL:", error);
+        setPengajuanPKLStatus(null);
+      }
+    };
+
+    fetchPengajuanPKL();
+  }, []);
+
+  // ===============================
+  // 🔑 LOGIC DISABLE IZIN PKL
   // ===============================
   const hasIzinToday = !!todayIzin;
   const izinStatus = todayIzin?.status?.toLowerCase();
@@ -48,6 +67,16 @@ export default function QuickActions({ onAction, isPKLActive }) {
   // Disable jika hari ini ADA izin & status Pending / Approved
   const izinDisabled =
     hasIzinToday && ["pending", "approved"].includes(izinStatus);
+
+  // ===============================
+  // 🔑 LOGIC DISABLE PENGAJUAN PKL (DIPERBAIKI)
+  // ===============================
+  // Disable jika:
+  // 1. isPKLActive = true (sudah aktif)
+  // 2. Status pengajuan = 'pending' (menunggu persetujuan)
+  const pengajuanPKLDisabled = 
+    isPKLActive || 
+    pengajuanPKLStatus === 'pending';
 
   // ===============================
   // ACTION LIST
@@ -59,7 +88,7 @@ export default function QuickActions({ onAction, isPKLActive }) {
       icon: <FilePlus size={28} className="text-blue-600" />,
       bg: "bg-blue-100",
       key: "pengajuan_pkl",
-      disabled: isPKLActive
+      disabled: pengajuanPKLDisabled, // Gunakan logika baru
     },
     {
       label: "Pengajuan Pindah PKL",
@@ -124,13 +153,16 @@ export default function QuickActions({ onAction, isPKLActive }) {
                 {item.label}
               </p>
 
-              {/* INFO LABEL */}
+              {/* INFO LABEL UNTUK PENGAJUAN PKL */}
               {isDisabled && item.key === "pengajuan_pkl" && (
                 <span className="text-xs text-gray-500 mt-1 text-center">
-                  Pengajuan PKL sedang aktif
+                  {isPKLActive 
+                    ? "Pengajuan PKL sedang aktif" 
+                    : "Pengajuan PKL sedang diproses"}
                 </span>
               )}
 
+              {/* INFO LABEL UNTUK IZIN PKL */}
               {isDisabled && item.key === "izin_pkl" && (
                 <span className="text-xs text-gray-500 mt-1 text-center">
                   Izin hari ini sudah diajukan

@@ -228,10 +228,13 @@ export default function PKLDashboard() {
         muridGrouped[k.nama || `Kelas ${k.id}`] = jumlah;
       });
 
-      const muridPerKelasTemp = Object.keys(muridGrouped).map((k) => ({
+      const muridPerKelasTemp = Object.keys(muridGrouped)
+      .map((k) => ({
         name: k,
         value: muridGrouped[k],
-      }));
+      }))
+      .sort((a, b) => b.value - a.value); 
+
 
       setDataDisplay(dataDisplayTemp);
       setKelasPerJurusan(kelasPerJurusanTemp);
@@ -299,32 +302,43 @@ export default function PKLDashboard() {
                 ))}
               </div>
 
-              {/* BAR CHART UTAMA */}
+         
+              {/* PIE CHART PENGAJUAN PKL PER KELAS */}
               <div className="mt-10 bg-white rounded-2xl p-6 shadow-lg max-w-6xl mx-auto">
-                {/* <div className="text-right text-gray-700 font-semibold mb-2">{waktu}</div> */}
                 <h2 className="font-semibold text-gray-800 mb-4">
                   Statistik Pengajuan PKL Berdasarkan Kelas
                 </h2>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={pengajuanPerKelas}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="name"
-                      angle={-30}
-                      textAnchor="end"
-                      interval={0}
-                      height={70}
-                    />
-                    <YAxis />
-                    <Tooltip formatter={(v) => [`${v}`, "Pengajuan"]} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={pengajuanPerKelas}
+                      dataKey="value"
+                      nameKey="name"
+                      outerRadius={130}
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
                       {pengajuanPerKelas.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        <Cell
+                          key={i}
+                          fill={COLORS[i % COLORS.length]}
+                        />
                       ))}
-                    </Bar>
-                  </BarChart>
+                    </Pie>
+
+                    {/* TOOLTIP CUSTOM */}
+                    <Tooltip
+                      formatter={(value, _name, props) => {
+                        const kelas = props.payload.name;
+                        return [`Pengajuan ${kelas} : ${value}`, ""];
+                      }}
+                    />
+
+                    <Legend />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
+
 
               {/* PIE CHART */}
               <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">

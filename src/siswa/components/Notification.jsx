@@ -5,6 +5,7 @@ import { getGuru } from "../../utils/services/admin/get_guru";
 import empty from "../../assets/empty.jpg";
 import { getPengajuanMe } from "../../utils/services/siswa/pengajuan_pkl";
 import Detail from "./Detail"
+import { getPindahPKLMe } from "../../utils/services/siswa/perpindahan";
 import { createPortal } from "react-dom";
 import {
   ArrowUpRight,
@@ -25,6 +26,9 @@ import {
 
 
 export default function StatusPengajuanPKL() {
+  const [dataPindahPKL, setDataPindahPKL] = useState(null);
+  const [isPindahPKL, setIsPindahPKL] = useState(false);
+
   const [namaIndustri, setNamaIndustri] = useState("-");
   const [namaPembimbing, setNamaPembimbing] = useState("-");
   const [namaKaprog, setNamaKaprog] = useState("-");
@@ -50,18 +54,41 @@ export default function StatusPengajuanPKL() {
   // GET DATA PENGAJUAN
   
   useEffect(() => {
-    const fetchPKL = async () => {
+    const fetchData = async () => {
       try {
+        // cek pindah PKL dulu
+        const pindah = await getPindahPKLMe();
+
+        if (pindah) {
+          setIsPindahPKL(true);
+          setDataPindahPKL(pindah);
+
+          // mapping ke bentuk dataPKL TANPA ubah UI
+          setDataPKL({
+            status: pindah.status,
+            catatan: pindah.alasan,
+            tanggal_permohonan: pindah.created_at,
+            tanggal_mulai: pindah.tanggal_efektif,
+            tanggal_selesai: pindah.tanggal_efektif,
+            industri_id: pindah.industri_baru?.id,
+            decided_at: pindah.updated_at,
+            kaprog_note: pindah.kaprog_catatan,
+          });
+
+          return; // stop, jangan ambil pengajuan biasa
+        }
+
+        // fallback ke pengajuan PKL biasa
         const data = await getPengajuanMe();
-         console.log("DATA PKL:", data);
         setDataPKL(data.data[0] || null);
       } catch (err) {
         console.error("Gagal mengambil data PKL", err);
       }
     };
 
-    fetchPKL();
+    fetchData();
   }, []);
+
 
   
   // GET INDUSTRI DAN PEMBIMBING
@@ -132,7 +159,11 @@ export default function StatusPengajuanPKL() {
     }).format(new Date(t));
   };
 
-  const status = dataPKL.status?.toLowerCase();
+  const rawStatus = dataPKL.status?.toLowerCase();
+
+  const status =
+    rawStatus?.startsWith("pending") ? "pending" : rawStatus;
+
 
   return (
     <div className="w-[575px] bg-white rounded-2xl shadow-sm border border-[#6e0f0f] p-6 font-sans">
@@ -186,7 +217,10 @@ export default function StatusPengajuanPKL() {
         </div>
       </div>
 
-      <h3 className="font-semibold text-lg mb-3">Pengajuan PKL :</h3>
+      <h3 className="font-semibold text-lg mb-3">
+        {isPindahPKL ? "Perpindahan PKL :" : "Pengajuan PKL :"}
+      </h3>
+
 
       {/* VIEW KHUSUS PENDING */}
       {status === "pending" && (
@@ -286,7 +320,7 @@ export default function StatusPengajuanPKL() {
                         flex items-center justify-center gap-1
                         hover:!border hover:!border-[#EC933A] hover:!bg-transparent hover:!text-[#EC933A] transition"
             >
-              Rincian
+              Detail
               <ArrowUpRight size={16} />
             </button>
 

@@ -1,109 +1,135 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Add from "./components/Add";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-export default function PengajuanPKL() {
+import { createPerpindahanPKL } from "../utils/services/siswa/perpindahan";
+import { getAvailableIndustri } from "../utils/services/siswa/industri";
+
+export default function PengajuanPerpindahanPKL() {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [industriOptions, setIndustriOptions] = useState([]);
+
+  // 🔹 FETCH INDUSTRI
+  useEffect(() => {
+    const fetchIndustri = async () => {
+      try {
+        const res = await getAvailableIndustri();
+
+        const options = (res?.data || res || []).map((item) => ({
+          label: item.name || item.nama,
+          value: item.id.toString(),
+        }));
+
+        setIndustriOptions(options);
+      } catch (error) {
+        toast.error("Gagal mengambil data industri");
+      }
+    };
+
+    fetchIndustri();
+  }, []);
+
   const fields = [
     {
-      name: "nama_siswa",
-      label: "Nama Siswa",
-      type: "text",
-      width: "half",
+      name: "industri_id",
+      label: "Industri Tujuan Baru",
+      type: "select",
+      width: "full",
       required: true,
+      options: industriOptions,
     },
     {
-      name: "kelas",
-      label: "Kelas",
-      type: "text",
-      width: "half",
-      required: true,
-    },
-    {
-      name: "jurusan",
-      label: "Konsentrasi Keahlian",
-      type: "text",
-      width: "half",
-      required: true,
-    },
-    {
-      name: "nomor_industri",
-      label: "Nomor Industri",
-      type: "text",
-      width: "half",
-      required: true,
-    },
-    {
-      name: "industri",
-      label: "Nama Industri",
-      type: "text",
+      name: "alasan",
+      label: "Alasan Perpindahan",
+      type: "textarea",
       width: "full",
       required: true,
     },
     {
-      name: "alamat_industri",
-      label: "Alamat Industri",
-      type: "text",
-      width: "full",
-      required: true,
-    },
-    {
-      name: "bukti_diterima",
-      label: "Bukti Diterima",
+      name: "files",
+      label: "Unggah Bukti Pendukung (JPG / PNG , max 5MB)",
       type: "file",
-      accept: "image/jpeg,image/png",
       width: "full",
       required: true,
-    },
-    {
-      name: "tanggal_mulai",
-      label: "Tanggal Mulai",
-      type: "date",
-      width: "half",
-      required: true,
-    },
-    {
-      name: "tanggal_selesai",
-      label: "Tanggal Selesai",
-      type: "date",
-      width: "half",
-      required: true,
+      accept: "image/jpeg,image/png",
+      multiple: false, 
+
+      // 🔥 VALIDASI LANGSUNG
+      onChange: (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const allowedTypes = [
+          "image/jpeg",
+          "image/png",,
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+          toast.error("Hanya JPG, PNG, atau PDF yang diperbolehkan");
+          e.target.value = null;
+          return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("Ukuran file maksimal 5MB");
+          e.target.value = null;
+        }
+      },
     },
   ];
 
   const handleSubmit = async (formData) => {
-    const payload = new FormData();
-    payload.append("nama_siswa", formData.get("nama_siswa"));
-    payload.append("kelas", formData.get("kelas"));
-    payload.append("jurusan", formData.get("jurusan"));
-    payload.append("industri", formData.get("industri"));
-    payload.append("nomor_industri", formData.get("nomor_industri"));
-    payload.append("alamat_industri", formData.get("alamat_industri"));
-    payload.append("bukti_diterima", formData.get("bukti_diterima"));
-    payload.append("tanggal_mulai", formData.get("tanggal_mulai"));
-    payload.append("tanggal_selesai", formData.get("tanggal_selesai"));
+    if (isSubmitting) return;
 
-    console.log("DATA DIKIRIM:", Object.fromEntries(payload));
+    const industri_id = formData.get("industri_id");
+    const alasan = formData.get("alasan");
+    const file = formData.get("files");
+
+    if (!file || !file.name) {
+      toast.error("Bukti pendukung wajib diunggah");
+      return;
+    }
+
+    if (!alasan || alasan.length < 10) {
+      toast.error("Alasan minimal 10 karakter");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      // await submitPengajuanPKL(payload);
-      toast.success("Pengajuan PKL berhasil dikirim");
+      await createPerpindahanPKL({
+        industri_baru_id: industri_id,
+        alasan,
+        files: [file], // API tetap array
+      });
+
+      toast.success("Pengajuan perpindahan PKL berhasil dikirim");
       navigate(-1);
-    } catch (error) {
-      console.error(error);
-      toast.error("Gagal mengirim pengajuan PKL");
+    } catch (err) {
+      const backendMessage =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "";
+
+      toast.error(backendMessage || "Gagal mengirim pengajuan");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Add
-      title="Form Bukti Diterima PKL"
+      title="Pengajuan Perpindahan PKL"
       fields={fields}
       onSubmit={handleSubmit}
       onCancel={() => navigate(-1)}
       backgroundStyle={{ backgroundColor: "#F4EFE6" }}
-      containerStyle={{ maxHeight: "650px" }}
+      containerStyle={{ maxHeight: "600px" }}
+      isSubmitting={isSubmitting}
     />
   );
 }
