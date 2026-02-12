@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import Sidebar from "./components/SidebarDashboard";
 import Header from "./components/HeaderDashboard";
 import DashboardCard from "./components/DashboardCard";
-import AktivitasTerkini from "./components/AktivitasTerkini";
+// import AktivitasTerkini from "./components/AktivitasTerkini";
 import CalendarPanel from "./components/Calender";
 import Detail from "./components/Detail";
 
@@ -158,7 +158,7 @@ export default function KoordinatorDashboard() {
           </div>
 
           {/* AKTIVITAS TERKINI */}
-          <div className="mt-10 max-w-6xl mx-auto">
+          {/* <div className="mt-10 max-w-6xl mx-auto">
             <AktivitasTerkini
               title="Aktivitas Terkini (7 Hari Terakhir)"
               icon="🔔"
@@ -169,7 +169,7 @@ export default function KoordinatorDashboard() {
                 setOpenDetail(true);
               }}
             />
-          </div>
+          </div> */}
         </main>
 
         {/* DETAIL MODAL */}

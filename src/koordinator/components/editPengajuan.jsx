@@ -14,7 +14,8 @@ export default function EditPengajuan({
   const [editMode, setEditMode] = useState("individu");
   const [editableSurat, setEditableSurat] = useState(null);
   const [selectedSiswaForGroup, setSelectedSiswaForGroup] = useState([]);
-  const [tempatTanggal, setTempatTanggal] = useState("");
+  const [tempatTanggalSurat1, setTempatTanggalSurat1] = useState("");
+  const [tempatTanggalSurat2, setTempatTanggalSurat2] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Default active tab ke "surat1"
@@ -46,8 +47,9 @@ export default function EditPengajuan({
 
       setEditableSurat(initialData);
 
-      // Set default tempat tanggal
-      setTempatTanggal(`Singosari, .................................... 2025`);
+      // Set default tempat tanggal untuk masing-masing surat
+      setTempatTanggalSurat1(`Singosari, .................................... 2025`);
+      setTempatTanggalSurat2(`Malang, .................................... 2026`);
 
       // Saat pertama kali buka, otomatis pilih siswa yang sedang diedit
       setSelectedSiswaForGroup([selectedSurat]);
@@ -162,17 +164,43 @@ export default function EditPengajuan({
         logo_url: "https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_SMKN_2_Singosari.png",
       },
       students: students,
-      tempat_tanggal: tempatTanggal,
+      // Gunakan tempat tanggal yang sesuai dengan tab aktif
+      tempat_tanggal: activeTab === "surat1" ? tempatTanggalSurat1 : tempatTanggalSurat2,
       periode_pkl: currentData.periode || "",
-      jenis_surat: activeTab 
+      jenis_surat: activeTab, // Tentukan jenis surat yang aktif
+      // Data khusus surat 1
+      tanggal_mulai: currentData.tanggal_mulai,
+      tanggal_selesai: currentData.tanggal_selesai,
+      nama_kepala_sekolah: currentData.nama_kepala_sekolah,
+      nip_kepala_sekolah: currentData.nip_kepala_sekolah,
+      nomor_surat: currentData.nomor_surat
     };
 
+    console.log("Export dengan tab:", activeTab);
+    console.log("Jenis surat:", payload.jenis_surat);
+
     if (onExportPDF) {
-      onExportPDF(payload, editMode === "kelompok", siswaUntukExport);
+      onExportPDF(payload, editMode === "kelompok", siswaUntukExport, activeTab);
     } else {
       alert("Fungsi export tidak tersedia!");
     }
   };
+
+  // Komponen Kop Surat yang reusable
+  const KopSurat = () => (
+    <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
+      <div className="flex-shrink-0 -mt-2 -ml-2">
+        <img src={logoSmk} alt="Logo" className="w-24 h-auto object-contain" />
+      </div>
+      <div className="flex-1 text-center -ml-10">
+        <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
+        <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
+        <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
+        <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
+        <p className="text-[10px]">Telepon (0341) 4345127</p>
+      </div>
+    </div>
+  );
 
   if (!editableSurat) {
     return (
@@ -241,111 +269,99 @@ export default function EditPengajuan({
           {/* ================================================================================= */}
           {activeTab === "surat1" && (
             <div className="bg-white p-10 rounded-lg shadow-sm text-[12px] leading-relaxed text-black">
-               {/* KOP SURAT */}
-               <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
-                <div className="flex-shrink-0 -mt-2 -ml-2">
-                  <img src={logoSmk} alt="Logo" className="w-24 h-auto object-contain" />
-                </div>
-                <div className="flex-1 text-center -ml-10">
-                    <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
-                    <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
-                    <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
-                    <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
-                    <p className="text-[10px]">Telepon (0341) 4345127</p>
-                </div>
-              </div>
+              {/* KOP SURAT */}
+              <KopSurat />
 
               {/* TANGGAL SURAT */}
               <div className="text-right mt-2 mb-4">
-                  <p>{tempatTanggal}</p>
+                <p>{tempatTanggalSurat1}</p>
               </div>
 
               {/* META DATA SURAT */}
               <div className="mb-6 w-full">
-                  <table className="border-none w-auto">
-                      <tbody>
-                          <tr>
-                              <td className="align-top pr-2">Nomor</td>
-                              <td className="align-top pr-2">:</td>
-                              <td className="align-top">{editableSurat.nomor_surat}</td>
-                          </tr>
-                          <tr>
-                              <td className="align-top pr-2">Lampiran</td>
-                              <td className="align-top pr-2">:</td>
-                              <td className="align-top">-</td>
-                          </tr>
-                          <tr>
-                              <td className="align-top pr-2">Perihal</td>
-                              <td className="align-top pr-2">:</td>
-                              <td className="align-top font-bold underline">Permohonan Praktik Kerja Lapangan (PKL)</td>
-                          </tr>
-                      </tbody>
-                  </table>
+                <table className="border-none w-auto">
+                  <tbody>
+                    <tr>
+                      <td className="align-top pr-2">Nomor</td>
+                      <td className="align-top pr-2">:</td>
+                      <td className="align-top">{editableSurat.nomor_surat}</td>
+                    </tr>
+                    <tr>
+                      <td className="align-top pr-2">Lampiran</td>
+                      <td className="align-top pr-2">:</td>
+                      <td className="align-top">-</td>
+                    </tr>
+                    <tr>
+                      <td className="align-top pr-2">Perihal</td>
+                      <td className="align-top pr-2">:</td>
+                      <td className="align-top font-bold underline">Permohonan Praktik Kerja Lapangan (PKL)</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               {/* TUJUAN SURAT */}
               <div className="mb-6">
-                  <p>Kepada Yth,</p>
-                  <p className="font-bold">Pimpinan {editableSurat.nama_perusahaan || ".........................."}</p>
-                  <p>Di Tempat</p>
+                <p>Kepada Yth,</p>
+                <p className="font-bold">Pimpinan {editableSurat.nama_perusahaan || ".........................."}</p>
+                <p>Di Tempat</p>
               </div>
 
               {/* ISI SURAT */}
               <p className="text-justify mb-4 indent-8">
-                  Dengan ini kami sampaikan bahwa kegiatan Praktik Kerja Lapangan (PKL) siswa-siswi SMK Negeri 2 Singosari akan dilaksanakan sekitar tanggal 
-                  <span className="font-semibold mx-1">
-                    {editableSurat.tanggal_mulai ? formatTanggal(editableSurat.tanggal_mulai) : ".............."}
-                  </span> 
-                  s.d 
-                  <span className="font-semibold mx-1">
-                    {editableSurat.tanggal_selesai ? formatTanggal(editableSurat.tanggal_selesai) : ".............."}
-                  </span>.
-                  Sehubungan dengan hal tersebut, kami mohon agar siswa-siswi kami dapat diterima di Instansi/Industri yang Bapak/Ibu pimpin. Adapun siswa-siswi yang akan kami ajukan untuk melaksanakan Praktik Kerja Lapangan (PKL) di Instansi/Industri yang Bapak/Ibu pimpin adalah sebanyak {displayStudents.length} orang, sebagai berikut:
+                Dengan ini kami sampaikan bahwa kegiatan Praktik Kerja Lapangan (PKL) siswa-siswi SMK Negeri 2 Singosari akan dilaksanakan sekitar tanggal 
+                <span className="font-semibold mx-1">
+                  {editableSurat.tanggal_mulai ? formatTanggal(editableSurat.tanggal_mulai) : ".............."}
+                </span> 
+                s.d 
+                <span className="font-semibold mx-1">
+                  {editableSurat.tanggal_selesai ? formatTanggal(editableSurat.tanggal_selesai) : ".............."}
+                </span>.
+                Sehubungan dengan hal tersebut, kami mohon agar siswa-siswi kami dapat diterima di Instansi/Industri yang Bapak/Ibu pimpin. Adapun siswa-siswi yang akan kami ajukan untuk melaksanakan Praktik Kerja Lapangan (PKL) di Instansi/Industri yang Bapak/Ibu pimpin adalah sebanyak {displayStudents.length} orang, sebagai berikut:
               </p>
 
               {/* TABEL SISWA */}
               <div className="mb-6 mx-4">
-                  <table className="w-full border-collapse border border-black">
-                      <thead>
-                          <tr className="bg-gray-100 text-center">
-                              <th className="border border-black px-2 py-1 w-10">NO</th>
-                              <th className="border border-black px-2 py-1">NAMA</th>
-                              <th className="border border-black px-2 py-1 w-20">KELAS</th>
-                              <th className="border border-black px-2 py-1 w-32">JURUSAN</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {displayStudents.map((siswa, index) => (
-                              <tr key={index}>
-                                  <td className="border border-black px-2 py-1 text-center">{index + 1}.</td>
-                                  <td className="border border-black px-2 py-1 uppercase">{siswa.name || editableSurat.name}</td>
-                                  <td className="border border-black px-2 py-1 text-center">{siswa.class || editableSurat.class}</td>
-                                  <td className="border border-black px-2 py-1 text-center">{siswa.jurusan || editableSurat.jurusan}</td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
+                <table className="w-full border-collapse border border-black">
+                  <thead>
+                    <tr className="bg-gray-100 text-center">
+                      <th className="border border-black px-2 py-1 w-10">NO</th>
+                      <th className="border border-black px-2 py-1">NAMA</th>
+                      <th className="border border-black px-2 py-1 w-20">KELAS</th>
+                      <th className="border border-black px-2 py-1 w-32">JURUSAN</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayStudents.map((siswa, index) => (
+                      <tr key={index}>
+                        <td className="border border-black px-2 py-1 text-center">{index + 1}.</td>
+                        <td className="border border-black px-2 py-1 uppercase">{siswa.name || editableSurat.name}</td>
+                        <td className="border border-black px-2 py-1 text-center">{siswa.class || editableSurat.class}</td>
+                        <td className="border border-black px-2 py-1 text-center">{siswa.jurusan || editableSurat.jurusan}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {/* PENUTUP */}
               <p className="text-justify mb-8 indent-8">
-                  Demikian surat permohonan ini kami ajukan. Atas perhatian dan kerjasama yang baik, kami sampaikan terima kasih.
+                Demikian surat permohonan ini kami ajukan. Atas perhatian dan kerjasama yang baik, kami sampaikan terima kasih.
               </p>
 
               {/* TANDA TANGAN */}
               <div className="flex justify-end mt-4">
-                  <div className="text-left w-64">
-                      <p>Kepala SMK Negeri 2 Singosari,</p>
-                      <br />
-                      <br />
-                      <br />
-                      <br />
-                      <p className="font-bold underline">{editableSurat.nama_kepala_sekolah}</p>
-                      <p>Pembina Utama Muda (IV/c)</p>
-                      <p>NIP. {editableSurat.nip_kepala_sekolah}</p>
-                  </div>
+                <div className="text-left w-64">
+                  <p>Kepala SMK Negeri 2 Singosari,</p>
+                  <br />
+                  <br />
+                  <br />
+                  <br />
+                  <p className="font-bold underline">{editableSurat.nama_kepala_sekolah}</p>
+                  <p>Pembina Utama Muda (IV/c)</p>
+                  <p>NIP. {editableSurat.nip_kepala_sekolah}</p>
+                </div>
               </div>
-
             </div>
           )}
 
@@ -353,25 +369,21 @@ export default function EditPengajuan({
           {/* === KONTEN SURAT 2: LEMBAR PERSETUJUAN === */}
           {/* ================================================================================= */}
           {activeTab === "surat2" && (
-            <div className="bg-white p-8 rounded-lg shadow-sm text-[12px] leading-relaxed">
-              {/* KOP SURAT */}
-              <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
-                <div className="flex-shrink-0 -mt-2 -ml-2">
-                  <img src={logoSmk} alt="Logo" className="w-24 h-auto object-contain" />
-                </div>
-                <div className="flex-1 text-center -ml-10">
-                    <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
-                    <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
-                    <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
-                    <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
-                    <p className="text-[10px]">Telepon (0341) 4345127</p>
-                </div>
+            <div className="bg-white p-10 rounded-lg shadow-sm text-[12px] leading-relaxed text-black">
+              {/* KOP SURAT (SAMA DENGAN SURAT 1) */}
+              <KopSurat />
+
+              {/* JARAK SETELAH KOP SURAT */}
+              <div className="mt-4 mb-6">
+                {/* Tidak ada tanggal Singosari di sini */}
               </div>
 
-              <div className="text-center my-4">
-                <p className="font-bold text-md underline">LEMBAR PERSETUJUAN</p>
+              {/* JUDUL LEMBAR PERSETUJUAN */}
+              <div className="text-center my-6">
+                <p className="font-bold text-lg underline">LEMBAR PERSETUJUAN</p>
               </div>
 
+              {/* TABEL PERSETUJUAN */}
               <div className="border border-black">
                 <div className="flex border-b border-black">
                   <div className="w-12 border-r border-black p-2 text-center font-bold">NO</div>
@@ -408,10 +420,11 @@ export default function EditPengajuan({
                 </div>
               </div>
 
-              <div className="mt-6 text-end">
-                <p className="mr-7 font-medium">{tempatTanggal || `Malang, .................................... 2026`}</p>
-                <p className="mt-1 mr-10">Bapak / Ibu Pimpinan</p>
-                <div className="mt-12">
+              {/* TANDA TANGAN PIHAK DU/DI */}
+              <div className="mt-8 text-right">
+                <p className="mb-2">{tempatTanggalSurat2}</p>
+                <p className="mb-12">Bapak / Ibu Pimpinan</p>
+                <div className="mr-10">
                   <p>( ................................................................ )</p>
                 </div>
               </div>
@@ -522,9 +535,10 @@ export default function EditPengajuan({
                     </label>
                     <input
                       type="text"
-                      value={tempatTanggal}
-                      onChange={(e) => setTempatTanggal(e.target.value)}
+                      value={tempatTanggalSurat1}
+                      onChange={(e) => setTempatTanggalSurat1(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Contoh: Singosari, .................................... 2025"
                     />
                   </div>
 
@@ -591,43 +605,49 @@ export default function EditPengajuan({
                 </>
               )}
 
-              {/* INPUT BIASA UNTUK SURAT 2 */}
+              {/* INPUT KHUSUS SURAT 2 */}
               {activeTab === "surat2" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tempat dan Tanggal Surat
-                  </label>
-                  <input
-                    type="text"
-                    value={tempatTanggal}
-                    onChange={(e) => setTempatTanggal(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: Malang, .................................... 2026"
-                  />
-                </div>
-              )}
-
-
-              {editMode === "individu" && (
                 <>
-                  <div className="pt-4">
+                  <h4 className="font-bold text-lg text-[#641E21] border-b pb-2 pt-4">
+                    Detail Lembar Persetujuan
+                  </h4>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nama Siswa *
+                      Tempat dan Tanggal Persetujuan
                     </label>
                     <input
                       type="text"
-                      value={editableSurat.name || ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setEditableSurat({
-                          ...editableSurat,
-                          name: value,
-                        });
-                      }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={tempatTanggalSurat2}
+                      onChange={(e) => setTempatTanggalSurat2(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Contoh: Malang, .................................... 2026"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      *Tempat dan tanggal yang akan ditandatangani oleh pihak DU/DI
+                    </p>
                   </div>
                 </>
+              )}
+
+              {editMode === "individu" && (
+                <div className="pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nama Siswa *
+                  </label>
+                  <input
+                    type="text"
+                    value={editableSurat.name || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEditableSurat({
+                        ...editableSurat,
+                        name: value,
+                      });
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               )}
             </div>
 
@@ -714,9 +734,14 @@ export default function EditPengajuan({
                 onClick={handleExport}
                 className="px-6 py-3 !bg-[#EC933A] text-white rounded-lg hover:bg-orange-500 transition font-medium"
               >
-                {editMode === "kelompok"
-                  ? `Cetak (${selectedSiswaForGroup.length} siswa)`
-                  : "Cetak Dokumen"}
+                {activeTab === "surat1" 
+                  ? (editMode === "kelompok" 
+                    ? `Cetak Surat 1 (${selectedSiswaForGroup.length} siswa)` 
+                    : "Cetak Surat 1")
+                  : (editMode === "kelompok" 
+                    ? `Cetak Surat 2 (${selectedSiswaForGroup.length} siswa)` 
+                    : "Cetak Surat 2")
+                }
               </button>
             </div>
           </div>

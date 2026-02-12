@@ -4,13 +4,14 @@ import { ArrowLeft, Eye, EyeOff, Calendar, X } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 // import assets
 import addSidebar from "../../assets/addSidebar.svg";
 import arrow from "../../assets/arrow.svg"; 
 import cancelImg from "../../assets/cancel.svg";
-import confirmSave from "../../assets/cancel.svg"; 
-import silang from "../../assets/silang.svg"
+import confirmSave from "../../assets/save.svg" 
+import silang from "../../assets/silang.svg";
 
 // import components
 import DeleteConfirmationModal from "../components/Cancel"; 
@@ -27,8 +28,13 @@ export default function Add({
   initialData = {},
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
+  leftContent,
+  submitText = "Simpan",   
+  cancelText = "Batal",    
+  submitButtonProps = {},
   optionalFields = [], // Tambahkan prop baru untuk field opsional
 }) {
+  const navigate = useNavigate();
   const [modalText, setModalText] = useState({
     title: "Apakah Anda yakin untuk kembali?",
     subtitle: "Data yang sudah diisi akan terhapus."
@@ -41,14 +47,13 @@ export default function Add({
   const [focusedIdx, setFocusedIdx] = useState(null);
   const inputRefs = useRef([]);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedValues, setSelectedValues] = useState(initialData?.roles || [])
+  const [selectedValues, setSelectedValues] = useState(initialData?.roles || []);
   const [dropdownState, setDropdownState] = useState({});
   const [searchQueries, setSearchQueries] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fileName, setFileName] = useState("");
 
-
-  // Date
+  // Date Input Component
   const DateInput = React.forwardRef(
     ({ value, onClick, onChange, placeholder, clearValue }, ref) => {
       const handleInputChange = (e) => {
@@ -103,7 +108,7 @@ export default function Add({
     }
   );
 
-  // switch
+  // Initialize switch values
   const initialSwitches = useMemo(() => {
     const obj = {};
     fields.forEach((f) => {
@@ -116,17 +121,17 @@ export default function Add({
 
   const [switchValues, setSwitchValues] = useState(initialSwitches);
 
-  // refs untuk multiselect
+  // Refs untuk multiselect
   const multiRefs = useRef({});
 
-  // update selectedValues saat initialData berubah (misal edit row)
+  // Update selectedValues saat initialData berubah (misal edit row)
   useEffect(() => {
     if (initialData?.roles) {
       setSelectedValues(initialData.roles);
     }
   }, [initialData]);
 
-  // detect klik di luar multiselect
+  // Detect klik di luar multiselect
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -141,6 +146,30 @@ export default function Add({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [focusedIdx]);
 
+  // State untuk date fields
+  const [dateValues, setDateValues] = useState(
+    fields.reduce((acc, f) => {
+      if (f.type === "date") {
+        acc[f.name] = initialData[f.name] ? new Date(initialData[f.name]) : null;
+      }
+      return acc;
+    }, {})
+  );
+
+  // Simpan label terpilih per field
+  const [selectedLabels, setSelectedLabels] = useState(() => {
+    const labels = {};
+    fields.forEach((f) => {
+      if (f.type === "select") {
+        const initialLabel =
+          f.options.find((opt) => opt.value === initialData[f.name])?.label || "";
+        labels[f.name] = initialLabel;
+      }
+    });
+    return labels;
+  });
+
+  // Event Handlers
   const handleToggle = (name) => {
     setSwitchValues((prev) => ({
       ...prev,
@@ -168,6 +197,20 @@ export default function Add({
     );
   };
 
+  const handleChange = (name, value) => {
+    // Update ke FormData saat submit
+    const hiddenInput = document.querySelector(`input[name="${name}"]`);
+    if (hiddenInput) {
+      hiddenInput.value = value;
+    } else {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      document.getElementById("addForm").appendChild(input);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -177,24 +220,31 @@ export default function Add({
       let value;
       if (field.type === "multiselect") {
         value = formData.getAll(field.name);
+      } else if (field.type === "switch") {
+        value = switchValues[field.name] ? "true" : "false";
+      } else if (field.type === "date") {
+        value = dateValues[field.name]
+          ? dateValues[field.name].toISOString().split("T")[0]
+          : "";
       } else {
         value = formData.get(field.name) || "";
       }
 
       const initialValue = initialData[field.name];
+      
       // VALIDASI REQUIRED - TAMBAHKAN KONDISI UNTUK OPTIONAL FIELDS
       if (
         field.required &&
         !optionalFields.includes(field.name) && // Field tidak opsional
         (
           !value ||
-          (Array.isArray(value) && value.length === 0)
+          (Array.isArray(value) && value.length === 0) ||
+          value === ""
         )
       ) {
         errors[field.name] = `Kolom ${field.label} harus diisi.`;
         return;
       }
-
 
       if (field.minLength && value.length < field.minLength) {
         errors[field.name] = `Kolom ${field.label} minimal ${field.minLength} karakter. Kurang ${
@@ -228,7 +278,6 @@ export default function Add({
     setFieldErrors({});
   };
 
-
   const handleKeyDown = (e, idx) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -236,45 +285,8 @@ export default function Add({
       if (nextInput) {
         nextInput.focus();
       } else {
-        document.getElementById("addForm").requestSubmit();
+        setIsSaveModalOpen(true);
       }
-    }
-  };
-
-   // state untuk date fields
-    const [dateValues, setDateValues] = useState(
-      fields.reduce((acc, f) => {
-        if (f.type === "date") {
-          acc[f.name] = initialData[f.name] ? new Date(initialData[f.name]) : null;
-        }
-        return acc;
-      }, {})
-    );
-
-  // simpan label terpilih per field
-  const [selectedLabels, setSelectedLabels] = useState(() => {
-    const labels = {};
-    fields.forEach((f) => {
-      if (f.type === "select") {
-        const initialLabel =
-          f.options.find((opt) => opt.value === initialData[f.name])?.label || "";
-        labels[f.name] = initialLabel;
-      }
-    });
-    return labels;
-  });
-
-  const handleChange = (name, value) => {
-    // update ke FormData saat submit
-    const hiddenInput = document.querySelector(`input[name="${name}"]`);
-    if (hiddenInput) {
-      hiddenInput.value = value;
-    } else {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = name;
-      input.value = value;
-      document.getElementById("addForm").appendChild(input);
     }
   };
 
@@ -332,10 +344,55 @@ export default function Add({
       }, {})
     );
     setSwitchValues(initialSwitches);
+    setFileName("");
     setIsChanged(false);
   };
 
-  // main
+  const handleSaveClick = () => {
+    const form = document.getElementById("addForm");
+    if (form) {
+      // Cek validasi dulu sebelum membuka modal
+      const errors = {};
+      fields.forEach((field) => {
+        const input = form.elements[field.name];
+        let value;
+        
+        if (field.type === "multiselect") {
+          value = form.getAll(field.name);
+        } else if (field.type === "switch") {
+          value = switchValues[field.name] ? "true" : "false";
+        } else if (field.type === "date") {
+          value = dateValues[field.name]
+            ? dateValues[field.name].toISOString().split("T")[0]
+            : "";
+        } else {
+          value = input?.value || "";
+        }
+
+        // Validasi required hanya untuk field yang tidak opsional
+        if (
+          field.required &&
+          !optionalFields.includes(field.name) &&
+          (
+            !value ||
+            (Array.isArray(value) && value.length === 0) ||
+            value === ""
+          )
+        ) {
+          errors[field.name] = `Kolom ${field.label} harus diisi.`;
+        }
+      });
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+
+      setIsSaveModalOpen(true);
+    }
+  };
+
+  // Main render
   return (
     <div
       className="flex h-screen w-screen justify-center items-center p-4"
@@ -348,7 +405,13 @@ export default function Add({
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
-            onClick={handleCancelClick}
+            onClick={() => {
+              if (isChanged) {
+                setIsModalOpen(true);
+              } else {
+                navigate(-1);
+              }
+            }}
             className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
           >
             <ArrowLeft size={20} />
@@ -358,16 +421,22 @@ export default function Add({
 
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
-          {/* kiri */}
-          <div className="hidden md:flex w-1/2 items-center justify-center border-r p-4">
-            <img
-              src={image || addSidebar}
-              alt="addSidebar"
-              className="max-w-xs w-full h-auto object-contain"
-            />
+          {/* Kiri */}
+          <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-300">
+            {leftContent ? (
+              leftContent
+            ) : (
+              <div className="p-10 flex justify-center items-center">
+                <img
+                  src={image || addSidebar}
+                  alt="add"
+                  className="max-w-xs w-full h-auto object-contain"
+                />
+              </div>
+            )}
           </div>
 
-          {/* kanan */}
+          {/* Kanan */}
           <div className="flex w-full md:w-1/2 p-15 overflow-hidden">
             <form
               id="addForm"
@@ -382,7 +451,6 @@ export default function Add({
                 >
                   <label className="block mb-1 text-sm font-bold text-gray-700">
                     {field.label}
-                    {/* TAMBAHKAN INDIKATOR OPSIONAL */}
                     {optionalFields.includes(field.name) && (
                       <span className="text-gray-500 text-xs font-normal ml-1">
                         (Opsional)
@@ -396,7 +464,7 @@ export default function Add({
                       <div
                         onClick={() => toggleDropdown(field.name)}
                         className={`cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center ${
-                          !field.required && optionalFields.includes(field.name) ? "border-gray-300" : ""
+                          optionalFields.includes(field.name) ? "border-gray-300" : ""
                         }`}
                       >
                         {selectedLabels[field.name] || `Pilih ${field.label}`}
@@ -420,27 +488,27 @@ export default function Add({
                             onChange={(e) => handleSearchChange(field.name, e.target.value)}
                           />
 
-                          {/* Tambahkan opsi kosong untuk field opsional */}
-                          {optionalFields.includes(field.name) && (
-                            <li
-                              onClick={() => {
-                                handleChange(field.name, "");
-                                setSelectedLabels((prev) => ({ ...prev, [field.name]: "" }));
-                                setDropdownState((prev) => ({
-                                  ...prev,
-                                  [field.name]: false,
-                                }));
-                                handleSearchChange(field.name, "");
-                              }}
-                              className="px-4 py-2 cursor-pointer hover:bg-orange-50 text-gray-500"
-                            >
-                              -- Tidak Dipilih --
-                            </li>
-                          )}
-
                           <ul className="max-h-48 overflow-y-auto">
+                            {/* Tambahkan opsi kosong untuk field opsional */}
+                            {optionalFields.includes(field.name) && (
+                              <li
+                                onClick={() => {
+                                  handleChange(field.name, "");
+                                  setSelectedLabels((prev) => ({ ...prev, [field.name]: "" }));
+                                  setDropdownState((prev) => ({
+                                    ...prev,
+                                    [field.name]: false,
+                                  }));
+                                  handleSearchChange(field.name, "");
+                                }}
+                                className="px-4 py-2 cursor-pointer hover:bg-orange-50 text-gray-500"
+                              >
+                                -- Tidak Dipilih --
+                              </li>
+                            )}
+
                             {field.options
-                              .filter((opt) =>
+                              ?.filter((opt) =>
                                 opt.label
                                   .toLowerCase()
                                   .includes((searchQueries[field.name] || "").toLowerCase())
@@ -466,7 +534,7 @@ export default function Add({
                         </div>
                       )}
                     </div>
-                    ) : field.type === "switch" ? (
+                  ) : field.type === "switch" ? (
                     <div
                       onClick={() => handleToggle(field.name)}
                       className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition ${
@@ -501,7 +569,7 @@ export default function Add({
                           selectedValues.map((val, i) => (
                             <div
                               key={i}
-                              className=" pl-2 pb-1 flex items-center bg-[#651C23] text-white px-1 rounded-full text-sm"
+                              className="pl-2 pb-1 flex items-center bg-[#651C23] text-white px-1 rounded-full text-sm"
                             >
                               {val}
                               <div
@@ -519,14 +587,13 @@ export default function Add({
                                 }}
                                 className="h-8 text-white font-bold hover:text-gray-700 flex items-center gap-2 cursor-pointer select-none pl-1 pr-1"
                               >
-                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]"> 
-                                  <img  src={silang}/>
+                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]">
+                                  <img src={silang} alt="remove" />
                                 </span>
                               </div>
                             </div>
                           ))
                         ) : (
-                          
                           <span className="text-gray-400">
                             {field.placeholder || `Pilih ${field.label}`}
                             {optionalFields.includes(field.name) && " (Opsional)"}
@@ -558,7 +625,7 @@ export default function Add({
                                 onClick={() => toggleOption(field.name, val)}
                               >
                                 <input
-                                  className="accent-[#641E20] "
+                                  className="accent-[#641E20]"
                                   type="checkbox"
                                   checked={isChecked}
                                   readOnly
@@ -611,7 +678,7 @@ export default function Add({
                         {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                       </button>
                     </div>
-                  ): field.type === "date" ? (
+                  ) : field.type === "date" ? (
                     <div>
                       <DatePicker
                         selected={dateValues[field.name]}
@@ -619,7 +686,7 @@ export default function Add({
                           setDateValues((prev) => ({ ...prev, [field.name]: date }))
                         }
                         className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
-                        calendarClassName=" w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
+                        calendarClassName="w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
                         dayClassName={() =>
                           "hover:!bg-[#EC933A] hover:!text-white rounded-full"
                         }
@@ -629,18 +696,18 @@ export default function Add({
                             name: "preventOverflow",
                             options: {
                               altAxis: true,
-                              tether: false, 
+                              tether: false,
                             },
                           },
                           {
                             name: "offset",
                             options: {
-                              offset: [0, 10], 
+                              offset: [0, 10],
                             },
                           },
                         ]}
                         withPortal
-                        locale={id} 
+                        locale={id}
                         placeholderText={optionalFields.includes(field.name) ? `Pilih ${field.label} (Opsional)` : (field.placeholder || `Pilih ${field.label}`)}
                         customInput={
                           <DateInput
@@ -653,15 +720,21 @@ export default function Add({
                         popperPlacement="bottom-start"
                         renderCustomHeader={({ monthDate, decreaseMonth, increaseMonth }) => (
                           <div className="flex justify-between items-center px-4 py-2 bg-transparent border-b">
-                            <button onClick={decreaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
+                            <button
+                              onClick={decreaseMonth}
+                              type="button"
+                              className="border-none outline-none focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent"
+                            >
                               ◀
                             </button>
                             <span className="font-bold text-black">
                               {format(monthDate, "MMMM yyyy", { locale: id })}
                             </span>
-                            <button onClick={increaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
+                            <button
+                              onClick={increaseMonth}
+                              type="button"
+                              className="border-none outline-none focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent"
+                            >
                               ▶
                             </button>
                           </div>
@@ -678,15 +751,15 @@ export default function Add({
                         }
                       />
                     </div>
-                                    ) : field.type === "file" ? (
-                    <div className=" mt-5 file-upload-wrapper">
+                  ) : field.type === "file" ? (
+                    <div className="mt-5 file-upload-wrapper">
                       <label className="file-label w-20 h-10 !bg-[#EC933A] pl-2 pr-2 pt-2 pb-2 rounded-md !text-white mr-3">
                         Pilih File
                         <input
                           type="file"
                           name={field.name}
                           accept={field.accept}
-                          required={!optionalFields.includes(field.name) && field.required} // Ubah required berdasarkan optionalFields
+                          required={!optionalFields.includes(field.name) && field.required}
                           hidden
                           onChange={(e) => {
                             field.onChange?.(e);
@@ -716,8 +789,7 @@ export default function Add({
                       }`}
                       placeholder={optionalFields.includes(field.name) ? `(${field.label} - Opsional)` : field.placeholder}
                     />
-                  )
-}
+                  )}
 
                   {fieldErrors[field.name] && (
                     <p className="text-red-500 text-xs mt-1">{fieldErrors[field.name]}</p>
@@ -732,7 +804,7 @@ export default function Add({
         <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
           <button
             type="button"
-            onClick={handleResetClick} 
+            onClick={handleResetClick}
             className="button-radius"
             style={{
               "--btn-bg": "#3A3D3D",
@@ -743,30 +815,43 @@ export default function Add({
             Atur Ulang
           </button>
 
+          {/* <button
+            type="button"
+            onClick={handleCancelClick}
+            className="button-radius"
+            style={{
+              "--btn-bg": "#3A3D3D",
+              "--btn-active": "#5d6464ff",
+              "--btn-text": "white",
+            }}
+          >
+            {cancelText}
+          </button> */}
+
           <button
             type="button"
-            onClick={() => {
-              const form = document.getElementById("addForm");
-              if (form) form.requestSubmit(); 
-            }}
+            onClick={handleSaveClick}
             className="button-radius"
             style={{
               "--btn-bg": "#EC933A",
               "--btn-active": "#f4d0adff",
               "--btn-text": "white",
             }}
+            disabled={submitButtonProps.disabled}
+            {...submitButtonProps}
           >
-            Simpan
+            {submitText}
           </button>
-
         </div>
 
+        {/* Modals */}
         <DeleteConfirmationModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onDelete={() => {
             setIsModalOpen(false);
             if (onCancel) onCancel();
+            else navigate(-1);
           }}
           imageSrc={cancelImg}
           title={modalText.title}
@@ -779,16 +864,13 @@ export default function Add({
           onConfirm={() => {
             setIsSaveModalOpen(false);
             const form = document.getElementById("addForm");
-            if (form) form.requestSubmit(); 
+            if (form) form.requestSubmit();
           }}
           imageSrc={confirmSave}
           title="Apakah Anda yakin ingin menyimpan data ini?"
           subtitle="Pastikan semua data sudah benar sebelum disimpan."
         />
-
-
       </div>
     </div>
   );
-  
 }

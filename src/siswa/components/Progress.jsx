@@ -94,7 +94,7 @@ function ProgressView({ percentage, remainingTime }) {
 
   return (
     <div className="flex flex-col items-center justify-center bg-white border rounded-2xl p-10 shadow-sm w-[450px]">
-      <div className="relative w-[240px] h-[240px]">
+      <div className="relative w-[290px] h-[290px]">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
           <circle
             cx="100"
@@ -129,7 +129,7 @@ function ProgressView({ percentage, remainingTime }) {
         </div>
       </div>
 
-      <p className="mt-4 text-xl font-bold">Progress PKL</p>
+      <p className="mt-4 text-xl font-bold">Progres PKL</p>
     </div>
   );
 }

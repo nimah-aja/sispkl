@@ -184,13 +184,13 @@ export default function Detail({
         {mode === "approve" && (
           <div className="gap-120 px-6 py-4 flex justify-end">
            {/* BACK */}
-            <button
+            {/* <button
               type="button"
               onClick={() => onChangeMode("view")}
               className="!bg-black flex items-center gap-2 text-white"
             >
               <ArrowLeft className="w-5 h-5" /> Kembali
-            </button>
+            </button> */}
             <button type="button"onClick={handleSubmit} className="!bg-[#EC933A] flex items-center gap-2 text-white rounded-xl">
                Proses <ArrowRight 
                 /> 
@@ -202,13 +202,13 @@ export default function Detail({
         {mode === "reject" && (
           <div className="gap-120 px-6 py-4 flex justify-end">
             {/* BACK */}
-            <button
+            {/* <button
               type="button"
               onClick={() => onChangeMode("view")}
               className="!bg-black flex items-center gap-2 text-white"
             >
               <ArrowLeft className="w-5 h-5" /> Kembali
-            </button>
+            </button> */}
             <button   type="button" onClick={handleSubmit} className="!bg-[#BC2424] flex items-center gap-2 text-white rounded-xl">
               Proses <ArrowRight />
             </button>

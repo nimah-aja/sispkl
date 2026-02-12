@@ -23,31 +23,10 @@ const CalendarWrapper = ({ pklData }) => {
 
   return (
     <div>
-      <div
-        className="bg-white border border-[#641E21] rounded-xl p-4 
-                   shadow-sm cursor-pointer hover:bg-gray-50 transition"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="w-full flex justify-end">
-          <img
-            src={arrow}
-            alt="arrow icon"
-            className={`w-5 h-5 transition-transform duration-300 ${
-              expanded ? "rotate-180" : "rotate-0"
-            }`}
-          />
-        </div>
-        <p className="text-gray-700 -mt-4 font-medium">{today}</p>
-        <p className="text-sm text-gray-500 mt-1">
-          Klik untuk {expanded ? "menyembunyikan" : "melihat"} kalender lengkap
-        </p>
-      </div>
-
-      {expanded && (
         <div className="mt-4">
           <CalendarPKL pklData={pklData} />
         </div>
-      )}
+      
     </div>
   );
 };
@@ -82,7 +61,7 @@ const CalendarPKL = ({ pklData }) => {
 
   const jenisKegiatanOptions = [
     { value: "Pembekalan", label: "Pembekalan" },
-    { value: "Pengantaran", label: "Pengantaran" },
+    // { value: "Pengantaran", label: "Pengantaran" },
     { value: "Monitoring1", label: "Monitoring 1" },
     { value: "Monitoring2", label: "Monitoring 2" },
     { value: "Penjemputan", label: "Penjemputan" },
@@ -436,12 +415,27 @@ const CalendarPKL = ({ pklData }) => {
             toast.success("Acara berhasil dibuat di server");
           }
         } catch (apiError) {
+          // Ambil pesan error dari backend
+          const message =
+            apiError?.response?.data?.error ||
+            apiError?.response?.data?.message;
+
+          // 👉 KALAU ADA MESSAGE → itu error validasi
+          if (message) {
+            toast.error(message.replace(/^Validation error:\s*/i, ""));
+            return; // ⛔ STOP, jangan lanjut simpan lokal
+          }
+
+          // 👉 kalau benar-benar error jaringan / server mati
           console.error("API Error, falling back to localStorage:", apiError);
           setApiAvailable(false);
           isLocal = true;
-          savedDbId = editingEvent?.dbId || `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          savedDbId =
+            editingEvent?.dbId ||
+            `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           toast.warning("API tidak tersedia, menyimpan di lokal");
         }
+
       } else {
         isLocal = true;
         savedDbId = editingEvent?.dbId || `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

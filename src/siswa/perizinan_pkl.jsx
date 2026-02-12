@@ -22,7 +22,7 @@ export default function PengajuanPKL() {
       options: [
         { label: "Sakit", value: "Sakit" },
         { label: "Izin", value: "Izin" },
-        { label: "Keperluan Keluarga", value: "Keperluan Keluarga" },
+        { label: "Dispen", value: "Dispen" },
       ],
     },
     {

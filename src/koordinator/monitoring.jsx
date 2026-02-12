@@ -38,7 +38,6 @@ export default function Penilaian() {
   namaPembimbing: ""
 });
 
-
   // State untuk nilai/skor setiap aspek penilaian
   const [penilaian, setPenilaian] = useState([
     {
@@ -69,9 +68,9 @@ export default function Penilaian() {
 
   // State untuk kehadiran
   const [kehadiran, setKehadiran] = useState({
-    sakit: "-",
-    izin: "-",
-    tanpaKeterangan: "-"
+    sakit: "",
+    izin: "",
+    tanpaKeterangan: ""
   });
 
   // Handle upload logo
@@ -148,9 +147,13 @@ export default function Penilaian() {
 
   // Simpan data
   const handleSaveData = () => {
+    if (!formData.namaPesertaDidik.trim() || formData.namaPesertaDidik === "-") {
+      toast.error("Nama peserta didik harus diisi");
+      return;
+    }
+
     toast.success("Data penilaian berhasil disimpan!");
   };
-
 
   // Generate PDF
   const handleGeneratePDF = () => {
@@ -159,6 +162,151 @@ export default function Penilaian() {
     try {
       const doc = new jsPDF("p", "mm", "a4");
       let y = 15;
+
+      // ================= HALAMAN 1: PANDUAN SKOR DAN DESKRIPSI =================
+      // KOP
+      if (logo.preview) {
+        try {
+          doc.addImage(logo.preview, 'PNG', 15, y, 18, 18);
+        } catch (err) {
+          console.warn("Gagal menambahkan logo:", err);
+        }
+      }
+
+      doc.setFont("times", "bold");
+      doc.setFontSize(11);
+      doc.text("PEMERINTAH PROVINSI JAWA TIMUR", 105, y, { align: "center" });
+      y += 5;
+      doc.text("DINAS PENDIDIKAN", 105, y, { align: "center" });
+      y += 5;
+      doc.text("SMK NEGERI 2 SINGOSARI", 105, y, { align: "center" });
+
+      doc.setFontSize(9);
+      doc.setFont("times", "normal");
+      y += 4;
+      doc.text(
+        "Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Malang, Jawa Timur 65153",
+        105,
+        y,
+        { align: "center" }
+      );
+      y += 4;
+      doc.text("Telepon (0341) 4345127", 105, y, { align: "center" });
+
+      doc.setLineWidth(1);
+      doc.line(15, y + 3, 195, y + 3);
+      doc.setLineWidth(0.3);
+      doc.line(15, y + 5, 195, y + 5);
+
+      y += 15;
+
+      // JUDUL PANDUAN SKOR
+      doc.setFontSize(12);
+      doc.setFont("times", "bold");
+      doc.text("PANDUAN SKOR DAN DESKRIPSI", 105, y, { align: "center" });
+      y += 10;
+
+      // Data Panduan Skor
+      const panduanData = [
+        {
+          title: "1. Menerapkan Soft skills yang dibutuhkan dalam dunia kerja (tempat PKL).",
+          scores: [
+            { range: "<75 (kurang)", desc: "Peserta didik mampu menerapkan soft skill yang dimiliki dengan menunjukkan integritas (jujur, disiplin, komitmen, dan tanggung jawab), memiliki etos kerja, menunjukkan kemandirian, menunjukkan kerja sama, dan menunjukkan kepedulian sosial dan lingkungan dengan predikat kurang." },
+            { range: "75-85 (baik)", desc: "Peserta didik mampu menerapkan soft skill yang dimiliki dengan menunjukkan integritas (jujur, disiplin, komitmen, dan tanggung jawab), memiliki etos kerja, menunjukkan kemandirian, menunjukkan kerja sama, dan menunjukkan kepedulian sosial dan lingkungan dengan predikat baik." },
+            { range: "86-100 (sangat baik)", desc: "Peserta didik mampu menerapkan soft skill yang dimiliki dengan menunjukkan integritas (jujur, disiplin, komitmen, dan tanggung jawab), memiliki etos kerja, menunjukkan kemandirian, menunjukkan kerja sama, dan menunjukkan kepedulian sosial dan lingkungan dengan predikat sangat baik." }
+          ]
+        },
+        {
+          title: "2. Menerapkan norma, POS, dan K3LH yang ada pada dunia kerja (tempat PKL).",
+          scores: [
+            { range: "<75 (kurang)", desc: "Peserta didik mampu menerapkan norma, Prosedur Operasional Standar (POS), dan Kesehatan, Keselamatan Kerja, dan Lingkungan Hidup (K3LH) yang ditunjukkan dengan menggunakan APD dengan tertib dan benar, serta melaksanakan pekerjaan sesuai POS dengan predikat kurang." },
+            { range: "75-85 (baik)", desc: "Peserta didik mampu menerapkan norma, Prosedur Operasional Standar (POS), dan Kesehatan, Keselamatan Kerja, dan Lingkungan Hidup (K3LH) yang ditunjukkan dengan menggunakan APD dengan tertib dan benar, serta melaksanakan pekerjaan sesuai POS dengan predikat baik." },
+            { range: "86-100 (sangat baik)", desc: "Peserta didik mampu menerapkan norma, Prosedur Operasional Standar (POS), dan Kesehatan, Keselamatan Kerja, dan Lingkungan Hidup (K3LH) yang ditunjukkan dengan menggunakan APD dengan tertib dan benar, serta melaksanakan pekerjaan sesuai POS dengan predikat sangat baik." }
+          ]
+        },
+        {
+          title: "3. Menerapkan kompetensi teknis yang sudah dipelajari di sekolah dan/atau baru dipelajari pada dunia kerja (tempat PKL).",
+          scores: [
+            { range: "<75 (kurang)", desc: "Peserta didik mampu menerapkan kompetensi teknis yang sudah dipelajari di sekolah dan/atau baru dipelajari di dunia kerja (tempat PKL) dengan predikat kurang." },
+            { range: "75-85 (baik)", desc: "Peserta didik mampu menerapkan kompetensi teknis yang sudah dipelajari di sekolah dan/atau baru dipelajari di dunia kerja (tempat PKL) dengan predikat baik." },
+            { range: "86-100 (sangat baik)", desc: "Peserta didik mampu menerapkan kompetensi teknis yang sudah dipelajari di sekolah dan/atau baru dipelajari di dunia kerja (tempat PKL) dengan predikat sangat baik." }
+          ]
+        },
+        {
+          title: "4. Memahami alur bisnis dunia kerja tempat PKL dan wawasan wirausaha.",
+          scores: [
+            { range: "<75 (kurang)", desc: "Peserta didik mampu memahami alur bisnis dunia kerja tempat PKL dan wawasan wirausaha dengan predikat kurang." },
+            { range: "75-85 (baik)", desc: "Peserta didik mampu memahami alur bisnis dunia kerja tempat PKL dan wawasan wirausaha dengan predikat baik." },
+            { range: "86-100 (sangat baik)", desc: "Peserta didik mampu memahami alur bisnis dunia kerja tempat PKL dan wawasan wirausaha dengan predikat sangat baik." }
+          ]
+        }
+      ];
+
+      // Render Panduan Skor
+      doc.setFontSize(8);
+      panduanData.forEach((item) => {
+        // Judul aspek
+        doc.setFont("times", "bold");
+        doc.setFontSize(9);
+        const titleLines = doc.splitTextToSize(item.title, 180);
+        titleLines.forEach((line) => {
+          doc.text(line, 15, y);
+          y += 4;
+        });
+        y += 2;
+
+        // Header tabel
+        doc.setFont("times", "bold");
+        doc.setFontSize(7);
+        const colWidth = 60;
+        const tableX = 15;
+
+        doc.rect(tableX, y, colWidth, 6);
+        doc.text("<75 (kurang)", tableX + colWidth / 2, y + 4, { align: "center" });
+        doc.rect(tableX + colWidth, y, colWidth, 6);
+        doc.text("75-85 (baik)", tableX + colWidth + colWidth / 2, y + 4, { align: "center" });
+        doc.rect(tableX + colWidth * 2, y, colWidth, 6);
+        doc.text("86-100 (sangat baik)", tableX + colWidth * 2 + colWidth / 2, y + 4, { align: "center" });
+        y += 6;
+
+        // Konten tabel
+        doc.setFont("times", "normal");
+        doc.setFontSize(6);
+
+        // Hitung tinggi maksimal row
+        const descLines0 = doc.splitTextToSize(item.scores[0].desc, colWidth - 4);
+        const descLines1 = doc.splitTextToSize(item.scores[1].desc, colWidth - 4);
+        const descLines2 = doc.splitTextToSize(item.scores[2].desc, colWidth - 4);
+        const maxLines = Math.max(descLines0.length, descLines1.length, descLines2.length);
+        const rowHeight = Math.max(maxLines * 3 + 4, 15);
+
+        doc.rect(tableX, y, colWidth, rowHeight);
+        descLines0.forEach((line, idx) => {
+          doc.text(line, tableX + 2, y + 3 + (idx * 3));
+        });
+
+        doc.rect(tableX + colWidth, y, colWidth, rowHeight);
+        descLines1.forEach((line, idx) => {
+          doc.text(line, tableX + colWidth + 2, y + 3 + (idx * 3));
+        });
+
+        doc.rect(tableX + colWidth * 2, y, colWidth, rowHeight);
+        descLines2.forEach((line, idx) => {
+          doc.text(line, tableX + colWidth * 2 + 2, y + 3 + (idx * 3));
+        });
+
+        y += rowHeight + 6;
+
+        // Cek apakah perlu halaman baru
+        if (y > 270) {
+          doc.addPage();
+          y = 15;
+        }
+      });
+
+      // ================= HALAMAN 2: DAFTAR NILAI PESERTA DIDIK =================
+      doc.addPage();
+      y = 15;
 
       // ================= KOP =================
       // Logo
@@ -268,14 +416,14 @@ export default function Penilaian() {
         x += col[1];
 
         doc.rect(x, y, col[2], rowHeight);
-        doc.text(item.skor.split(" ")[0], x + col[2] / 2, y + 5, { align: "center" });
+        // doc.text(item.skor.split(" ")[0], x + col[2] / 2, y + 5, { align: "center" });
         x += col[2];
 
         doc.rect(x, y, col[3], rowHeight);
-        const deskripsiLines = doc.splitTextToSize(item.deskripsi, col[3] - 4);
-        deskripsiLines.slice(0, 6).forEach((line, idx) => {
-          doc.text(line, x + 2, y + 5 + (idx * 3.5));
-        });
+        // const deskripsiLines = doc.splitTextToSize(item.deskripsi, col[3] - 4);
+        // deskripsiLines.slice(0, 6).forEach((line, idx) => {
+        //   doc.text(line, x + 2, y + 5 + (idx * 3.5));
+        // });
 
         y += rowHeight;
       });
@@ -295,7 +443,7 @@ export default function Penilaian() {
       doc.setFont("times", "normal");
       doc.setFontSize(9);
       doc.text(
-        "Catatan:",
+        "Catatan: Peserta didik telah memiliki soft skill dan hard skill yang dibutuhkan oleh dunia kerja.",
         15,
         y
       );
@@ -390,14 +538,12 @@ export default function Penilaian() {
 
   return (
     <div className="flex min-h-screen w-full bg-white">
-        {/* SIDEBAR */}
-        <Sidebar active={active} setActive={setActive} />
+          <Sidebar active={active} setActive={setActive} />
     
-        {/* CONTENT AREA */}
-        <div className="flex flex-col flex-1">
-          <Header user={user} />
+          <div className="flex flex-col flex-1">
+            <Header user={user} />
     
-          <main className="flex-1 p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-tl-3xl shadow-inner overflow-y-auto">
+            <main className="flex-1 p-6 bg-[#641E21] rounded-tl-3xl">
           {/* Header */}
           <div className="mb-6">
             <div className="flex justify-between items-center">
@@ -737,19 +883,28 @@ export default function Penilaian() {
               {/* HALAMAN 1 - NILAI */}
               <div className="p-6 border border-gray-300 bg-white shadow-sm">
                 {/* Kop Surat */}
-                <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
-                                <div className="flex-shrink-0 -mt-2 -ml-2">
-                                  <img src={logoSmk} alt="Logo" className="w-24 h-auto object-contain" />
-                                </div>
-                                <div className="flex-1 text-center -ml-10">
-                                    <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
-                                    <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
-                                    <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
-                                    <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
-                                    <p className="text-[10px]">Telepon (0341) 4345127</p>
-                                </div>
-                              </div>
-                              <div className="border-t border-gray-300 -mt-1 mb-2"></div>
+                <div className="flex items-center gap-4 mb-4">
+                  <img
+                    src={logo.preview}
+                    alt="Logo SMK"
+                    className="w-35 h-35 object-contain"
+                    onError={(e) => {
+                      e.target.src = logoSmk;
+                    }}
+                  />
+                  <div className="text-center flex-1 -ml-8">
+                    <p className="font-bold text-sm">PEMERINTAH PROVINSI JAWA TIMUR</p>
+                    <p className="font-bold text-sm">DINAS PENDIDIKAN</p>
+                    <p className="font-bold text-sm">SMK NEGERI 2 SINGOSARI</p>
+                    <p className="text-xs mt-1">
+                      Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Malang, Jawa Timur, 65153
+                    </p>
+                    <p className="text-xs">Telepon (0341) 4345127</p>
+                  </div>
+                </div>
+
+                <div className="border-t-2 border-black my-3"></div>
+                <div className="border-t border-black -mt-2 mb-6"></div>
 
                 {/* Judul */}
                 <div className="text-center mb-6">
@@ -761,39 +916,15 @@ export default function Penilaian() {
 
                 {/* Identitas */}
                 <div className="mb-6 text-sm space-y-1">
-                  <p><span className="font-bold inline-block w-44">Nama Peserta Didik</span>: 
-                  {formData.namaPesertaDidik}
-                  
-                  </p>
-                  <p><span className="font-bold inline-block w-44">NISN</span>: 
-                  
-                  {formData.nisn}
-                  </p>
-                  <p><span className="font-bold inline-block w-44">Kelas</span>: 
-                  
-                  {formData.kelas}
-                  </p>
-                  <p><span className="font-bold inline-block w-44">Program Keahlian</span>: 
-                  {formData.programKeahlian}
-                  </p>
-                  <p><span className="font-bold inline-block w-44">Konsentrasi Keahlian</span>:
-                   {formData.konsentrasiKeahlian}
-                   </p>
-                  <p><span className="font-bold inline-block w-44">Tempat PKL</span>: 
-                  
-                  {formData.tempat}
-                  </p>
-                  <p><span className="font-bold inline-block w-44">Tanggal PKL</span>: Mulai: 
-                  {formData.tanggalMulai} 
-                  <span className="ml-8">Selesai: 
-                    {formData.tanggalSelesai}
-                    </span></p>
-                  <p><span className="font-bold inline-block w-44">Nama Instruktur</span>: 
-                  {formData.namaInstruktur}
-                  </p>
-                  <p><span className="font-bold inline-block w-44">Nama Pembimbing</span>:
-                   {formData.namaPembimbing}
-                   </p>
+                  <p><span className="font-bold inline-block w-44">Nama Peserta Didik</span>: {formData.namaPesertaDidik}</p>
+                  <p><span className="font-bold inline-block w-44">NISN</span>: {formData.nisn}</p>
+                  <p><span className="font-bold inline-block w-44">Kelas</span>: {formData.kelas}</p>
+                  <p><span className="font-bold inline-block w-44">Program Keahlian</span>: {formData.programKeahlian}</p>
+                  <p><span className="font-bold inline-block w-44">Konsentrasi Keahlian</span>: {formData.konsentrasiKeahlian}</p>
+                  <p><span className="font-bold inline-block w-44">Tempat PKL</span>: {formData.tempat}</p>
+                  <p><span className="font-bold inline-block w-44">Tanggal PKL</span>: Mulai: {formData.tanggalMulai} <span className="ml-8">Selesai: {formData.tanggalSelesai}</span></p>
+                  <p><span className="font-bold inline-block w-44">Nama Instruktur</span>: {formData.namaInstruktur}</p>
+                  <p><span className="font-bold inline-block w-44">Nama Pembimbing</span>: {formData.namaPembimbing}</p>
                 </div>
 
                 {/* Tabel Nilai */}
@@ -808,13 +939,14 @@ export default function Penilaian() {
                   <tbody>
                     {penilaian.map((item, index) => (
                       <tr key={item.id}>
-                        <td className="border border-black p-2 align-top text-sm">{index + 1}. {item.aspek}</td>
+                        <td className="border border-black p-2 align-top text-sm">
+                          {index + 1}. {item.aspek}
+                          </td>
                         <td className="border border-black p-2 text-center align-top">
-                          {item.skor}
+                          {/* {item.skor} */}
                           </td>
                         <td className="border border-black p-2 align-top text-sm">
-                          {item.deskripsi}
-                          
+                          {/* {item.deskripsi} */}
                           </td>
                       </tr>
                     ))}
@@ -836,28 +968,35 @@ export default function Penilaian() {
                 </table>
 
                 <p className="text-sm">
-                  Catatan: 
+                  Catatan: Peserta didik telah memiliki soft skill dan hard skill yang dibutuhkan oleh dunia kerja.
                 </p>
               </div>
 
               {/* HALAMAN 2 - KEHADIRAN */}
               <div className="p-6 border border-gray-300 bg-white shadow-sm mt-6">
                 {/* Kop Surat Halaman 2 */}
-                <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
-                                <div className="flex-shrink-0 -mt-2 -ml-2">
-                                  <img src={logoSmk} alt="Logo" className="w-24 h-auto object-contain" />
-                                </div>
-                                <div className="flex-1 text-center -ml-10">
-                                    <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
-                                    <p className="font-bold text-sm uppercase">DINAS PENDIDIKAN</p>
-                                    <p className="font-bold text-lg uppercase tracking-wider">SMK NEGERI 2 SINGOSARI</p>
-                                    <p className="text-[10px]">Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153</p>
-                                    <p className="text-[10px]">Telepon (0341) 4345127</p>
-                                </div>
-                              </div>
-                              <div className="border-t border-gray-300 -mt-1 mb-2"></div>
+                <div className="flex items-center gap-4 mb-4">
+                  <img
+                    src={logo.preview}
+                    alt="Logo SMK"
+                    className="w-35 h-35 object-contain"
+                    onError={(e) => {
+                      e.target.src = logoSmk;
+                    }}
+                  />
+                  <div className="text-center flex-1 -ml-8">
+                    <p className="font-bold text-sm">PEMERINTAH PROVINSI JAWA TIMUR</p>
+                    <p className="font-bold text-sm">DINAS PENDIDIKAN</p>
+                    <p className="font-bold text-sm">SMK NEGERI 2 SINGOSARI</p>
+                    <p className="text-xs mt-1">
+                      Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Malang, Jawa Timur, 65153
+                    </p>
+                    <p className="text-xs">Telepon (0341) 4345127</p>
+                  </div>
+                </div>
 
-          
+                <div className="border-t-2 border-black my-2"></div>
+                <div className="border-t border-black -mt-1 mb-6"></div>
 
                 {/* Tabel KEHADIRAN */}
                 <div className="mb-8">
@@ -871,23 +1010,17 @@ export default function Penilaian() {
                       <tr>
                         <td className="border border-black p-2 w-32">Sakit</td>
                         <td className="border border-black p-2 w-6 text-center">:</td>
-                        <td className="border border-black p-2 w-16 text-center">
-                          {kehadiran.sakit} 
-                          Hari</td>
+                        <td className="border border-black p-2 w-16 text-center">{kehadiran.sakit} Hari</td>
                       </tr>
                       <tr>
                         <td className="border border-black p-2">Izin</td>
                         <td className="border border-black p-2 text-center">:</td>
-                        <td className="border border-black p-2 text-center">
-                          {kehadiran.izin}
-                           Hari</td>
+                        <td className="border border-black p-2 text-center">{kehadiran.izin} Hari</td>
                       </tr>
                       <tr>
                         <td className="border border-black p-2">Tanpa Keterangan</td>
                         <td className="border border-black p-2 text-center">:</td>
-                        <td className="border border-black p-2 text-center">
-                          {kehadiran.tanpaKeterangan} 
-                          Hari</td>
+                        <td className="border border-black p-2 text-center">{kehadiran.tanpaKeterangan} Hari</td>
                       </tr>
                     </tbody>
                   </table>

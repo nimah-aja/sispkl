@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 // assets
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
+import pindahPKL_side from "../../assets/pindahpkl_side.svg"
 import envelope from "../../assets/envelopenew.svg";
 import pengajuan_PKL from "../../assets/pengajuan_PKL.svg";
 import logo from "../../assets/logo.png";
@@ -33,6 +34,7 @@ export default function Sidebar({ active, setActive }) {
     { title: "Riwayat Perizinan", 
           icon: envelope, 
           route: "/siswa/riwayat_perizinan", key: "riwayat_perizinan" },
+         { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/siswa/perpindahan", key: "perpindahanPKL" }
   ];
 
   // main

@@ -10,10 +10,35 @@ import {
 } from "lucide-react";
 
 import { getIzinMe } from "../../utils/services/siswa/izin";
+import { getPindahPKLMe } from "../../utils/services/siswa/perpindahan";
+import { getPengajuanMe } from "../../utils/services/siswa/pengajuan_pkl";
+
+
 
 export default function QuickActions({ onAction, isPKLActive }) {
   const navigate = useNavigate();
   const [todayIzin, setTodayIzin] = useState(null);
+  const [pengajuanPKLStatus, setPengajuanPKLStatus] = useState(null);
+  const [hasPindahPKL, setHasPindahPKL] = useState(false);
+
+  // ===============================
+  // 🔑 CEK PENGAJUAN PINDAH PKL
+  // ===============================
+  useEffect(() => {
+    const fetchPindahPKL = async () => {
+      try {
+        const res = await getPindahPKLMe();
+        // kalau tidak null berarti sudah pernah / sedang mengajukan
+        setHasPindahPKL(!!res);
+      } catch (error) {
+        console.error("Gagal mengambil data pindah PKL:", error);
+        setHasPindahPKL(false);
+      }
+    };
+
+    fetchPindahPKL();
+  }, []);
+
 
   useEffect(() => {
     const fetchIzin = async () => {
@@ -40,14 +65,48 @@ export default function QuickActions({ onAction, isPKLActive }) {
   }, []);
 
   // ===============================
-  // 🔑 LOGIC DISABLE IZIN PKL (FINAL)
+  // 🔑 CEK STATUS PENGAJUAN PKL (FIX)
+  // ===============================
+  useEffect(() => {
+    const fetchPengajuanPKL = async () => {
+      try {
+        const res = await getPengajuanMe();
+        const list = res?.data || [];
+
+        // cek apakah ada yang pending
+        const hasPending = list.some(
+          (item) => item.status?.toLowerCase() === "pending"
+        );
+
+        setPengajuanPKLStatus(hasPending ? "pending" : null);
+      } catch (error) {
+        setPengajuanPKLStatus(null);
+      }
+    };
+
+    fetchPengajuanPKL();
+  }, []);
+
+
+  // ===============================
+  // 🔑 LOGIC DISABLE IZIN PKL
   // ===============================
   const hasIzinToday = !!todayIzin;
   const izinStatus = todayIzin?.status?.toLowerCase();
 
   // Disable jika hari ini ADA izin & status Pending / Approved
   const izinDisabled =
-    hasIzinToday && ["pending", "approved"].includes(izinStatus);
+    hasIzinToday && ["pending", "approved", "rejected"].includes(izinStatus);
+
+  // ===============================
+  // 🔑 LOGIC DISABLE PENGAJUAN PKL (DIPERBAIKI)
+  // ===============================
+  // Disable jika:
+  // 1. isPKLActive = true (sudah aktif)
+  // 2. Status pengajuan = 'pending' (menunggu persetujuan)
+  const pengajuanPKLDisabled = 
+    isPKLActive || 
+    pengajuanPKLStatus === 'pending';
 
   // ===============================
   // ACTION LIST
@@ -59,7 +118,7 @@ export default function QuickActions({ onAction, isPKLActive }) {
       icon: <FilePlus size={28} className="text-blue-600" />,
       bg: "bg-blue-100",
       key: "pengajuan_pkl",
-      disabled: isPKLActive
+      disabled: pengajuanPKLDisabled, // Gunakan logika baru
     },
     {
       label: "Pengajuan Pindah PKL",
@@ -67,6 +126,7 @@ export default function QuickActions({ onAction, isPKLActive }) {
       icon: <ArrowLeftRight size={28} className="text-green-600" />,
       bg: "bg-green-100",
       key: "pindah_pkl",
+      disabled: hasPindahPKL,
     },
     {
       label: "Izin PKL",
@@ -124,18 +184,28 @@ export default function QuickActions({ onAction, isPKLActive }) {
                 {item.label}
               </p>
 
-              {/* INFO LABEL */}
+              {/* INFO LABEL UNTUK PENGAJUAN PKL */}
               {isDisabled && item.key === "pengajuan_pkl" && (
                 <span className="text-xs text-gray-500 mt-1 text-center">
-                  Pengajuan PKL sedang aktif
+                  {isPKLActive 
+                    ? "Pengajuan PKL sedang aktif" 
+                    : "Pengajuan PKL sedang diproses"}
                 </span>
               )}
 
+              {/* INFO LABEL UNTUK IZIN PKL */}
               {isDisabled && item.key === "izin_pkl" && (
                 <span className="text-xs text-gray-500 mt-1 text-center">
                   Izin hari ini sudah diajukan
                 </span>
               )}
+
+              {isDisabled && item.key === "pindah_pkl" && (
+                <span className="text-xs text-gray-500 mt-1 text-center">
+                  Pengajuan pindah PKL sudah diajukan
+                </span>
+              )}
+
             </div>
           );
         })}

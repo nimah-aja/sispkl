@@ -1,294 +1,224 @@
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import "dayjs/locale/id";
 import calender from "../../assets/calendar.svg";
 import arrow from "../../assets/arrow.svg";
 import { Clock, Palette } from "lucide-react";
 
-
-
 dayjs.locale("id");
 
-const CalendarWrapper = ({ pklData }) => {
-  const [expanded, setExpanded] = useState(false);
-
+/* ===================== WRAPPER ===================== */
+const CalendarWrapper = ({ pklData, kegiatan = [] }) => {
+  // const [expanded, setExpanded] = useState(false);
   const today = dayjs().format("dddd, DD MMM YYYY");
 
   return (
     <div>
-      <div
-        className="bg-white border border-[#641E21] rounded-xl p-4 
-                   shadow-sm cursor-pointer hover:bg-gray-50 transition"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="w-full flex justify-end">
-          <img
-            src={arrow}
-            alt="arrow icon"
-            className={`w-5 h-5 transition-transform duration-300 ${
-              expanded ? "rotate-180" : "rotate-0"
-            }`}
-          />
-        </div>
-
-        <p className="text-gray-700 -mt-4 font-medium">{today}</p>
-        <p className="text-sm text-gray-500 mt-1">
-          Klik untuk {expanded ? "menyembunyikan" : "melihat"} kalender lengkap
-        </p>
-      </div>
-
-      {/* FULL CALENDAR */}
-      {expanded && (
         <div className="mt-4">
-          <CalendarPKL pklData={pklData} />
+          <CalendarPKL pklData={pklData} kegiatan={kegiatan} />
         </div>
-      )}
     </div>
   );
 };
 
-
-const CalendarPKL = ({ pklData }) => {
+/* ===================== CALENDAR ===================== */
+const CalendarPKL = ({ pklData, kegiatan = [] }) => {
   const [currentMonth, setCurrentMonth] = useState(dayjs());
-  const [selectedDate, setSelectedDate] = useState(null);
   const [events, setEvents] = useState([]);
-  const [expanded, setExpanded] = useState(false);
-
+  const [selectedDate, setSelectedDate] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showEventsModal, setShowEventsModal] = useState(false);
   const [eventsOnSelectedDay, setEventsOnSelectedDay] = useState([]);
 
   const [newEvent, setNewEvent] = useState({
     title: "",
-    start: "",
-    end: "",
     timeStart: "",
     timeEnd: "",
     color: "#8b5cf6",
   });
 
-
   const weekdayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
   const mappedTodayIndex = dayjs().day() === 0 ? 6 : dayjs().day() - 1;
 
-  //  event PKL 
+  /* ===== PKL START & END ===== */
   useEffect(() => {
     if (!pklData || pklData.status !== "Approved") return;
 
-    const start = dayjs(pklData.tanggal_mulai);
-    const end = dayjs(pklData.tanggal_selesai);
-
     const pklEvents = [
-        {
-        id: `pkl-start`,
-        date: start.format("YYYY-MM-DD"),
+      {
+        id: "pkl-start",
+        date: dayjs(pklData.tanggal_mulai).format("YYYY-MM-DD"),
         title: "PKL Mulai",
-        color: "#EC933A", 
-        },
-        {
-        id: `pkl-end`,
-        date: end.format("YYYY-MM-DD"),
+        color: "#EC933A",
+      },
+      {
+        id: "pkl-end",
+        date: dayjs(pklData.tanggal_selesai).format("YYYY-MM-DD"),
         title: "PKL Selesai",
-        color: "#F87171", 
-        },
+        color: "#F87171",
+      },
     ];
 
-    setEvents(pklEvents);
-    }, [pklData]);
-
-
-  const prevMonth = () => setCurrentMonth(currentMonth.subtract(1, "month"));
-  const nextMonth = () => setCurrentMonth(currentMonth.add(1, "month"));
-
-  const generateDays = () => {
-    const start = currentMonth.startOf("month").startOf("week");
-    const end = currentMonth.endOf("month").endOf("week");
-    const days = [];
-    let date = start;
-
-    while (date.isBefore(end) || date.isSame(end)) {
-      days.push(date);
-      date = date.add(1, "day");
-    }
-
-    return days;
-  };
-
-  const days = generateDays();
-
-  const handleDayClick = (day) => {
-    setSelectedDate(day);
-    setShowModal(true);
-    setNewEvent({ title: "", start: "", end: "", color: "#8b5cf6" });
-  };
-
-  const saveEvent = () => {
-    if (!newEvent.title || !newEvent.timeStart || !newEvent.timeEnd) return;
-
-    const selected = selectedDate.format("YYYY-MM-DD");
-
-    const newData = {
-      id: Date.now(),
-      date: selected,
-      start: newEvent.timeStart,
-      end: newEvent.timeEnd,
-      title: newEvent.title,
-      color: newEvent.color,
-    };
-
-    setEvents((prev) => [...prev, newData]);
-    setShowModal(false);
-
-    setNewEvent({
-      title: "",
-      start: "",
-      end: "",
-      timeStart: "",
-      timeEnd: "",
-      color: "#8b5cf6",
+    setEvents((prev) => {
+      const filtered = prev.filter((e) => !e.id.startsWith("pkl-"));
+      return [...filtered, ...pklEvents];
     });
-  };
+  }, [pklData]);
+
+  /* ===== KEGIATAN DARI API ===== */
+  useEffect(() => {
+    if (!kegiatan.length) return;
+
+    const kegiatanEvents = [];
+
+    kegiatan.forEach((item) => {
+      const start = dayjs(item.tanggal_mulai);
+      const end = dayjs(item.tanggal_selesai);
+
+      let current = start.clone();
+
+      while (current.isSame(end) || current.isBefore(end)) {
+        kegiatanEvents.push({
+          id: `kegiatan-${item.id}-${current.format("YYYY-MM-DD")}`,
+          date: current.format("YYYY-MM-DD"),
+          title: item.jenis_kegiatan,
+          description: item.deskripsi,
+          color:
+            item.jenis_kegiatan === "Pembekalan"
+              ? "#3B82F6"
+              : item.jenis_kegiatan?.includes("Monitoring")
+              ? "#10B981"
+              : "#F59E0B",
+        });
+
+        current = current.add(1, "day");
+      }
+    });
+
+    setEvents((prev) => {
+      const ids = new Set(prev.map((e) => e.id));
+      return [...prev, ...kegiatanEvents.filter((e) => !ids.has(e.id))];
+    });
+  }, [kegiatan]);
 
 
+  /* ===== CALENDAR LOGIC ===== */
+  const start = currentMonth.startOf("month").startOf("week");
+  const end = currentMonth.endOf("month").endOf("week");
+  const days = [];
+  let d = start;
+  while (d.isBefore(end) || d.isSame(end)) {
+    days.push(d);
+    d = d.add(1, "day");
+  }
+
+  const todayEvents = events.filter(
+    (e) => e.date === dayjs().format("YYYY-MM-DD")
+  );
+
+  const upcomingEvents = events
+    .filter((e) => dayjs(e.date).isAfter(dayjs(), "day"))
+    .sort((a, b) => dayjs(a.date).diff(dayjs(b.date)))
+    .slice(0, 5);
 
   const openEventsModal = (day) => {
-    const list = events.filter((ev) => ev.date === day.format("YYYY-MM-DD"));
-    setEventsOnSelectedDay(list);
     setSelectedDate(day);
+    setEventsOnSelectedDay(
+      events.filter((e) => e.date === day.format("YYYY-MM-DD"))
+    );
     setShowEventsModal(true);
   };
 
-  const monthEvents = events.filter(
-    (ev) => dayjs(ev.date).format("YYYY-MM") === currentMonth.format("YYYY-MM")
-  );
+  // pindah bulan
+  const prevMonth = () => {
+    setCurrentMonth((prev) => prev.subtract(1, "month"));
+  };
 
-  const todayEvents = events.filter(
-    (ev) => ev.date === dayjs().format("YYYY-MM-DD")
-  );
+  const nextMonth = () => {
+    setCurrentMonth((prev) => prev.add(1, "month"));
+  };
+      
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6">
-      {/* LEFT SIDE */}
-      <div className="px-4 pb-4 pt-5 bg-white rounded-2xl shadow-sm border border-[#641E2]">
-        <div className="flex justify-between items-center mb-1">
-          <button
-            className="!text-4xl font-bold !bg-transparent leading-none"
-            onClick={prevMonth}
-          >
-            ‹
-          </button>
-          <h2 className="font-bold text-lg leading-none">
-            {currentMonth.format("MMMM YYYY")}
-          </h2>
-          <button
-            className="!text-4xl font-bold !bg-transparent leading-none"
-            onClick={nextMonth}
-          >
-            ›
-          </button>
-        </div>
-
-        {/* HEADER HARI */}
-        <div className="grid grid-cols-7 text-center font-semibold mb-2">
-          {weekdayLabels.map((d, i) => (
-            <div
-              key={d}
-              className={
-                i === mappedTodayIndex
-                  ? "font-extrabold text-purple-700"
-                  : "text-gray-700"
-              }
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-
-        {/* DAYS */}
-        <div className="grid grid-cols-7 text-center gap-1">
-          {days.map((day, idx) => {
-            const isToday =
-              day.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
-            const dayEvent = events.find(
-              (ev) => ev.date === day.format("YYYY-MM-DD")
-            );
-
-            return (
-              <div
-                key={idx}
-                onClick={() => handleDayClick(day)}
-                className={`p-2 cursor-pointer transition w-10 h-10 mx-auto flex items-center justify-center
-                  rounded-full
-                  ${day.month() !== currentMonth.month() ? "text-gray-300" : ""}
-                  ${isToday ? "border-2 border-purple-600 font-bold" : "hover:bg-purple-200"}`}
-                style={{
-                  backgroundColor: !isToday && dayEvent ? dayEvent.color : "",
-                }}
-              >
-                {day.date()}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* BADGES */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {monthEvents.map((ev) => (
-            <span
-              key={ev.id}
-              className="px-3 py-1 text-sm text-white rounded-full"
-              style={{ backgroundColor: ev.color }}
-            >
-              {ev.title}
-            </span>
-          ))}
-        </div>
-
-        {/* ACARA HARI INI */}
-        <div className="mt-6 p-4 border rounded-xl bg-gray-50">
-          <div className="flex items-center gap-3 mb-3">
-            <img src={calender} alt="Calendar Icon" className="w-5 h-5" />
-            <h3 className="font-bold text-lg">Acara Hari Ini</h3>
-          </div>
-
-          <div className="max-h-[8rem] overflow-y-auto pr-1">
-            {todayEvents.length === 0 ? (
-              <p className="text-gray-500 text-sm">Tidak ada acara hari ini.</p>
-            ) : (
-              todayEvents.map((ev) => (
-                <div key={ev.id} className="mb-3 flex items-start gap-2">
-                  <div
-                    className="w-1.5 rounded-lg"
-                    style={{ backgroundColor: ev.color, height: "2.2rem" }}
-                  ></div>
-                  <div>
-                    <p className="font-semibold truncate">{ev.title}</p>
-                    <p className="text-sm text-gray-600">
-                      {ev.start} – {ev.end}
-                    </p>
-                  </div>
+      {/* LEFT */}
+      <div className="flex flex-col gap-6">
+        {/* HARI INI */}
+        <div className="bg-white rounded-2xl border-2 border-[#641E21] p-5">
+          <h3 className="font-bold text-lg text-center mb-4">Acara Hari Ini</h3>
+          {todayEvents.length === 0 ? (
+            <p className="text-center text-sm text-gray-500">
+              Tidak ada acara hari ini
+            </p>
+          ) : (
+            todayEvents.map((e) => (
+              <div key={e.id} className="flex gap-3 mb-3">
+                <span
+                  className="w-2 rounded-full"
+                  style={{ backgroundColor: e.color }}
+                />
+                <div>
+                  <p className="font-semibold">{e.title}</p>
+                  <p className="text-xs text-gray-600">{e.description}</p>
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* MENDATANG */}
+        <div className="bg-white rounded-2xl border-2 border-[#641E21] p-5">
+          <h3 className="font-bold text-lg text-center mb-4">
+            Acara Mendatang
+          </h3>
+          {upcomingEvents.length === 0 ? (
+            <p className="text-center text-sm text-gray-500">
+              Tidak ada acara
+            </p>
+          ) : (
+            upcomingEvents.map((e) => (
+              <div key={e.id} className="flex gap-3 mb-3">
+                <span
+                  className="w-2 rounded-full"
+                  style={{ backgroundColor: e.color }}
+                />
+                <div>
+                  <p className="font-semibold">{e.title} - {dayjs(e.date).format("DD MMM YYYY")}</p>
+                  <p className="text-xs text-gray-600">
+                    {e.description}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="p-4 pt-10 bg-white rounded-2xl shadow-sm border border-[#641E21]">
-        <h2 className="font-bold text-lg text-center mb-3">
-          {currentMonth.format("MMMM YYYY")}
-        </h2>
+      {/* RIGHT */}
+      <div className="bg-white rounded-2xl border border-[#641E21] p-4">
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={prevMonth} className="p-1 hover:text-purple-600 !bg-transparent">
+            <ChevronLeft size={20} />
+          </button>
+
+          <h2 className="font-bold text-lg">
+            {currentMonth.format("MMMM YYYY")}
+          </h2>
+
+          <button onClick={nextMonth} className="p-1 hover:text-purple-600 !bg-transparent">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+
 
         <div className="grid grid-cols-7 text-center font-semibold mb-2">
           {weekdayLabels.map((d, i) => (
             <div
               key={d}
-              className={
-                i === mappedTodayIndex
-                  ? "font-extrabold text-purple-700"
-                  : "text-gray-700"
-              }
+              className={i === mappedTodayIndex ? "text-purple-700" : ""}
             >
               {d}
             </div>
@@ -296,34 +226,41 @@ const CalendarPKL = ({ pklData }) => {
         </div>
 
         <div className="grid grid-cols-7 gap-1">
-          {days.map((day, idx) => {
+          {days.map((day) => {
             const dayEvents = events.filter(
-              (ev) => ev.date === day.format("YYYY-MM-DD")
+              (e) => e.date === day.format("YYYY-MM-DD")
             );
-            const firstThree = dayEvents.slice(0, 2);
-            const extraCount = dayEvents.length - 2;
+
+            const isToday = day.isSame(dayjs(), "day");
 
             return (
               <div
-                key={idx}
-                className="p-2 border h-24 relative hover:bg-purple-50 transition rounded-xl cursor-pointer"
+                key={day.format()}
+                className="p-2 border h-24 rounded-xl cursor-pointer hover:bg-purple-50"
                 onClick={() => openEventsModal(day)}
               >
-                <div className="text-left font-bold text-xl">{day.date()}</div>
+                <div
+                  className={`${
+                    isToday
+                      ? "font-extrabold text-lg text-purple-700"
+                      : "font-bold"
+                  }`}
+                >
+                  {day.date()}
+                </div>
 
-                {firstThree.map((ev) => (
+                {dayEvents.slice(0, 2).map((e) => (
                   <div
-                    key={ev.id}
-                    className="mt-1 text-xs text-white rounded px-1 truncate"
-                    style={{ backgroundColor: ev.color }}
+                    key={e.id}
+                    className="text-xs text-white rounded px-1 truncate mt-1"
+                    style={{ backgroundColor: e.color }}
                   >
-                    {ev.title}
+                    {e.title}
                   </div>
                 ))}
-
-                {extraCount > 0 && (
-                  <div className="absolute top-1 right-1 text-purple-700 font-bold text-lg">
-                    +{extraCount}
+                {dayEvents.length > 2 && (
+                  <div className="text-xs text-purple-700 font-bold">
+                    +{dayEvents.length - 2}
                   </div>
                 )}
               </div>
@@ -332,129 +269,25 @@ const CalendarPKL = ({ pklData }) => {
         </div>
       </div>
 
-      {/* MODAL ADD EVENT */}
-        {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center !z-[9999]">
-            <div className="bg-[#641E21] w-[480px] overflow-hidden">
-
-            {/* HEADER */}
-            <div className="flex justify-between items-center px-5 py-4">
-              <div className="flex items-center gap-3">
-                <span className="text-white text-3xl font-bold">+</span>
-
-                <input
-                  type="text"
-                  placeholder="Judul Acara..."
-                  className="bg-transparent pb-1 border-b border-white/50 text-white text-xl font-semibold focus:outline-none placeholder-white/70 w-[370px]"
-                  value={newEvent.title}
-                  onChange={(e) =>
-                    setNewEvent({ ...newEvent, title: e.target.value })
-                  }
-                />
-              </div>
-
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-white text-2xl !bg-transparent !font-bold -ml-2"
-              >
-                ✕
-              </button>
-            </div>
-
-
-            {/* <hr className="border-white/30" /> */}
-
-            {/* BODY */}
-            <div className="-mt-5 px-5 py-4 space-y-4">
-
-                {/* TIME RANGE */}
-                <div className="flex items-center gap-3">
-                <Clock className="text-white" size={20} />
-                <div className="flex gap-2 items-center bg-white px-3 py-3 rounded-lg min-w-[390px]
-max-w-[480px]
-">
-                    <input
-                    type="time"
-                    className=" focus:outline-none"
-                    value={newEvent.timeStart}
-                    onChange={(e) =>
-                        setNewEvent({ ...newEvent, timeStart: e.target.value })
-                    }
-                    />
-                    <span>-</span>
-                    <input
-                    type="time"
-                    className="focus:outline-none"
-                    value={newEvent.timeEnd}
-                    onChange={(e) =>
-                        setNewEvent({ ...newEvent, timeEnd: e.target.value })
-                    }
-                    />
-                </div>
-                </div>
-
-                {/* COLOR PICKER */}
-                <div className="flex items-center gap-3">
-                  <Palette className="text-white" size={20} />
-                  <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg w-full min-w-[370px]
-max-w-[390px]
-">
-                    <input
-                      type="color"
-                      value={newEvent.color}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, color: e.target.value })
-                      }
-                      className="w-10 h-8 p-0 border-none cursor-pointer bg-transparent"
-                    />
-                    <span className="text-sm font-semibold">
-                      {newEvent.color}
-                    </span>
-                  </div>
-                </div>
-
-            </div>
-
-            {/* FOOTER */}
-            <div className="bg-white py-3 text-center !border !border-[#E1D6C4] ">
-                <button
-                onClick={saveEvent}
-                className="text-[#EC933A] font-bold text-lg w-full !bg-transparent"
-                >
-                Buat Acara
-                </button>
-            </div>
-            </div>
-        </div>
-        )}
-
-
-      {/* MODAL LIST EVENTS */}
+      {/* MODAL LIST */}
       {showEventsModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center !z-[9999]">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
           <div className="bg-white p-6 rounded-xl w-80">
             <h3 className="font-bold mb-3">
-              Daftar Acara – {selectedDate.format("DD MMMM YYYY")}
+              {selectedDate.format("DD MMMM YYYY")}
             </h3>
-
-            <div className="max-h-[18rem] overflow-y-auto pr-1">
-              {eventsOnSelectedDay.map((ev) => (
-                <div
-                  key={ev.id}
-                  className="p-2 rounded mb-2 text-white"
-                  style={{ backgroundColor: ev.color }}
-                >
-                  <p className="font-semibold">{ev.title}</p>
-                  <p className="text-sm">
-                    {ev.start} – {ev.end}
-                  </p>
-                </div>
-              ))}
-            </div>
-
+            {eventsOnSelectedDay.map((e) => (
+              <div
+                key={e.id}
+                className="p-2 mb-2 rounded text-white"
+                style={{ backgroundColor: e.color }}
+              >
+                {e.title}
+              </div>
+            ))}
             <button
               onClick={() => setShowEventsModal(false)}
-              className="w-full py-2 mt-2 !bg-[#EC933A] !text-white rounded-lg"
+              className="w-full mt-2 bg-[#EC933A] text-white py-2 rounded-lg"
             >
               Tutup
             </button>
@@ -466,4 +299,3 @@ max-w-[390px]
 };
 
 export default CalendarWrapper;
-

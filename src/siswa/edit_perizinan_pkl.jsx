@@ -29,7 +29,7 @@ export default function EditPengajuanPKL() {
       options: [
         { label: "Sakit", value: "Sakit" },
         { label: "Izin", value: "Izin" },
-        { label: "Keperluan Keluarga", value: "Keperluan Keluarga" },
+        { label: "Dispen", value: "Dispen" },
       ],
     },
     {

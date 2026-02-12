@@ -101,7 +101,7 @@ export default function PengajuanPKL() {
 
   return (
     <Add
-      title="Form Bukti Diterima PKL"
+      title="Formulir Bukti Diterima PKL"
       fields={fields}
       onSubmit={handleSubmit}
       onCancel={() => navigate(-1)}

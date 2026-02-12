@@ -44,7 +44,7 @@ export default function DataPerizinanSiswa() {
     return <Clock className="w-6 h-6 text-orange-500" />;
   };
 
-  //  DUMMY DATA 
+
   const dummyDataPerizinan = [
     {
       nama: "Firli Zulfa Azzahra",
@@ -245,12 +245,12 @@ export default function DataPerizinanSiswa() {
                 options: statusOptions,
                 onChange: setStatusFilter,
               },
-              {
-                label: "Tanggal",
-                type: "date",
-                value: dateFilter,
-                onChange: setDateFilter,
-              },
+              // {
+              //   label: "Tanggal",
+              //   type: "date",
+              //   value: dateFilter,
+              //   onChange: setDateFilter,
+              // },
             ]}
           />
 
