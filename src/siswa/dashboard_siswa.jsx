@@ -15,6 +15,7 @@ import PKLProgressCircle from "./components/Progress";
 import { getPengajuanMe } from "../utils/services/siswa/pengajuan_pkl";
 import {getIndustri} from "../utils/services/admin/get_industri";
 import {getGuru} from "../utils/services/admin/get_guru";
+import { getActiveKegiatanPKL } from "../utils/services/siswa/kegiatan";
 import { createPortal } from "react-dom";
 import Detail from "./components/Detail";
 import IzinCard from "./components/DetailIzin";
@@ -38,6 +39,7 @@ dayjs.extend(relativeTime);
 
 
 export default function DashboardSiswa() {
+  const [kegiatanKalender, setKegiatanKalender] = useState([]);
   const navigate = useNavigate();
   const [openDetail, setOpenDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
@@ -196,6 +198,22 @@ useEffect(() => {
   fetchPKL();
 }, [industriMap, guruMap]);
 
+// kegiatan
+useEffect(() => {
+  const fetchKegiatan = async () => {
+    try {
+      const res = await getActiveKegiatanPKL();
+      // asumsi backend return array
+      setKegiatanKalender(res.data || res);
+    } catch (err) {
+      console.error("Gagal ambil kegiatan PKL", err);
+    }
+  };
+
+  fetchKegiatan();
+}, []);
+
+
 // WS
 useEffect(() => {
   connectWS((data) => {
@@ -230,9 +248,6 @@ useEffect(() => {
     disconnectWS();
   };
 }, [navigate]);
-
-
-
 
   useEffect(() => {
     const fetchPKL = async () => {
@@ -367,7 +382,7 @@ useEffect(() => {
 
           {/* Kalender */}
           <div className="mt-6">
-            <KalenderPKL pklData={activePKLData} />
+            <KalenderPKL pklData={activePKLData}  kegiatan={kegiatanKalender}/>
           </div>
 
           {/* Aktivitas + Progress */}

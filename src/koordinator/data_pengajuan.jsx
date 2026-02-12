@@ -84,22 +84,30 @@ export default function DataPengajuan() {
   };
 
   // ======================================================
-  // FUNGSI REUSABLE KOP SURAT
+  // FUNGSI REUSABLE KOP SURAT (UPDATE: CENTERED TEXT)
   // ======================================================
   const drawKopSurat = (doc, margin) => {
-    if (logoSmk) { doc.addImage(logoSmk, "PNG", margin, 10, 22, 22); }
+    if (logoSmk) {
+      // Menggunakan dimensi 18x23 agar proporsional (tidak gepeng)
+      doc.addImage(logoSmk, "PNG", margin, 10, 18, 23);
+    }
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    doc.text("PEMERINTAH PROVINSI JAWA TIMUR", 45, 15);
-    doc.text("DINAS PENDIDIKAN", 45, 20);
-    doc.setFontSize(13);
-    doc.text("SMK NEGERI 2 SINGOSARI", 45, 25);
+    // Menggunakan align: "center" dengan titik tengah X = 105 (A4 lebar 210mm)
+    doc.text("PEMERINTAH PROVINSI JAWA TIMUR", 105, 15, { align: "center" });
+    doc.text("DINAS PENDIDIKAN", 105, 20, { align: "center" });
+
+    doc.setFontSize(14);
+    doc.text("SMK NEGERI 2 SINGOSARI", 105, 26, { align: "center" });
+
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.text("Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153", 45, 29);
-    doc.text("Telepon (0341) 4345127", 45, 33);
-    doc.setLineWidth(0.5);
-    doc.line(margin, 36, 195, 36);
+    doc.setFontSize(8.5);
+    doc.text("Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153", 105, 31, { align: "center" });
+    doc.text("Telepon (0341) 4345127", 105, 35, { align: "center" });
+
+    doc.setLineWidth(0.7);
+    doc.line(margin, 38, 195, 38);
   };
 
   // ======================================================
@@ -108,9 +116,9 @@ export default function DataPengajuan() {
   const generateSuratPermohonanOnly = (doc, data, margin) => {
     drawKopSurat(doc, margin);
     doc.setFontSize(10);
-    doc.text(data.tempat_tanggal || `Malang, .................... 2026`, 195, 42, { align: "right" });
+    doc.text(data.tempat_tanggal || `Malang, .................... 2026`, 195, 45, { align: "right" });
 
-    let y = 48;
+    let y = 52;
     doc.text(`Nomor      : ${data.nomor_surat || "400.3 /      / 101.6.9.19 / 2025"}`, margin, y);
     doc.text(`Lampiran   : -`, margin, y + 5);
     doc.setFont("helvetica", "bold");
@@ -143,7 +151,9 @@ export default function DataPengajuan() {
     doc.setFont("helvetica", "bold");
     doc.text(data.nama_kepala_sekolah || "Sumijah, S.Pd., M.Si.", 140, y);
     doc.setFont("helvetica", "normal");
-    doc.text(`NIP. ${data.nip_kepala_sekolah || "19700210 199802 2 009"}`, 140, y + 4);
+    doc.text(data.tingkatan_kepsek || "Pembina Utama Muda (IV/c)", 140, y+5);
+    doc.setFont("helvetica", "normal");
+    doc.text(`NIP. ${data.nip_kepala_sekolah || "19700210 199802 2 009"}`, 140, y + 9);
   };
 
   // ======================================================
@@ -201,13 +211,11 @@ export default function DataPengajuan() {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const margin = 15;
 
-    // Logika Filter: Cetak berdasarkan button mana yang diklik di modal
     if (payload.jenis_surat === "surat1") {
       generateSuratPermohonanOnly(doc, payload, margin);
     } else if (payload.jenis_surat === "surat2") {
       generateLembarPersetujuanOnly(doc, payload, margin);
     } else {
-      // Fallback gabungan jika tidak ada flag spesifik
       generateSuratPermohonanOnly(doc, payload, margin);
       doc.addPage();
       generateLembarPersetujuanOnly(doc, payload, margin);
@@ -251,6 +259,7 @@ export default function DataPengajuan() {
                         tempat_tanggal: "Malang, .................... 2026",
                         nomor_surat: "400.3 /      / 101.6.9.19 / 2025",
                         nama_kepala_sekolah: "Sumijah, S.Pd., M.Si.",
+                        tingkatan_kepsek: "Pembina Utama Muda (IV/c)",
                         nip_kepala_sekolah: "19700210 199802 2 009"
                       };
                       generateDokumenLengkapPDF(payload);

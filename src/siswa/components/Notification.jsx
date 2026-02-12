@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getIndustri } from "../../utils/services/admin/get_industri";
 import { getGuru } from "../../utils/services/admin/get_guru";
 import empty from "../../assets/empty.jpg";
-import { getPengajuanMe } from "../../utils/services/siswa/pengajuan_pkl";
+import { getActivePklMe, getPengajuanMe } from "../../utils/services/siswa/pengajuan_pkl";
 import Detail from "./Detail"
 import { getPindahPKLMe } from "../../utils/services/siswa/perpindahan";
 import { createPortal } from "react-dom";
@@ -23,43 +23,50 @@ import {
   MessageSquareText
 } from "lucide-react";
 
-
-
 export default function StatusPengajuanPKL() {
   const [dataPindahPKL, setDataPindahPKL] = useState(null);
   const [isPindahPKL, setIsPindahPKL] = useState(false);
-
   const [namaIndustri, setNamaIndustri] = useState("-");
   const [namaPembimbing, setNamaPembimbing] = useState("-");
   const [namaKaprog, setNamaKaprog] = useState("-");
   const navigate = useNavigate();
   const [dataPKL, setDataPKL] = useState(null);
   const [openDetail, setOpenDetail] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const statusLabel = (status) => {
     if (!status) return "-";
 
     switch (status.toLowerCase()) {
       case "pending":
+      case "pending_pembimbing":
+      case "pending_kaprog":
         return "Tertunda";
       case "rejected":
         return "Ditolak";
       case "approved":
         return "Diterima";
       default:
-        return "-";
+        return status;
     }
   };
   
-  // GET DATA PENGAJUAN
+  // GET DATA PENGAJUAN - PRIORITAS: PINDAH PKL -> ACTIVE PKL -> PENGAJUAN BIASA
   
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // cek pindah PKL dulu
-        const pindah = await getPindahPKLMe();
+        setLoading(true);
+        
+        // 1. CEK PERPINDAHAN PKL DULU (PRIORITAS TERTINGGI)
+        let pindah = null;
+        try {
+          pindah = await getPindahPKLMe();
+        } catch (err) {
+          console.log("Tidak ada data perpindahan PKL:", err.message);
+        }
 
-        if (pindah) {
+        if (pindah && Object.keys(pindah).length > 0) {
           setIsPindahPKL(true);
           setDataPindahPKL(pindah);
 
@@ -73,59 +80,148 @@ export default function StatusPengajuanPKL() {
             industri_id: pindah.industri_baru?.id,
             decided_at: pindah.updated_at,
             kaprog_note: pindah.kaprog_catatan,
+            processed_by: null,
+            pembimbing_guru_id: null,
           });
 
+          setLoading(false);
           return; // stop, jangan ambil pengajuan biasa
         }
 
-        // fallback ke pengajuan PKL biasa
-        const data = await getPengajuanMe();
-        setDataPKL(data.data[0] || null);
+        // 2. CEK PKL AKTIF (PRIORITAS KEDUA)
+        let activeData = null;
+        try {
+          activeData = await getActivePklMe();
+        } catch (err) {
+          console.log("Tidak ada PKL aktif:", err.message);
+        }
+
+        if (activeData && Object.keys(activeData).length > 0) {
+          // Mapping data dari response getActivePklMe ke format yang diharapkan
+          const mappedData = {
+            id: activeData.id,
+            status: activeData.status,
+            industri_id: activeData.industri_id,
+            tanggal_mulai: activeData.tanggal_mulai,
+            tanggal_selesai: activeData.tanggal_selesai,
+            pembimbing_guru_id: activeData.pembimbing_guru_id,
+            created_at: activeData.created_at,
+            updated_at: activeData.updated_at,
+            application_id: activeData.application_id,
+            // Field untuk kompatibilitas
+            catatan: activeData.catatan || "",
+            kaprog_note: activeData.kaprog_note || "",
+            processed_by: activeData.processed_by || null,
+            tanggal_permohonan: activeData.created_at,
+            decided_at: activeData.updated_at,
+          };
+          
+          setDataPKL(mappedData);
+          setLoading(false);
+          return;
+        }
+
+        // 3. CEK PENGAJUAN BIASA (PRIORITAS TERAKHIR)
+        try {
+          const pengajuanData = await getPengajuanMe();
+          
+          if (pengajuanData && pengajuanData.data && pengajuanData.data.length > 0) {
+            // Ambil pengajuan terbaru (indeks pertama)
+            const latestPengajuan = pengajuanData.data[0];
+            
+            // Format data untuk kompatibilitas
+            const formattedData = {
+              id: latestPengajuan.id,
+              status: latestPengajuan.status,
+              industri_id: latestPengajuan.industri_id,
+              tanggal_mulai: latestPengajuan.tanggal_mulai,
+              tanggal_selesai: latestPengajuan.tanggal_selesai,
+              pembimbing_guru_id: latestPengajuan.pembimbing_guru_id,
+              created_at: latestPengajuan.created_at,
+              updated_at: latestPengajuan.updated_at || latestPengajuan.decided_at,
+              application_id: latestPengajuan.application_id || latestPengajuan.id,
+              catatan: latestPengajuan.catatan || "",
+              kaprog_note: latestPengajuan.kaprog_note || "",
+              processed_by: latestPengajuan.processed_by || null,
+              tanggal_permohonan: latestPengajuan.tanggal_permohonan,
+              decided_at: latestPengajuan.updated_at || latestPengajuan.decided_at,
+            };
+            
+            setDataPKL(formattedData);
+          } else {
+            setDataPKL(null);
+          }
+        } catch (err) {
+          console.error("Gagal mengambil data pengajuan biasa:", err);
+          setDataPKL(null);
+        }
       } catch (err) {
         console.error("Gagal mengambil data PKL", err);
+        setDataPKL(null);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-
   
   // GET INDUSTRI DAN PEMBIMBING
   
   useEffect(() => {
     const fetchData = async () => {
+      if (!dataPKL) return;
+      
       try {
+        // Get data industri untuk konversi ID ke nama
         const allIndustri = await getIndustri();
-        const industri = allIndustri.find(
-          (i) => i.id === dataPKL.industri_id
-        );
-        setNamaIndustri(industri ? industri.nama : "-");
+        
+        if (dataPKL.industri_id) {
+          const industri = allIndustri.find((i) => i.id === dataPKL.industri_id);
+          setNamaIndustri(industri ? industri.nama : "-");
+        } else {
+          setNamaIndustri("-");
+        }
 
+        // Get data guru untuk konversi ID ke nama
         const allGuru = await getGuru();
 
         // Pembimbing
-        const pembimbing = allGuru.find(
-          (g) => g.id === dataPKL.pembimbing_guru_id
-        );
-        setNamaPembimbing(pembimbing ? pembimbing.nama : "-");
+        if (dataPKL.pembimbing_guru_id) {
+          const pembimbing = allGuru.find((g) => g.id === dataPKL.pembimbing_guru_id);
+          setNamaPembimbing(pembimbing ? pembimbing.nama : "-");
+        } else {
+          setNamaPembimbing("-");
+        }
 
-        //  Kaprog 
-        const kaprog = allGuru.find(
-          (g) => g.id === dataPKL.processed_by
-        );
-        setNamaKaprog(kaprog ? kaprog.nama : "-");
+        // Kaprog 
+        if (dataPKL.processed_by) {
+          const kaprog = allGuru.find((g) => g.id === dataPKL.processed_by);
+          setNamaKaprog(kaprog ? kaprog.nama : "-");
+        } else {
+          setNamaKaprog("-");
+        }
 
       } catch (error) {
         console.error("Gagal memuat data industri/guru", error);
       }
     };
 
-
-    if (dataPKL) fetchData();
+    fetchData();
   }, [dataPKL]);
 
   
+  if (loading) {
+    return (
+      <div className="w-[575px] bg-white rounded-2xl shadow-sm border border-[#6e0f0f] p-6 font-sans flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="animate-spin w-8 h-8 text-[#6e0f0f] mb-2" />
+          <p className="text-sm text-gray-600">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
   
   if (!dataPKL) {
     return (
@@ -160,10 +256,13 @@ export default function StatusPengajuanPKL() {
   };
 
   const rawStatus = dataPKL.status?.toLowerCase();
+  const status = rawStatus?.startsWith("pending") ? "pending" : rawStatus;
 
-  const status =
-    rawStatus?.startsWith("pending") ? "pending" : rawStatus;
-
+  // Fungsi untuk menentukan apakah status adalah pending
+  const isPendingStatus = (status) => {
+    const s = status?.toLowerCase();
+    return s === "pending" || s?.includes("pending");
+  };
 
   return (
     <div className="w-[575px] bg-white rounded-2xl shadow-sm border border-[#6e0f0f] p-6 font-sans">
@@ -213,7 +312,6 @@ export default function StatusPengajuanPKL() {
           ) : (
             <Clock3 size={18} />
           )}
-
         </div>
       </div>
 
@@ -221,11 +319,9 @@ export default function StatusPengajuanPKL() {
         {isPindahPKL ? "Perpindahan PKL :" : "Pengajuan PKL :"}
       </h3>
 
-
       {/* VIEW KHUSUS PENDING */}
-      {status === "pending" && (
+      {isPendingStatus(dataPKL.status) && (
         <div className="text-sm space-y-3">
-
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Building2 size={16} />
@@ -269,7 +365,6 @@ export default function StatusPengajuanPKL() {
             <ArrowUpRight size={16} />
           </button>
         </div>
-
       )}
 
       {/* VIEW APPROVED / REJECTED */}
@@ -341,76 +436,6 @@ export default function StatusPengajuanPKL() {
         </div>
       )}
 
-      {/* {openDetail && (
-        <Detail
-          size="half"
-          title="Detail Pengajuan PKL"
-          onClose={() => setOpenDetail(false)}
-          initialData={{
-            ...dataPKL,
-
-            // FORMAT TANGGAL DI SINI
-            tanggal_permohonan: formatTanggal(dataPKL.tanggal_permohonan),
-            tanggal_mulai: formatTanggal(dataPKL.tanggal_mulai),
-            tanggal_selesai: formatTanggal(dataPKL.tanggal_selesai),
-
-            nama_industri: namaIndustri,
-            nama_pembimbing: namaPembimbing,
-            status: statusLabel(status),
-            nama_kaprog: namaKaprog,
-          }}
-          fields={[
-            {
-              name: "nama_industri",
-              label: "Industri",
-              icon: <Building2 size={16} />,
-              full: true,
-            },
-            {
-              name: "kaprog_note",
-              label: "Catatan Kaprog",
-              icon: <MessageSquareText size={16} />,
-            },
-            {
-              name: "status",
-              label: "Status",
-              icon: <CircleDot size={16} />,
-            },
-            {
-              name: "tanggal_permohonan",
-              label: "Tanggal Permohonan",
-              icon: <CalendarDays size={16} />,
-            },
-            {
-              name: "tanggal_mulai",
-              label: "Tanggal Mulai",
-              icon: <CalendarRange size={16} />,
-            },
-            {
-              name: "tanggal_selesai",
-              label: "Tanggal Selesai",
-              icon: <CalendarCheck size={16} />,
-            },
-            {
-              name: "nama_pembimbing",
-              label: "Pembimbing",
-              icon: <UserCheck size={16} />,
-            },
-            {
-              name: "nama_kaprog",
-              label: "Kaprog",
-              icon: <UserCog size={16} />,
-            },
-            {
-              name: "catatan",
-              label: "Catatan",
-              icon: <NotebookText size={16} />,
-            },
-          ]}
-
-        />
-      )} */}
-
       {openDetail &&
         createPortal(
           <Detail
@@ -419,13 +444,14 @@ export default function StatusPengajuanPKL() {
             onClose={() => setOpenDetail(false)}
             initialData={{
               ...dataPKL,
-              tanggal_permohonan: formatTanggal(dataPKL.tanggal_permohonan),
+              tanggal_permohonan: formatTanggal(dataPKL.tanggal_permohonan || dataPKL.created_at),
               tanggal_mulai: formatTanggal(dataPKL.tanggal_mulai),
               tanggal_selesai: formatTanggal(dataPKL.tanggal_selesai),
               nama_industri: namaIndustri,
               nama_pembimbing: namaPembimbing,
-              status: statusLabel(status),
+              status: statusLabel(dataPKL.status),
               nama_kaprog: namaKaprog,
+              decided_at: formatTanggal(dataPKL.decided_at || dataPKL.updated_at),
             }}
             fields={[
               {
@@ -479,11 +505,6 @@ export default function StatusPengajuanPKL() {
           document.body
         )
       }
-
-
-
-
     </div>
-    
   );
 }

@@ -416,14 +416,14 @@ export default function Penilaian() {
         x += col[1];
 
         doc.rect(x, y, col[2], rowHeight);
-        doc.text(item.skor.split(" ")[0], x + col[2] / 2, y + 5, { align: "center" });
+        // doc.text(item.skor.split(" ")[0], x + col[2] / 2, y + 5, { align: "center" });
         x += col[2];
 
         doc.rect(x, y, col[3], rowHeight);
-        const deskripsiLines = doc.splitTextToSize(item.deskripsi, col[3] - 4);
-        deskripsiLines.slice(0, 6).forEach((line, idx) => {
-          doc.text(line, x + 2, y + 5 + (idx * 3.5));
-        });
+        // const deskripsiLines = doc.splitTextToSize(item.deskripsi, col[3] - 4);
+        // deskripsiLines.slice(0, 6).forEach((line, idx) => {
+        //   doc.text(line, x + 2, y + 5 + (idx * 3.5));
+        // });
 
         y += rowHeight;
       });
@@ -945,7 +945,9 @@ export default function Penilaian() {
                         <td className="border border-black p-2 text-center align-top">
                           {/* {item.skor} */}
                           </td>
-                        <td className="border border-black p-2 align-top text-sm">{item.deskripsi}</td>
+                        <td className="border border-black p-2 align-top text-sm">
+                          {/* {item.deskripsi} */}
+                          </td>
                       </tr>
                     ))}
                   </tbody>

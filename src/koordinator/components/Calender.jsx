@@ -61,7 +61,7 @@ const CalendarPKL = ({ pklData }) => {
 
   const jenisKegiatanOptions = [
     { value: "Pembekalan", label: "Pembekalan" },
-    { value: "Pengantaran", label: "Pengantaran" },
+    // { value: "Pengantaran", label: "Pengantaran" },
     { value: "Monitoring1", label: "Monitoring 1" },
     { value: "Monitoring2", label: "Monitoring 2" },
     { value: "Penjemputan", label: "Penjemputan" },
@@ -415,12 +415,27 @@ const CalendarPKL = ({ pklData }) => {
             toast.success("Acara berhasil dibuat di server");
           }
         } catch (apiError) {
+          // Ambil pesan error dari backend
+          const message =
+            apiError?.response?.data?.error ||
+            apiError?.response?.data?.message;
+
+          // 👉 KALAU ADA MESSAGE → itu error validasi
+          if (message) {
+            toast.error(message.replace(/^Validation error:\s*/i, ""));
+            return; // ⛔ STOP, jangan lanjut simpan lokal
+          }
+
+          // 👉 kalau benar-benar error jaringan / server mati
           console.error("API Error, falling back to localStorage:", apiError);
           setApiAvailable(false);
           isLocal = true;
-          savedDbId = editingEvent?.dbId || `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          savedDbId =
+            editingEvent?.dbId ||
+            `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           toast.warning("API tidak tersedia, menyimpan di lokal");
         }
+
       } else {
         isLocal = true;
         savedDbId = editingEvent?.dbId || `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

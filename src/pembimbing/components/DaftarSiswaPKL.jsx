@@ -61,9 +61,9 @@ export default function DaftarSiswaPKL({
                 <ArrowUpRight className="absolute top-2 right-2 w-4 h-4 text-white opacity-50 group-hover:opacity-100 transition" />
 
                 {/* Hari berjalan & sisa hari */}
-                <p className="absolute top-9 right-2 text-xs text-white opacity-80">
+                {/* <p className="absolute top-9 right-2 text-xs text-white opacity-80">
                   {hariBerjalan} hari berjalan • {hariTersisa} hari tersisa
-                </p>
+                </p> */}
               </div>
             );
           })

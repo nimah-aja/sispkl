@@ -20,7 +20,7 @@ import AktivitasTerkini from "./components/AktivitasTerkini";
 import Detail from "./components/Detail";
 import { 
   getGuruTasks, 
-  getGuruSiswa,
+  // getGuruSiswa,
 } from "../utils/services/pembimbing/guru"; 
 import {getMyRealisasiKegiatan} from "../utils/services/pembimbing/realisasi"; 
 import {getActiveKegiatanPKL} from "../utils/services/pembimbing/kegiatan"; 
@@ -43,6 +43,7 @@ export default function PKLDashboard() {
   });
 
   const [active, setActive] = useState("sidebarDashboard");
+  
   const [totalPerizinan, setTotalPerizinan] = useState(0);
   const [query, setQuery] = useState("");
 
@@ -429,39 +430,38 @@ export default function PKLDashboard() {
 
   // Fetch data siswa
   useEffect(() => {
-    const fetchSiswa = async () => {
+    const fetchSiswaFromTasks = async () => {
       try {
-        const siswaRes = await getGuruSiswa();
-        console.log("API SISWA response:", siswaRes);
-        
-        // Handle berbagai format response
-        const siswaData = siswaRes.data?.data || siswaRes.data || [];
-        console.log("Siswa data to map:", siswaData);
-        
-        const siswaList = siswaData.map((item) => ({
-          siswa_id: item.siswa_id || item.id,
-          nama_ssw: item.siswa_nama || item.nama || "Nama tidak tersedia",
-          inisial: (item.siswa_nama || item.nama || "")
-            .split(" ")
-            .map((n) => n ? n[0] : '')
-            .join("")
-            .toUpperCase() || '?',
-          industri_ssw: item.industri_nama || item.industri || "Industri tidak tersedia",
-          tanggal_selesai: item.tanggal_selesai,
-          tanggal_mulai: item.tanggal_mulai,
-          status: item.status || "Approved",
-          username_ssw: item.siswa_username || item.username || "-"
-        }));
-        
-        console.log("Siswa List setelah mapping:", siswaList);
+        const res = await getGuruTasks();
+
+        const siswaList = res.data.flatMap((group) =>
+          (group.siswa || []).map((s) => ({
+            siswa_id: s.id,
+            nama_ssw: s.nama,
+            username_ssw: s.username,
+            nisn: s.nisn,
+            kelas: s.kelas,
+            industri_ssw: group.industri?.nama || "-",
+            status: "Approved", // default, karena dari tasks
+            tanggal_mulai: null,
+            tanggal_selesai: null,
+            inisial: s.nama
+              ?.split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase(),
+          }))
+        );
+
         setSiswa(siswaList);
-        
       } catch (err) {
-        console.error("Gagal fetch siswa:", err);
+        console.error("Gagal fetch siswa dari tasks:", err);
       }
     };
-    fetchSiswa();
+
+    fetchSiswaFromTasks();
   }, []);
+
 
   // Update dashboard cards dengan data yang sudah ada
   useEffect(() => {
@@ -690,8 +690,8 @@ export default function PKLDashboard() {
                 { name: "username", label: "Username", type: "text" },
                 { name: "nama", label: "Nama Siswa", type: "text" },
                 { name: "industri", label: "Industri PKL", type: "text" },
-                { name: "tanggal_mulai", label: "Tanggal Mulai", type: "date" },
-                { name: "tanggal_selesai", label: "Tanggal Selesai", type: "date" },
+                // { name: "tanggal_mulai", label: "Tanggal Mulai", type: "date" },
+                // { name: "tanggal_selesai", label: "Tanggal Selesai", type: "date" },
                 { name: "status", label: "Status", type: "text" },
               ] :
               detailType === 'industri' ? [

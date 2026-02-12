@@ -67,7 +67,7 @@ export default function PengajuanPerpindahanPKL() {
         ];
 
         if (!allowedTypes.includes(file.type)) {
-          toast.error("Hanya JPG, PNG, atau PDF yang diperbolehkan");
+          toast.error("Hanya JPG, PNG yang diperbolehkan");
           e.target.value = null;
           return;
         }

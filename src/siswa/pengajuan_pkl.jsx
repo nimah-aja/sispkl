@@ -5,8 +5,8 @@ import { X, Plus, ArrowLeft } from "lucide-react";
 
 import { getAvailableIndustri } from "../utils/services/siswa/industri";
 import { submitPengajuanPKL } from "../utils/services/siswa/pengajuan_pkl";
-import { getSiswa } from "../utils/services/admin/get_siswa";
-import { getKelas } from "../utils/services/admin/get_kelas";
+import { getAvailableMembers } from "../utils/services/siswa/group";
+// import { getKelas } from "../utils/services/admin/get_kelas";
 
 import addSidebar from "../assets/addSidebar.svg";
 
@@ -15,14 +15,14 @@ export default function PengajuanPKL() {
   const navigate = useNavigate();
 
   const [listIndustri, setListIndustri] = useState([]);
-  const [listKelas, setListKelas] = useState([]);
+  // const [listKel as, setListKelas] = useState([]);
 
   const [allSiswa, setAllSiswa] = useState([]);
   const [listSiswa, setListSiswa] = useState([]);
 
   const [selectedSiswa, setSelectedSiswa] = useState([]);
   const [selectedIndustri, setSelectedIndustri] = useState("");
-  const [selectedKelas, setSelectedKelas] = useState("");
+  // const [selectedKelas, setSelectedKelas] = useState("");
 
   const [kategoriPeserta, setKategoriPeserta] = useState("individu");
   const [catatan, setCatatan] = useState("");
@@ -66,8 +66,8 @@ export default function PengajuanPKL() {
           }))
         );
 
-        /* SISWA */
-        const siswaRes = await getSiswa();
+        /* SISWA (AVAILABLE MEMBERS) */
+        const siswaRes = await getAvailableMembers();
         const siswaData = Array.isArray(siswaRes?.data)
           ? siswaRes.data
           : Array.isArray(siswaRes)
@@ -75,13 +75,13 @@ export default function PengajuanPKL() {
           : [];
 
         const formatted = siswaData.map((s) => ({
-          label: s.nama_lengkap || s.nama,
+          label: `${s.nama} - ${s.kelas}`,
           value: s.id.toString(),
-          kelas_id: s.kelas_id?.toString(),
         }));
 
-        setAllSiswa(formatted);
         setListSiswa(formatted);
+
+
       } catch (err) {
         console.error(err);
         toast.error("Gagal memuat data");
@@ -94,20 +94,20 @@ export default function PengajuanPKL() {
   }, []);
 
   /* ===== FILTER SISWA BERDASARKAN KELAS ===== */
-  useEffect(() => {
-    if (!selectedKelas) {
-      setListSiswa([]);
-      setSelectedSiswa([]);
-      return;
-    }
+  // useEffect(() => {
+  //   if (!selectedKelas) {
+  //     setListSiswa([]);
+  //     setSelectedSiswa([]);
+  //     return;
+  //   }
 
-    const filtered = allSiswa.filter(
-      (s) => s.kelas_id === selectedKelas
-    );
+  //   const filtered = allSiswa.filter(
+  //     (s) => s.kelas_id === selectedKelas
+  //   );
 
-    setListSiswa(filtered);
-    setSelectedSiswa([]);
-  }, [selectedKelas, allSiswa]);
+  //   setListSiswa(filtered);
+  //   setSelectedSiswa([]);
+  // }, [selectedKelas, allSiswa]);
 
   /* ================= HANDLER ================= */
   const handleTambahSiswa = () =>
@@ -232,7 +232,7 @@ export default function PengajuanPKL() {
                 </select>
 
                 {/* KELAS — HANYA KELOMPOK */}
-                {kategoriPeserta === "kelompok" && (
+                {/* {kategoriPeserta === "kelompok" && (
                   <select
                     value={selectedKelas}
                     onChange={(e) => setSelectedKelas(e.target.value)}
@@ -246,7 +246,7 @@ export default function PengajuanPKL() {
                       </option>
                     ))}
                   </select>
-                )}
+                )} */}
               </div>
             </div>
 
@@ -260,9 +260,7 @@ export default function PengajuanPKL() {
                   <div key={idx} className="flex gap-2 mb-2">
                     <select
                       value={val}
-                      onChange={(e) =>
-                        handleSiswaChange(idx, e.target.value)
-                      }
+                      onChange={(e) => handleSiswaChange(idx, e.target.value)}
                       className="flex-1 p-4 border rounded-lg"
                     >
                       <option value="">Pilih siswa</option>
@@ -272,6 +270,7 @@ export default function PengajuanPKL() {
                         </option>
                       ))}
                     </select>
+
                     <button className="!text-red-600 !bg-transparent" onClick={() => handleHapusSiswa(idx)}>
                       <X />
                     </button>

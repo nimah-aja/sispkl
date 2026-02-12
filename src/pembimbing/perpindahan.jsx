@@ -33,17 +33,22 @@ const PembimbingPindahPKL = () => {
   const [detailData, setDetailData] = useState(null);
   const [openExport, setOpenExport] = useState(false);
   const exportRef = useRef(null);
+  const [active, setActive] = useState("perpindahanPKL");
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Pembimbing",
     role: "PEMBIMBING",
   };
 
+  // =============================
+  // FETCH DATA
+  // =============================
   const fetchData = async () => {
     try {
       const res = await getPindahPklPembimbing();
+      const items = res?.items || [];
 
-      const mapped = res.map((item) => {
+      const mapped = items.map((item) => {
         let type = "submit";
         if (item.status === "approved") type = "approved";
         if (item.status === "rejected") type = "rejected";
@@ -51,16 +56,20 @@ const PembimbingPindahPKL = () => {
         return {
           id: item.id,
           type,
-          hasActions: type === "submit",
-          name: item.nama_siswa,
-          description: `Pindah PKL dari ${item.industri_lama?.nama} ke ${item.industri_baru?.nama}`,
+          hasActions: item.status === "pending_pembimbing",
+          name: item.siswa_nama,
+          description: `Pindah PKL dari ${item.industri_lama_nama} ke ${item.industri_baru_nama}`,
           time: item.created_at,
-          raw: item,
+          raw: {
+            ...item,
+            catatan: item.catatan || "-",
+          },
         };
       });
 
       setSubmissions(mapped);
     } catch (err) {
+      console.error(err);
       toast.error("Gagal memuat data pindah PKL");
     }
   };
@@ -69,12 +78,19 @@ const PembimbingPindahPKL = () => {
     fetchData();
   }, []);
 
+  // =============================
+  // ICON
+  // =============================
   const getIcon = (type) => {
     if (type === "submit") return <FilePlus className="text-orange-500" />;
     if (type === "approved") return <CheckCircle className="text-green-600" />;
     if (type === "rejected") return <XCircle className="text-red-600" />;
+    return null;
   };
 
+  // =============================
+  // FILTER
+  // =============================
   const filtered = submissions.filter((s) => {
     const q = query.toLowerCase();
     const matchQuery =
@@ -89,22 +105,29 @@ const PembimbingPindahPKL = () => {
     return matchQuery && matchStatus;
   });
 
+  // =============================
+  // DECISION
+  // =============================
   const handleDecision = async (mode, payload) => {
     try {
       await decidePindahPklPembimbing(detailData.id, {
         status: mode === "approve" ? "approved" : "rejected",
-        catatan: payload.catatan || null,
+        catatan: payload.catatan?.trim() || "-",
       });
 
       toast.success("Pengajuan berhasil diproses");
       setOpenDetail(false);
       setDetailMode("view");
       fetchData();
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Gagal memproses pengajuan");
     }
   };
 
+  // =============================
+  // EXPORT
+  // =============================
   const exportData = filtered.map((s, i) => ({
     No: i + 1,
     Nama: s.name,
@@ -138,26 +161,35 @@ const PembimbingPindahPKL = () => {
     setOpenExport(false);
   };
 
+  // =============================
+  // RENDER
+  // =============================
   return (
     <div className="bg-white min-h-screen">
       <Header query={query} setQuery={setQuery} user={user} />
+
       <div className="flex">
-        <Sidebar active="pindah_pkl" />
+        <Sidebar active={active} setActive={setActive} />
+
         <main className="flex-1 p-6 bg-[#641E21] rounded-l-3xl">
           <div className="flex justify-between mb-4">
             <h2 className="text-white font-bold">Pengajuan Pindah PKL</h2>
 
-            <div ref={exportRef} className="relative">
-              <button onClick={() => setOpenExport(!openExport)}>
-                <Download className="text-white" />
-              </button>
+           <div className="relative" ref={exportRef}>
+                         <button
+                           onClick={() => setOpenExport(!openExport)}
+                           className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full -ml-310 -mt-2"
+                         >
+                           <Download />
+                         </button>
+
               {openExport && (
-                <div className="absolute right-0 bg-white rounded shadow">
-                  <button onClick={exportExcel} className="p-2 flex gap-2">
-                    <FileSpreadsheet size={16} /> Excel
+                <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50 -ml-310">
+                  <button onClick={exportExcel} className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full">
+                    <FileSpreadsheet size={16} className="text-green-600"/> Excel
                   </button>
-                  <button onClick={exportPDF} className="p-2 flex gap-2">
-                    <FileText size={16} /> PDF
+                  <button onClick={exportPDF} className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full">
+                    <FileText size={16} className="text-red-600" /> PDF
                   </button>
                 </div>
               )}
@@ -167,14 +199,14 @@ const PembimbingPindahPKL = () => {
           <SearchBar
             query={query}
             setQuery={setQuery}
-            filters={[
-              {
-                label: "Status",
-                value: statusFilter,
-                options: ["Status", "Menunggu", "Disetujui", "Ditolak"],
-                onChange: setStatusFilter,
-              },
-            ]}
+            // filters={[
+            //   {
+            //     label: "Status",
+            //     value: statusFilter,
+            //     options: ["Status", "Menunggu", "Disetujui", "Ditolak"],
+            //     onChange: setStatusFilter,
+            //   },
+            // ]}
           />
 
           <div className="mt-6 space-y-3">
@@ -204,7 +236,7 @@ const PembimbingPindahPKL = () => {
                 {s.hasActions && (
                   <div className="flex gap-2 mt-3 ml-9">
                     <button
-                      className="px-4 py-2 rounded-lg text-white bg-[#EC933A]"
+                      className="px-4 py-2 rounded-lg text-white !bg-[#EC933A]"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDetailData(s.raw);
@@ -215,7 +247,7 @@ const PembimbingPindahPKL = () => {
                       Terima
                     </button>
                     <button
-                      className="px-4 py-2 rounded-lg text-white bg-[#BC2424]"
+                      className="px-4 py-2 rounded-lg text-white !bg-[#BC2424]"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDetailData(s.raw);
@@ -242,10 +274,11 @@ const PembimbingPindahPKL = () => {
             title="Detail Pindah PKL"
             size="half"
             initialData={{
-              siswa: detailData?.nama_siswa,
-              industri_lama: detailData?.industri_lama?.nama,
-              industri_baru: detailData?.industri_baru?.nama,
+              siswa: detailData?.siswa_nama,
+              industri_lama: detailData?.industri_lama_nama,
+              industri_baru: detailData?.industri_baru_nama,
               status: detailData?.status,
+              catatan: detailData?.catatan || "-",
             }}
             fields={
               detailMode === "view"
@@ -254,6 +287,13 @@ const PembimbingPindahPKL = () => {
                     { name: "industri_lama", label: "Industri Lama" },
                     { name: "industri_baru", label: "Industri Baru" },
                     { name: "status", label: "Status" },
+                    {
+                      name: "catatan",
+                      label: "Catatan",
+                      type: "textarea",
+                      full: true,
+                      readOnly: true,
+                    },
                   ]
                 : [
                     {

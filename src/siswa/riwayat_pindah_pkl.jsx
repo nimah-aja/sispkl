@@ -311,24 +311,24 @@ const RiwayatPindahPKL = () => {
             <div className="relative" ref={exportRef}>
               <button
                 onClick={() => setOpenExport(!openExport)}
-                className="text-white"
+                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full -ml-300"
               >
                 <Download />
               </button>
 
               {openExport && (
-                <div className="absolute right-0 bg-white rounded shadow-md z-10">
+                <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50 -ml-300">
                   <button
                     onClick={handleExportExcel}
-                    className="flex gap-2 p-2 hover:bg-gray-100 w-full text-left"
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                   >
-                    <FileSpreadsheet size={16} /> Excel
+                    <FileSpreadsheet size={16} className="text-green-600"/> Excel
                   </button>
                   <button
                     onClick={handleExportPDF}
-                    className="flex gap-2 p-2 hover:bg-gray-100 w-full text-left"
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                   >
-                    <FileText size={16} /> PDF
+                    <FileText size={16} className="text-red-600"/> PDF
                   </button>
                 </div>
               )}
