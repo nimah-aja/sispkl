@@ -65,7 +65,13 @@ export default function SearchBar({
               w-auto min-w-[100px] max-w-[200px] truncate
             "
           >
-            <span className="truncate">{f.value || f.label}</span>
+           <span className="truncate">
+              {f.value
+                ? f.optionLabels
+                  ? f.optionLabels[f.value]
+                  : f.value
+                : f.label}
+            </span>
             <img
               src={arrow}
               alt="arrow"
@@ -105,12 +111,12 @@ export default function SearchBar({
                         value={opt}
                         checked={f.value === opt}
                         onChange={() => {
-                          f.onChange(opt);
+                          f.onChange(opt);   // VALUE tetap english
                           setOpenIndex(null);
                         }}
                         className="accent-[#641E21]"
                       />
-                      {opt}
+                      {f.optionLabels ? f.optionLabels[opt] : opt}
                     </label>
                   ))}
                 </div>

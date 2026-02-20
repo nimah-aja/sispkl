@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { getSekolah } from "../../utils/services/admin/sekolah";
 import { useNavigate } from "react-router-dom";
 
 // import assets
@@ -15,6 +16,7 @@ import sidebarCorporate from "../../assets/sidebarCorporate.svg";
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
+  const [sekolah, setSekolah] = useState(null);
 
   const items = [
       { title: "Beranda", icon: sidebarDashboard, route: "/guru/pembimbing/dashboard_pembimbing", key: "sidebarDashboard" },
@@ -27,12 +29,29 @@ export default function Sidebar({ active, setActive }) {
       { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/guru/pembimbing/perpindahan", key: "perpindahanPKL" }
   ];
 
+  // logo dan nama sekolah
+    useEffect(() => {
+      const fetchSekolah = async () => {
+        try {
+          const res = await getSekolah();
+          // asumsi API kamu return { success, data }
+          setSekolah(res.data);
+        } catch (err) {
+          console.error("Gagal ambil data sekolah", err);
+        } finally {
+          setLoadingSekolah(false);
+        }
+      };
+  
+      fetchSekolah();
+    }, []);
+
   // main
   return (
     <aside className="w-20 bg-[#5F1A1E] h-screen flex flex-col items-center py-8 space-y-6">
 
       <div className="-mt-3 w-14 h-14 rounded-full flex items-center justify-center">
-        <img src={logo} alt="Logo"  />
+        <img src={sekolah?.logo_url || logo} alt="Logo"  />
       </div>
       
       {items.map((item) => (

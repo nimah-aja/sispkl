@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Header from "../admin/components/Header";
+import Header from "./components/Header";
 import waliKelasImg from "../assets/waliKelas.svg";
 import kaprodiImg from "../assets/kaprodi.svg";
 import pembimbingImg from "../assets/pembimbing_role.svg";
@@ -48,7 +48,7 @@ export default function RoleOption() {
 
       {/* Konten utama */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-        <h2 className="text-[#641E20] text-2xl font-bold mb-2">Pilih Role Kamu</h2>
+        <h2 className="text-[#641E20] text-2xl font-bold mb-2">Pilih Peran Kamu</h2>
 
         <p
           className="text-gray-500 mb-10"

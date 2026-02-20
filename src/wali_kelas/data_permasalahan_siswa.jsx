@@ -1,18 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
-import { useRef } from "react";
+
 import Detail from "./components/Detail";
-
-
-// Components
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
-import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Pagination from "./components/Pagination";
+
+const STORAGE_KEY = "data_permasalahan_siswa";
 
 export default function DataPermasalahanSiswa() {
   const exportRef = useRef(null);
@@ -27,7 +25,6 @@ export default function DataPermasalahanSiswa() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [detailMode, setDetailMode] = useState("view");
 
-
   const itemsPerPage = 10;
 
   const user = {
@@ -35,10 +32,12 @@ export default function DataPermasalahanSiswa() {
     role: "Wali Kelas",
   };
 
-
-  //  DUMMY DATA 
+  /* =====================
+     DUMMY DATA
+  ===================== */
   const dummyDataPermasalahan = [
     {
+      id: 1,
       pelapor: "Pembimbing",
       nama: "Firli Zulfa Azzahra",
       tanggal: "01/05/2025",
@@ -47,6 +46,7 @@ export default function DataPermasalahanSiswa() {
       status: "Proses",
     },
     {
+      id: 2,
       pelapor: "Pembimbing",
       nama: "Budi Santoso",
       tanggal: "20/11/2025",
@@ -54,77 +54,49 @@ export default function DataPermasalahanSiswa() {
       masalah: "Nilai rapor menurun drastis",
       status: "Selesai",
     },
-    {
-      pelapor: "Pembimbing",
-      nama: "Maya Anggraini",
-      tanggal: "28/11/2025",
-      industri: "PT Astra Honda",
-      masalah: "Kesulitan adaptasi di sekolah baru",
-      status: "Proses",
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Putri Maharani",
-      tanggal: "05/12/2025",
-      industri: "PT Astra Honda",
-      masalah: "Bolos sekolah tanpa keterangan",
-      status: "Selesai",
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Andi Pratama",
-      tanggal: "15/11/2025",
-      industri: "PT Astra Honda",
-      masalah: "Konflik dengan teman sekelas",
-      status: "Proses",
-    },
   ];
+
+  /* =====================
+     LOAD LOCAL STORAGE
+  ===================== */
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) setDataPermasalahan(JSON.parse(saved));
+    else {
+      setDataPermasalahan(dummyDataPermasalahan);
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(dummyDataPermasalahan)
+      );
+    }
+  }, []);
+
+  /* =====================
+     HELPERS
+  ===================== */
+  const saveData = (data) => {
+    setDataPermasalahan(data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  };
 
   const getInitials = (name = "") =>
     name
       .split(" ")
-      .map(w => w[0])
+      .map((w) => w[0])
       .slice(0, 2)
       .join("")
       .toUpperCase();
 
-  const avatarColors = [
-    "bg-orange-500",
-    "bg-blue-500",
-    "bg-green-500",
-    "bg-purple-500",
-    "bg-pink-500",
-  ];
-
-  const handleProcess = (index) => {
-    setDataPermasalahan(prev =>
-      prev.map((item, i) =>
-        i === index ? { ...item, status: "Selesai" } : item
-      )
-    );
-  };
-
-
-  //  LOAD DATA 
-  useEffect(() => {
-    setDataPermasalahan(dummyDataPermasalahan);
-  }, []);
-
-  // reset pagination jika filter berubah
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter, dateFilter]);
-
-  //  HELPER 
   const parseDate = (dateStr) => {
     const [day, month, year] = dateStr.split("/");
     return new Date(`${year}-${month}-${day}`);
   };
 
-  //  FILTER DATA 
+  /* =====================
+     FILTER DATA
+  ===================== */
   const filteredData = dataPermasalahan.filter((item) => {
     const q = search.toLowerCase();
-
     const matchSearch =
       item.nama.toLowerCase().includes(q) ||
       item.pelapor.toLowerCase().includes(q) ||
@@ -140,30 +112,42 @@ export default function DataPermasalahanSiswa() {
     return matchSearch && matchStatus && matchDate;
   });
 
-  // nomor urut
-  const dataWithNo = filteredData.map((item, i) => ({
-    ...item,
-    no: i + 1,
-  }));
-
-  // pagination
-  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
-  const paginatedData = dataWithNo.slice(
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  //  TABLE 
-  const columns = [
-    { label: "Pelapor", key: "pelapor" },
-    { label: "Nama", key: "nama" },
-    { label: "Tanggal", key: "tanggal" },
-    { label: "Masalah", key: "masalah" },
-    { label: "Status", key: "status" },
-  ];
+  /* =====================
+     ACTIONS
+  ===================== */
+  const handleProcess = (id) => {
+    setDataPermasalahan((prev) => {
+      const updated = prev.map((item) =>
+        item.id === id ? { ...item, status: "Selesai" } : item
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
 
-  const statusOptions = [...new Set(dataPermasalahan.map((d) => d.status))];
+  const handleEditSubmit = (updatedItem) => {
+    const updated = dataPermasalahan.map((item) =>
+      item.id === updatedItem.id ? updatedItem : item
+    );
+    saveData(updated);
+    setSelectedItem(updatedItem);
+  };
 
+  const handleDelete = (id) => {
+    const updated = dataPermasalahan.filter((item) => item.id !== id);
+    saveData(updated);
+    setSelectedItem(null);
+  };
+
+  /* =====================
+     EXPORT DATA
+  ===================== */
   const exportData = filteredData.map((item, i) => ({
     No: i + 1,
     Pelapor: item.pelapor,
@@ -174,156 +158,85 @@ export default function DataPermasalahanSiswa() {
   }));
 
   const handleExportExcel = () => {
-    if (!exportData.length) return;
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Permasalahan Siswa");
+    XLSX.utils.book_append_sheet(wb, ws, "Permasalahan");
     XLSX.writeFile(wb, "data_permasalahan_siswa.xlsx");
   };
 
   const handleExportPDF = () => {
-    if (!exportData.length) return;
     const doc = new jsPDF();
-    doc.text("Data Permasalahan Peserta Didik", 14, 15);
+    doc.text("Data Permasalahan Siswa", 14, 15);
     autoTable(doc, {
       startY: 20,
       head: [Object.keys(exportData[0])],
       body: exportData.map((d) => Object.values(d)),
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [100, 30, 33] },
     });
     doc.save("data_permasalahan_siswa.pdf");
   };
 
-
+  /* =====================
+     RENDER
+  ===================== */
   return (
     <div className="bg-white min-h-screen w-full">
       <Header user={user} />
 
       <div className="flex">
-        <div className="hidden md:block">
-          <Sidebar active={active} setActive={setActive} />
-        </div>
+        <Sidebar active={active} setActive={setActive} />
 
         <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
-          <div className="flex items-center mb-6 gap-1 w-full relative">
-            <h2 className="text-white font-bold text-lg">
-              Data Permasalahan
-            </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-white font-bold text-lg">Data Permasalahan</h2>
+          </div>
 
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setOpenExport(!openExport)}
-                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
-              >
-                <Download size={18} />
-              </button>
-
-              {openExport && (
-                <div className="absolute left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
-                  <button
-                    onClick={() => {
-                      handleExportExcel();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileSpreadsheet size={16} className="text-green-600" />
-                    Excel
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      handleExportPDF();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileText size={16} className="text-red-600" />
-                    PDF
-                  </button>
-                </div>
-              )}
-            </div>
-            </div>
-
-
-          {/* SEARCH & FILTER */}
           <SearchBar
             query={search}
             setQuery={setSearch}
-            placeholder="Cari nama / pelapor / masalah"
-            filters={[
-              {
-                label: "Status",
-                value: statusFilter,
-                options: statusOptions,
-                onChange: setStatusFilter,
-              },
-              {
-                label: "Tanggal",
-                type: "date",
-                value: dateFilter,
-                onChange: setDateFilter,
-              },
-            ]}
+            // filters={[
+            //   {
+            //     label: "Status",
+            //     value: statusFilter,
+            //     options: ["Proses", "Selesai"],
+            //     onChange: setStatusFilter,
+            //   },
+            // ]}
           />
 
-          {/* TABLE */}
           <div className="mt-6 space-y-4">
-            {filteredData.map((item, index) => (
+            {paginatedData.map((item) => (
               <div
-                key={index}
-                onClick={() => {
-                  setSelectedItem(item);
-                  setDetailMode("view");
-                }}
-                className="bg-white rounded-xl p-4 hover:shadow-md transition-all cursor-pointer"
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                className="bg-white rounded-xl p-4 cursor-pointer"
               >
-
-                {/* HEADER */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-4">
-                    {/* AVATAR ORANGE  */}
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500 text-white font-bold text-sm"
-                    >
+                <div className="flex justify-between">
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 bg-orange-500 rounded-full text-white flex items-center justify-center font-bold">
                       {getInitials(item.nama)}
                     </div>
-
                     <div>
-                      <h3 className="font-bold text-gray-900 text-sm">
-                        {item.nama}
-                      </h3>
-                      <p className="text-xs text-gray-600">
-                        Pelapor: {item.pelapor}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {item.masalah}
-                      </p>
+                      <h3 className="font-bold">{item.nama}</h3>
+                      <p className="text-sm text-gray-500">{item.masalah}</p>
                     </div>
                   </div>
 
-                  {/* Tanggal di kanan atas */}
-                  <span className="text-xs text-gray-500">
-                    {item.tanggal}
-                  </span>
+                  <span className="text-xs text-gray-500">{item.tanggal}</span>
                 </div>
 
-                {/* ACTION */}
-                <div className="flex justify-between items-center mt-3 ml-15">
-                  {/* Tombol Proses di kiri */}
+                {/* <div className="flex justify-between mt-3">
                   {item.status === "Proses" && (
                     <button
-                      onClick={() => handleProcess(index)}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-                      style={{ backgroundColor: "#EC933A" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleProcess(item.id);
+                      }}
+                      className="px-3 py-1 bg-orange-400 text-white rounded text-xs"
                     >
                       Proses
                     </button>
                   )}
 
-                  {/* Status di kanan */}
                   <span
                     className={`text-xs font-semibold ${
                       item.status === "Selesai"
@@ -333,44 +246,42 @@ export default function DataPermasalahanSiswa() {
                   >
                     {item.status}
                   </span>
-                </div>
+                </div> */}
               </div>
             ))}
           </div>
-            
 
-          
-                    {totalPages > 1 && (
-                                <div className="flex justify-between items-center mt-4 text-white">
-                                  <span>
-                                    Halaman {currentPage} dari {totalPages}
-                                  </span>
-                                  <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={setCurrentPage}
-                                  />
-                                </div>
-                              )}
+          {totalPages > 1 && (
+                            <div className="flex justify-between items-center mt-0 text-white">
+                              <p className="text-sm sm:text-base">
+                                Halaman {currentPage} dari {totalPages} halaman
+                              </p>
+                              <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                              />
+                            </div>
+                          )}
         </main>
+
         {selectedItem && (
           <Detail
             title="Detail Permasalahan Siswa"
-            initialData={selectedItem}
             mode={detailMode}
+            initialData={selectedItem}
             onClose={() => setSelectedItem(null)}
             onChangeMode={setDetailMode}
-            onSubmit={() => setSelectedItem(null)}
+            onSubmit={handleEditSubmit}
+            onDelete={handleDelete}
             fields={[
               { name: "nama", label: "Nama Siswa" },
               { name: "industri", label: "Nama Industri" },
-              { name: "masalah", label: "Permasalahan Siswa", full: true },
+              { name: "masalah", label: "Permasalahan Siswa" },
               { name: "tanggal", label: "Tanggal" },
-              { name: "status", label: "Status" },
             ]}
           />
         )}
-
       </div>
     </div>
   );

@@ -176,29 +176,24 @@ export default function TugasTerbaru({
                     {/* ROW BAWAH */}
                     <div className="flex items-center justify-between gap-3 text-xs text-gray-500">
                       {/* KIRI */}
-                      <div className="flex items-center gap-4 min-w-0">
-                        {/* Tombol Daftar Siswa */}
+                      <div className="-ml-4 flex items-center gap-4 min-w-0">
+                        {/* Tombol Daftar Siswa - SEJARAH HORIZONTAL */}
                         <button
                           onClick={(e) => openPopup("siswa", item.siswa, e)}
-                          className="-ml-2 !bg-transparent flex items-center gap-1 hover:text-[#641E21] group"
+                          className="!bg-transparent flex items-center gap-1.5 hover:text-[#641E21] group"
                           title="Lihat daftar siswa"
                         >
+                          <Users className="w-3.5 h-3.5" />
                           {item.siswa && item.siswa.length > 0 ? (
-                            <>
-                              <Users className="w-3 h-3" />
-                              <span>{item.siswa.length} siswa</span>
-                            </>
+                            <span className="text-xs whitespace-nowrap">{item.siswa.length} siswa</span>
                           ) : (
-                            <>
-                              <User className="w-3 h-3" />
-                              <span>{item.jumlahSiswa || 0} siswa</span>
-                            </>
+                            <span className="text-xs whitespace-nowrap">{item.jumlahSiswa || 0} siswa</span>
                           )}
                         </button>
 
                         <div className="flex items-center gap-1 min-w-0" title={industriNama}>
-                          <Building2 className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate max-w-[120px]">
+                          <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate max-w-[120px] text-xs">
                             {industriNama}
                           </span>
                         </div>
@@ -277,7 +272,7 @@ export default function TugasTerbaru({
                     ))
                   ) : (
                     <div className="text-center py-4 text-gray-500 text-sm">
-                      <User className="w-8 h-8 mx-auto mb-2 -ml-2 text-gray-300" />
+                      <User className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                       <p>Tidak ada data siswa</p>
                     </div>
                   )}

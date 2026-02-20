@@ -20,12 +20,12 @@ export default function Sidebar({ active, setActive }) {
       { title: "Beranda", icon: sidebarDashboard, route: "/guru/koordinator", key: "sidebarDashboard" },
       { title: "Siswa", icon: sidebarUsers, route: "/guru/koordinator/pesertaPKL", key: "sidebarUsers" },
       // lembar persetujuan/permohonan
-      { title: "Pengajuan PKL", icon: pengajuanPKL, route: "/guru/koordinator/pengajuanPKL", key: "pengajuanPKL" },
+      { title: "Surat Persetujuan PKL", icon: pengajuanPKL, route: "/guru/koordinator/pengajuanPKL", key: "pengajuanPKL" },
       { title: "Pembimbing", icon: Pembimbing, route: "/guru/koordinator/pembimbing", key: "Pembimbing" },
       // surat tugas
       { title: "Surat Tugas", icon: suratPengantaran, route: "/guru/koordinator/suratPengantaran", key: "suratPengantaran" },
       // form input nilai
-      { title: "Penilaian", icon: monitoring, route: "/guru/koordinator/monitoring", key: "penilaian" },
+      // { title: "Penilaian", icon: monitoring, route: "/guru/koordinator/monitoring", key: "penilaian" },
       // CRUD kegiatan
       // { title: "Surat Penjemputan", icon: suratPenjemputan, route: "/guru/koordinator/suratPenjemputan", key: "suratPenjemputan" },
       { title: "Perpindahan PKL", icon: perpindahanPKL, route: "/guru/koordinator/perpindahanPKL", key: "perpindahanPKL" },

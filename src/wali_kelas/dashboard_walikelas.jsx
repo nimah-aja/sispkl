@@ -19,6 +19,7 @@ import { getDashboardWaliKelas } from "../utils/services/wakel/dashboard";
 import { getIzinWaliKelas } from "../utils/services/wakel/izin";
 import { getSiswa } from "../utils/services/admin/get_siswa";
 import { getKelas } from "../utils/services/admin/get_kelas";
+import { getGuru } from "../utils/services/admin/get_guru";
 
 // Assets
 import userIcon from "../assets/sidebarUsers.svg";
@@ -70,6 +71,20 @@ export default function DashboardWaliKelas() {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("id-ID", { 
+        day: "numeric", 
+        month: "long", 
+        year: "numeric" 
+      });
+    } catch {
+      return "-";
+    }
+  };
+
   const getStatusBadge = (status) => {
     if (status === "Sedang PKL") {
       return <span className="px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-emerald-500">Sedang PKL</span>;
@@ -84,12 +99,12 @@ export default function DashboardWaliKelas() {
 
       try {
         // Ambil dashboard utama
-        // Ambil dashboard utama
         const res = await getDashboardWaliKelas();
 
-        // Ambil data siswa & kelas
+        // Ambil data siswa & kelas & guru
         const siswaList = await getSiswa();
         const kelasList = await getKelas();
+        const guruList = await getGuru();
 
         const siswaMap = {};
         siswaList.forEach(s => (siswaMap[s.id] = s));
@@ -97,12 +112,15 @@ export default function DashboardWaliKelas() {
         const kelasMap = {};
         kelasList.forEach(k => (kelasMap[k.id] = k.nama));
 
+        const guruMap = {};
+        guruList.forEach(g => (guruMap[g.id] = g.nama));
+
         // Ambil data perizinan
         const izinRes = await getIzinWaliKelas();
         const izinData = izinRes.data || izinRes || [];
         const totalPerizinan = Array.isArray(izinData) ? izinData.length : 0;
 
-        // ⬅️ BARU SET DATA DISPLAY SETELAH totalPerizinan ADA
+        // SET DATA DISPLAY
         setDataDisplay([
           {
             title: "Jumlah Siswa PKL",
@@ -116,59 +134,65 @@ export default function DashboardWaliKelas() {
           },
         ]);
 
-
-                
-
-            
-
-
         const perizinanMapped = Array.isArray(izinData) ? izinData.map((izin) => {
           const siswa = siswaMap[izin.siswa_id];
-          const status = (izin.status || "pending").toUpperCase();
-          const lampiran = izin.bukti_foto_urls?.length > 0 ? "Ada" : "Tidak Ada";
+          const waktu = izin.created_at || izin.tanggal;
+          const status = (izin.status || "pending").toLowerCase();
 
           return {
             id: izin.id,
             nama: siswa?.nama_lengkap || "-",
             kelas: kelasMap[siswa?.kelas_id] || "-",
-            status,
-            lampiran,
+            
+            // Data waktu
+            waktu,
+            tanggal: formatDate(waktu),
+            jam: formatTime(waktu),
+            
+            tanggal_putus: izin.decided_at ? formatDate(izin.decided_at) : "-",
+            jam_putus: izin.decided_at ? formatTime(izin.decided_at) : "-",
+            
+            // Data izin
             alasan: izin.jenis || "-",
-            waktu: izin.created_at || izin.tanggal,
+            keterangan: izin.keterangan || "-",
+            
+            // Status
+            status,
+            statusLabel: status === "approved" ? "Disetujui" : status === "rejected" ? "Ditolak" : "Proses",
+            
+            rejection_reason: izin.rejection_reason || "-",
+            bukti: izin.bukti_foto_urls || [],
+            
+            pembimbing: guruMap[izin.pembimbing_guru_id] || "-",
+            
+            // Icon
             icon: getInitials(siswa?.nama_lengkap),
             iconColor: getIconColor(siswa?.nama_lengkap),
+            
+            // Flag validitas
+            isValid: siswa?.nama_lengkap && siswa?.nama_lengkap !== "-" && kelasMap[siswa?.kelas_id] && kelasMap[siswa?.kelas_id] !== "-"
           };
         }) : [];
 
         setNotifikasiPerizinan(perizinanMapped);
 
-        // Mapping aktivitasDummy (5 terbaru)
+        // Mapping aktivitasDummy (5 terbaru) - HANYA tampilkan yang valid
         const aktivitasGabungan = perizinanMapped
+          .filter(item => item.isValid)
           .map(item => {
-            const statusType = item.status === "APPROVED" ? "approved" : item.status === "REJECTED" ? "rejected" : "pending";
-            const statusLabel = item.status === "APPROVED" ? "Disetujui" : item.status === "REJECTED" ? "Ditolak" : "Proses";
             return {
-              type: statusType,
+              type: item.status,
               title: `${item.nama} | ${item.kelas}`,
-              description: `${item.alasan} • Lampiran: ${item.lampiran}`,
-              subdescription: "",
-              status: statusLabel,
-              time: formatTime(item.waktu),
+              description: `${item.alasan} • ${item.statusLabel}`,
+              subdescription: item.keterangan !== "-" ? `Keterangan: ${item.keterangan}` : "",
+              status: item.statusLabel,
+              time: item.jam,
               icon: item.icon,
               iconColor: item.iconColor,
               onClick: () => {
-                setDetailData({
-                  nama: item.nama,
-                  kelas: item.kelas,
-                  alasan: item.alasan,
-                  statusLabel,
-                  waktu: item.waktu,
-                  jam: formatTime(item.waktu),
-                  lampiran: item.lampiran,
-                });
+                setDetailData(item); // Set data lengkap
                 setOpenDetail(true);
               },
-
             };
           })
           .slice(0, 5);
@@ -207,7 +231,7 @@ export default function DashboardWaliKelas() {
         <main className="flex-1 p-6 bg-white overflow-auto rounded-tl-3xl">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <p className="font-semibold">Loading data...</p>
+              <p className="font-semibold">Memuat data...</p>
             </div>
           ) : error ? (
             <div className="bg-red-100 text-red-600 p-6 rounded-xl text-center">{error}</div>
@@ -229,7 +253,13 @@ export default function DashboardWaliKelas() {
 
               {/* Aktivitas Terkini */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
-                <AktivitasTerkini title="Aktivitas Terkini" icon="🔔" items={aktivitasDummy} color="#641E21" showFooter={true} />
+                <AktivitasTerkini 
+                  title="Aktivitas Terkini" 
+                  icon="🔔" 
+                  items={aktivitasDummy} 
+                  color="#641E21" 
+                  showFooter={true} 
+                />
 
                 {/* Status PKL Siswa */}
                 <div className="rounded-2xl shadow-lg" style={{ backgroundColor: "#641E21" }}>
@@ -266,24 +296,53 @@ export default function DashboardWaliKelas() {
           )}
         </main>
         {openDetail &&
-  createPortal(
-    <Detail
-      mode="view"
-      title="Detail Izin"
-      initialData={detailData}
-      onClose={() => setOpenDetail(false)}
-      fields={[
-        { name: "nama", label: "Nama" },
-        { name: "kelas", label: "Kelas" },
-        { name: "alasan", label: "Jenis" },
-        { name: "statusLabel", label: "Status" },
-        { name: "jam", label: "Jam Pengajuan" },
-        { name: "lampiran", label: "Lampiran" },
-      ]}
-    />,
-    document.body
-  )}
-
+          createPortal(
+            <Detail
+              mode="view"
+              title="Detail Izin"
+              initialData={detailData}
+              onClose={() => setOpenDetail(false)}
+              fields={[
+                { name: "nama", label: "Nama Siswa" },
+                { name: "kelas", label: "Kelas" },
+                { name: "tanggal", label: "Tanggal Pengajuan" },
+                { name: "jam", label: "Jam Pengajuan" },
+                { name: "tanggal_putus", label: "Tanggal Diputuskan" },
+                { name: "jam_putus", label: "Jam Diputuskan" },
+                { name: "alasan", label: "Jenis Izin" },
+                { name: "keterangan", label: "Keterangan" },
+                { name: "statusLabel", label: "Status" },
+                { name: "pembimbing", label: "Pembimbing" },
+                { name: "rejection_reason", label: "Alasan Ditolak" },
+                { 
+                  name: "bukti", 
+                  label: "Bukti Foto",
+                  render: (value) => (
+                    <div>
+                      {value && value.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {value.map((url, idx) => (
+                            <a 
+                              key={idx}
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              Bukti {idx + 1}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500">Tidak ada bukti</span>
+                      )}
+                    </div>
+                  )
+                },
+              ]}
+            />,
+            document.body
+          )}
       </div>
     </div>
   );

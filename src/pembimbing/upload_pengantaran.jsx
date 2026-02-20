@@ -216,7 +216,7 @@ function CloudUpload({ images, setImages, setAllUploaded }) {
               </div>
               <div className="text-center">
                 <p className="text-black text-lg font-medium mb-2">
-                  {uploading ? 'Sedang Upload...' : 'Drag & drop atau klik pilih file'}
+                  {uploading ? 'Sedang Mengunggah...' : 'Seret & Lepas atau klik pilih file'}
                 </p>
                 <p className="text-gray-500 text-sm">
                   JPG, PNG, WebP, GIF (Max 5MB per file)
@@ -240,7 +240,7 @@ function CloudUpload({ images, setImages, setAllUploaded }) {
       {/* Upload Progress */}
       {Object.keys(uploadProgress).length > 0 && (
         <div className="mb-6">
-          <h3 className="font-semibold text-gray-700 mb-3">Status Upload</h3>
+          <h3 className="font-semibold text-gray-700 mb-3">Status Mengunggah</h3>
           <div className="space-y-2">
             {Object.entries(uploadProgress).map(([index, progress]) => (
               <div key={index} className="bg-gray-50 rounded-lg p-3">
@@ -369,7 +369,7 @@ function CloudUpload({ images, setImages, setAllUploaded }) {
           <div className="text-center">
             <div className="ml-20"><UploadIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" /></div>
             <p className="font-medium text-gray-500">Belum ada gambar</p>
-            <p className="text-sm mt-1">Pilih gambar untuk mulai upload</p>
+            <p className="text-sm mt-1">Pilih gambar untuk mulai mengunggah</p>
           </div>
         </div>
       )}
@@ -495,10 +495,10 @@ export default function UploadBuktiPengantaran() {
   return (
     <Add
   key={formKey}
-  title="Upload Bukti Kegiatan"
+  title="Mengunggah Bukti Kegiatan"
   fields={fields}
   submitText={loading ? "Mengirim..." : "Kirim"}
-  cancelText="Reset"
+  cancelText="Atur Ulang"
   image={uploadImg}
   leftContent={
     <CloudUpload 

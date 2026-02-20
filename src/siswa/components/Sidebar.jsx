@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { getSekolah } from "../../utils/services/admin/sekolah";
 import { useNavigate } from "react-router-dom";
 
 // assets
@@ -11,6 +12,7 @@ import pindahPKL_side from "../../assets/pindahpkl_side.svg"
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
+  const [sekolah, setSekolah] = useState(null);
 
   const items = [
     {
@@ -23,7 +25,7 @@ export default function Sidebar({ active, setActive }) {
       title: "Riwayat Pengajuan",
       icon: pengajuan_PKL,
       route: "/siswa/riwayat_pengajuan",
-      key: "riwayat_pengajuan",
+    key: "riwayat_pengajuan",
     },
     {
       title: "Industri",
@@ -34,14 +36,31 @@ export default function Sidebar({ active, setActive }) {
     { title: "Riwayat Perizinan", 
       icon: envelope, 
       route: "/siswa/riwayat_perizinan", key: "riwayat_perizinan" },
-     { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/siswa/perpindahan", key: "perpindahanPKL" }
+    //  { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/siswa/perpindahan", key: "perpindahanPKL" }
   ];
+
+  // logo dan nama sekolah
+    useEffect(() => {
+      const fetchSekolah = async () => {
+        try {
+          const res = await getSekolah();
+          // asumsi API kamu return { success, data }
+          setSekolah(res.data);
+        } catch (err) {
+          console.error("Gagal ambil data sekolah", err);
+        } finally {
+          setLoadingSekolah(false);
+        }
+      };
+  
+      fetchSekolah();
+    }, []);
 
   return (
     <aside className="w-20 bg-[#5F1A1E] h-screen flex flex-col items-center py-8 space-y-6 relative z-50">
       {/* LOGO */}
       <div className="-mt-3 w-14 h-14 rounded-full flex items-center justify-center">
-        <img src={logo} alt="Logo" />
+        <img src={sekolah?.logo_url || logo} alt="Logo" />
       </div>
 
       {/* MENU */}

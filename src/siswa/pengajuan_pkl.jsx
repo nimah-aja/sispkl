@@ -1,128 +1,290 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { X, Plus, ArrowLeft } from "lucide-react";
+import { X, Plus, ArrowLeft, Eye, EyeOff, Calendar } from "lucide-react";
+import DatePicker from "react-datepicker";
+import { id } from "date-fns/locale";
+import { format } from "date-fns";
+import "react-datepicker/dist/react-datepicker.css";
 
 import { getAvailableIndustri } from "../utils/services/siswa/industri";
 import { submitPengajuanPKL } from "../utils/services/siswa/pengajuan_pkl";
-import { getAvailableMembers } from "../utils/services/siswa/group";
-// import { getKelas } from "../utils/services/admin/get_kelas";
+import { getSiswa } from "../utils/services/admin/get_siswa";
+import { getKelas } from "../utils/services/admin/get_kelas";
 
+// import assets
 import addSidebar from "../assets/addSidebar.svg";
+import arrow from "../assets/arrow.svg";
+import cancelImg from "../assets/cancel.svg";
+import confirmSave from "../assets/cancel.svg";
+import silang from "../assets/silang.svg";
 
+// import components
+import DeleteConfirmationModal from "./components/Cancel";
+import SaveConfirmationModal from "./components/Save";
 
 export default function PengajuanPKL() {
   const navigate = useNavigate();
 
   const [listIndustri, setListIndustri] = useState([]);
-  // const [listKel as, setListKelas] = useState([]);
-
+  const [allKelas, setAllKelas] = useState([]);
   const [allSiswa, setAllSiswa] = useState([]);
-  const [listSiswa, setListSiswa] = useState([]);
+  const [filteredSiswa, setFilteredSiswa] = useState([]);
+  const [availableSiswa, setAvailableSiswa] = useState([]); // Siswa yang bisa dipilih (tanpa user yang login)
 
   const [selectedSiswa, setSelectedSiswa] = useState([]);
   const [selectedIndustri, setSelectedIndustri] = useState("");
-  // const [selectedKelas, setSelectedKelas] = useState("");
 
   const [kategoriPeserta, setKategoriPeserta] = useState("individu");
   const [catatan, setCatatan] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingIndustri, setIsLoadingIndustri] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  
+  // User data from localStorage
+  const [userData, setUserData] = useState(null);
+  const [userKelasId, setUserKelasId] = useState(null);
+  const [userJurusanId, setUserJurusanId] = useState(null);
+  const [userKelasNama, setUserKelasNama] = useState("");
+  const [kelasIdsInJurusan, setKelasIdsInJurusan] = useState([]);
 
-  /* ================= FETCH DATA ================= */
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isChanged, setIsChanged] = useState(false);
+  
+  // Dropdown states
+  const [dropdownState, setDropdownState] = useState({});
+  const [searchQueries, setSearchQueries] = useState({});
+  const [selectedLabels, setSelectedLabels] = useState({});
+  
+  // Student dropdown states untuk setiap baris
+  const [studentDropdownState, setStudentDropdownState] = useState({});
+  const [studentSearchQueries, setStudentSearchQueries] = useState({});
+
+  // Date states
+  const [dateValues, setDateValues] = useState({});
+
+  /* ================= GET LOGGED-IN USER'S DATA FROM LOCALSTORAGE ================= */
   useEffect(() => {
-    const fetchData = async () => {
+    try {
+      const userDataStr = localStorage.getItem('user');
+      
+      if (userDataStr) {
+        const parsedUser = JSON.parse(userDataStr);
+        console.log("👤 User yang login:", parsedUser);
+        setUserData(parsedUser);
+        setUserKelasId(parsedUser.kelas_id);
+      } else {
+        toast.error("Data user tidak ditemukan. Silakan login ulang.");
+      }
+    } catch (err) {
+      console.error("Failed to parse user data:", err);
+      toast.error("Gagal memuat data user");
+    }
+  }, []);
+
+  /* ================= FETCH ALL DATA ================= */
+  useEffect(() => {
+    const fetchAllData = async () => {
       try {
-        setIsLoadingIndustri(true);
+        setIsLoadingData(true);
 
-        /* INDUSTRI */
+        // Fetch industri
         const industriRes = await getAvailableIndustri();
-        const industriData = Array.isArray(industriRes?.data)
-          ? industriRes.data
-          : Array.isArray(industriRes)
-          ? industriRes
-          : [];
-
+        const industriData = industriRes?.data || industriRes || [];
+        const industriList = Array.isArray(industriData) ? industriData : [];
+        
         setListIndustri(
-          industriData.map((i) => ({
-            label: i.name || i.nama,
-            value: i.id.toString(),
-          }))
+          industriList.map((i) => ({
+            label: i.name || i.nama || "Unknown",
+            value: i.id?.toString() || "",
+          })).filter(i => i.value)
         );
 
-        /* KELAS */
+        // Fetch all kelas
         const kelasRes = await getKelas();
-        const kelasData = Array.isArray(kelasRes?.data)
-          ? kelasRes.data
-          : Array.isArray(kelasRes)
-          ? kelasRes
-          : [];
+        let kelasData = [];
+        if (kelasRes?.data?.data) {
+          kelasData = kelasRes.data.data;
+        } else if (kelasRes?.data) {
+          kelasData = kelasRes.data;
+        } else if (Array.isArray(kelasRes)) {
+          kelasData = kelasRes;
+        }
+        setAllKelas(kelasData);
 
-        setListKelas(
-          kelasData.map((k) => ({
-            label: k.nama_kelas || k.nama,
-            value: k.id.toString(),
-          }))
-        );
-
-        /* SISWA (AVAILABLE MEMBERS) */
-        const siswaRes = await getAvailableMembers();
-        const siswaData = Array.isArray(siswaRes?.data)
-          ? siswaRes.data
-          : Array.isArray(siswaRes)
-          ? siswaRes
-          : [];
-
-        const formatted = siswaData.map((s) => ({
-          label: `${s.nama} - ${s.kelas}`,
-          value: s.id.toString(),
-        }));
-
-        setListSiswa(formatted);
-
+        // Fetch all siswa
+        const siswaRes = await getSiswa();
+        let siswaData = [];
+        if (siswaRes?.data?.data) {
+          siswaData = siswaRes.data.data;
+        } else if (siswaRes?.data) {
+          siswaData = siswaRes.data;
+        } else if (Array.isArray(siswaRes)) {
+          siswaData = siswaRes;
+        }
+        console.log("📊 Total siswa dari API:", siswaData.length);
+        setAllSiswa(siswaData);
 
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch data:", err);
         toast.error("Gagal memuat data");
       } finally {
-        setIsLoadingIndustri(false);
+        setIsLoadingData(false);
       }
     };
 
-    fetchData();
+    fetchAllData();
   }, []);
 
-  /* ===== FILTER SISWA BERDASARKAN KELAS ===== */
-  // useEffect(() => {
-  //   if (!selectedKelas) {
-  //     setListSiswa([]);
-  //     setSelectedSiswa([]);
-  //     return;
-  //   }
+  /* ================= GET USER'S KELAS DETAIL ================= */
+  useEffect(() => {
+    if (!userKelasId || !allKelas.length) return;
 
-  //   const filtered = allSiswa.filter(
-  //     (s) => s.kelas_id === selectedKelas
-  //   );
+    const userKelas = allKelas.find(k => k.id === userKelasId);
+    
+    if (userKelas) {
+      setUserJurusanId(userKelas.jurusan_id);
+      setUserKelasNama(userKelas.nama || "");
+      
+      const sameJurusanKelas = allKelas.filter(k => k.jurusan_id === userKelas.jurusan_id);
+      const kelasIds = sameJurusanKelas.map(k => k.id);
+      console.log("📚 Kelas dengan jurusan sama:", sameJurusanKelas.map(k => k.nama));
+      setKelasIdsInJurusan(kelasIds);
+    }
+  }, [userKelasId, allKelas]);
 
-  //   setListSiswa(filtered);
-  //   setSelectedSiswa([]);
-  // }, [selectedKelas, allSiswa]);
+  /* ===== FILTER SISWA BASED ON KELAS IDS DAN EXCLUDE USER YANG LOGIN ===== */
+  useEffect(() => {
+    if (!kelasIdsInJurusan.length || !allSiswa.length || !userData) {
+      setFilteredSiswa([]);
+      setAvailableSiswa([]);
+      return;
+    }
+
+    console.log("🔍 Memfilter siswa...");
+    console.log("👤 User ID yang akan di-exclude:", userData.id);
+
+    // Filter siswa berdasarkan kelas_id yang sama jurusan
+    const filtered = allSiswa.filter(siswa => 
+      kelasIdsInJurusan.includes(siswa.kelas_id)
+    );
+    
+    console.log("📊 Siswa dengan jurusan sama (sebelum exclude):", filtered.length);
+    
+    // Exclude user yang sedang login
+    const available = filtered.filter(siswa => siswa.id !== userData.id);
+    
+    console.log("📊 Siswa yang tersedia (setelah exclude):", available.length);
+    console.log("❌ User yang di-exclude:", filtered.find(s => s.id === userData.id)?.nama_lengkap || "Tidak ditemukan");
+
+    const kelasMap = {};
+    allKelas.forEach(k => {
+      kelasMap[k.id] = k.nama;
+    });
+
+    const formatted = available.map((s) => ({
+      label: `${s.nama_lengkap || s.nama} - ${kelasMap[s.kelas_id] || `Kelas ID: ${s.kelas_id}`}`,
+      value: s.id.toString(),
+      kelas_id: s.kelas_id,
+      kelas_nama: kelasMap[s.kelas_id] || `Kelas ID: ${s.kelas_id}`
+    }));
+
+    setFilteredSiswa(filtered);
+    setAvailableSiswa(formatted);
+    setSelectedSiswa([]);
+    
+  }, [kelasIdsInJurusan, allSiswa, allKelas, userData]);
 
   /* ================= HANDLER ================= */
-  const handleTambahSiswa = () =>
+  const handleTambahSiswa = () => {
+    const newIndex = selectedSiswa.length;
     setSelectedSiswa([...selectedSiswa, ""]);
+    setIsChanged(true);
+  };
 
   const handleHapusSiswa = (idx) => {
     const copy = [...selectedSiswa];
     copy.splice(idx, 1);
     setSelectedSiswa(copy);
+    
+    // Hapus juga state dropdown untuk siswa yang dihapus
+    const newDropdownState = {...studentDropdownState};
+    const newSearchState = {...studentSearchQueries};
+    delete newDropdownState[idx];
+    delete newSearchState[idx];
+    setStudentDropdownState(newDropdownState);
+    setStudentSearchQueries(newSearchState);
+    
+    setIsChanged(true);
   };
 
-  const handleSiswaChange = (idx, value) => {
+  const handleSiswaChange = (idx, value, label) => {
     const copy = [...selectedSiswa];
     copy[idx] = value;
     setSelectedSiswa(copy);
+    
+    // Update selected labels
+    setSelectedLabels((prev) => ({
+      ...prev,
+      [`siswa_${idx}`]: label
+    }));
+    
+    // Tutup dropdown setelah memilih
+    setStudentDropdownState((prev) => ({
+      ...prev,
+      [idx]: false
+    }));
+    
+    setIsChanged(true);
+  };
+
+  const toggleStudentDropdown = (idx) => {
+    setStudentDropdownState((prev) => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }));
+  };
+
+  const handleStudentSearchChange = (idx, value) => {
+    setStudentSearchQueries((prev) => ({
+      ...prev,
+      [idx]: value
+    }));
+  };
+
+  const handleKategoriChange = (kategori) => {
+    setKategoriPeserta(kategori);
+    setIsChanged(true);
+  };
+
+  const handleIndustriChange = (value, label) => {
+    setSelectedIndustri(value);
+    setSelectedLabels((prev) => ({
+      ...prev,
+      industri: label
+    }));
+    setIsChanged(true);
+  };
+
+  const handleCatatanChange = (e) => {
+    setCatatan(e.target.value);
+    setIsChanged(true);
+  };
+
+  const toggleDropdown = (name) => {
+    setDropdownState((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
+  };
+
+  const handleSearchChange = (name, value) => {
+    setSearchQueries((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async () => {
@@ -131,24 +293,21 @@ export default function PengajuanPKL() {
       return;
     }
 
-    if (kategoriPeserta === "kelompok" && !selectedKelas) {
-      toast.error("Pilih kelas terlebih dahulu");
+    if (kategoriPeserta === "kelompok" && selectedSiswa.filter(Boolean).length === 0) {
+      toast.error("Pilih minimal satu siswa");
       return;
     }
 
     const payload = {
       kategori_peserta: kategoriPeserta,
       industri_id: parseInt(selectedIndustri),
-      kelas_id:
-        kategoriPeserta === "kelompok"
-          ? parseInt(selectedKelas)
-          : null,
-      siswa_ids:
-        kategoriPeserta === "kelompok"
-          ? selectedSiswa.filter(Boolean).map(Number)
-          : [],
-      catatan,
+      siswa_ids: kategoriPeserta === "kelompok" 
+        ? selectedSiswa.filter(Boolean).map(Number)
+        : [],
+      catatan: catatan || "",
     };
+
+    console.log("📤 Submitting payload:", payload);
 
     try {
       setIsLoading(true);
@@ -156,162 +315,391 @@ export default function PengajuanPKL() {
       toast.success("Pengajuan PKL berhasil");
       navigate(-1);
     } catch (err) {
-      toast.error("Gagal mengirim pengajuan");
+      console.error("Submit error:", err);
+      toast.error(err?.message || "Gagal mengirim pengajuan");
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="flex h-screen w-screen justify-center items-center bg-[#F4EFE6]">
-      <div className="flex flex-col w-full md:w-[1300px] bg-white rounded-2xl shadow overflow-hidden">
+  const handleCancelClick = () => {
+    let title = "Apakah Anda yakin untuk kembali?";
+    let subtitle = "Data yang sudah diisi akan terhapus.";
 
-        {/* HEADER */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b">
+    if (!isChanged) {
+      title = "Kembali tanpa menambah data?";
+      subtitle = "Anda belum mengisi data apapun.";
+    } else if (isChanged) {
+      title = "Apakah Anda yakin ingin membatalkan penambahan data?";
+      subtitle = "Data yang telah diisi akan hilang.";
+    }
+
+    setModalText({ title, subtitle });
+    setIsModalOpen(true);
+  };
+
+  const handleResetClick = () => {
+    setKategoriPeserta("individu");
+    setSelectedIndustri("");
+    setSelectedSiswa([]);
+    setCatatan("");
+    setSelectedLabels({});
+    setStudentDropdownState({});
+    setStudentSearchQueries({});
+    setIsChanged(false);
+  };
+
+  // Date Input component
+  const DateInput = React.forwardRef(
+    ({ value, onClick, onChange, placeholder, clearValue }, ref) => {
+      const handleInputChange = (e) => {
+        let input = e.target.value.replace(/\D/g, "");
+        if (input.length > 8) input = input.slice(0, 8);
+
+        let formatted = input;
+        if (input.length > 4) {
+          formatted = input.slice(0, 2) + "/" + input.slice(2, 4) + "/" + input.slice(4);
+        } else if (input.length > 2) {
+          formatted = input.slice(0, 2) + "/" + input.slice(2);
+        }
+        
+        e.target.value = formatted;
+        onChange(e);
+      };
+
+      return (
+        <div className="relative w-full">
+          <input
+            ref={ref}
+            value={value}
+            onChange={handleInputChange}
+            placeholder={placeholder || "dd/MM/yyyy"}
+            pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/[0-9]{4}$"
+            className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
+          />
+          {value ? (
+            <X
+              onClick={(e) => {
+                e.preventDefault();
+                clearValue();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 cursor-pointer"
+            />
+          ) : (
+            <Calendar
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500 cursor-pointer"
+              onClick={onClick}
+            />
+          )}
+        </div>
+      );
+    }
+  );
+
+  // Modal text
+  const [modalText, setModalText] = useState({
+    title: "Apakah Anda yakin untuk kembali?",
+    subtitle: "Data yang sudah diisi akan terhapus."
+  });
+
+  return (
+    <div className="flex h-screen w-screen justify-center items-center bg-[#F4EFE6] p-4">
+      <div className="flex flex-col w-full max-w-6xl h-[90vh] bg-white rounded-2xl shadow-lg overflow-hidden">
+        
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-full bg-[#EC933A] text-white cursor-pointer"
+            onClick={handleCancelClick}
+            className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
           >
             <ArrowLeft size={20} />
           </div>
-          <h2 className="text-2xl font-bold">Pengajuan PKL</h2>
+          <h1 className="text-2xl font-bold">Pengajuan PKL</h1>
         </div>
 
+        {/* Body */}
         <div className="flex flex-1 overflow-hidden">
-
-          {/* SIDEBAR */}
-          <div className="hidden md:flex w-1/2 justify-center items-center border-r">
-            <img src={addSidebar} className="max-w-xs" />
-          </div>
-
-          {/* FORM */}
-          <div className="w-full md:w-1/2 p-8 overflow-auto space-y-8">
-
-            {/* KATEGORI */}
-            <div>
-              <h2 className="font-semibold mb-3">Kategori Peserta</h2>
-              <div className="flex gap-6">
-                {["individu", "kelompok"].map((k) => (
-                  <label key={k} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={kategoriPeserta === k}
-                      onChange={() => setKategoriPeserta(k)}
-                    />
-                    {k}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* INDUSTRI + KELAS */}
-            {/* INDUSTRI + KELAS */}
-            <div>
-              <h2 className="font-semibold mb-3">Industri& Kelas</h2>
-
-              <div
-                className={`grid gap-4 ${
-                  kategoriPeserta === "kelompok"
-                    ? "grid-cols-1 md:grid-cols-2"
-                    : "grid-cols-1"
-                }`}
-              >
-                {/* INDUSTRI */}
-                <select
-                  value={selectedIndustri}
-                  onChange={(e) => setSelectedIndustri(e.target.value)}
-                  className="w-full p-4 border border-[#C9CFCF] rounded-lg bg-white
-                    focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                >
-                  <option value="">Pilih industri</option>
-                  {listIndustri.map((i) => (
-                    <option key={i.value} value={i.value}>
-                      {i.label}
-                    </option>
-                  ))}
-                </select>
-
-                {/* KELAS — HANYA KELOMPOK */}
-                {/* {kategoriPeserta === "kelompok" && (
-                  <select
-                    value={selectedKelas}
-                    onChange={(e) => setSelectedKelas(e.target.value)}
-                    className="w-full p-4 border border-[#C9CFCF] rounded-lg bg-white
-                      focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
-                  >
-                    <option value="">Pilih kelas</option>
-                    {listKelas.map((k) => (
-                      <option key={k.value} value={k.value}>
-                        {k.label}
-                      </option>
-                    ))}
-                  </select>
-                )} */}
-              </div>
-            </div>
-
-
-            {/* SISWA */}
-            {kategoriPeserta === "kelompok" && (
-              <div>
-                <h2 className="font-semibold mb-3">Siswa</h2>
-
-                {selectedSiswa.map((val, idx) => (
-                  <div key={idx} className="flex gap-2 mb-2">
-                    <select
-                      value={val}
-                      onChange={(e) => handleSiswaChange(idx, e.target.value)}
-                      className="flex-1 p-4 border rounded-lg"
-                    >
-                      <option value="">Pilih siswa</option>
-                      {listSiswa.map((s) => (
-                        <option key={s.value} value={s.value}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button className="!text-red-600 !bg-transparent" onClick={() => handleHapusSiswa(idx)}>
-                      <X />
-                    </button>
-                  </div>
-                ))}
-
-                <button
-                  onClick={handleTambahSiswa}
-                  className="flex items-center gap-2 !bg-transparent !text-[#641E20]"
-                >
-                  <Plus /> Tambah siswa
-                </button>
-              </div>
-            )}
-
-            {/* CATATAN */}
-            <textarea
-              value={catatan}
-              onChange={(e) => setCatatan(e.target.value)}
-              className="w-full p-4 border rounded-lg"
-              placeholder="Catatan (opsional)"
+          
+          {/* Left Sidebar */}
+          <div className="hidden md:flex w-1/2 items-center justify-center border-r p-4">
+            <img
+              src={addSidebar}
+              alt="addSidebar"
+              className="max-w-xs w-full h-auto object-contain"
             />
           </div>
+
+          {/* Right Form */}
+          <div className="flex w-full md:w-1/2 overflow-hidden">
+            <div className="w-full p-8 overflow-y-auto space-y-6">
+              
+              {/* Kategori Peserta */}
+              <div>
+                <label className="block mb-1 text-sm font-bold text-gray-700">
+                  Kategori Peserta
+                </label>
+                <div className="flex gap-6">
+                  {["individu", "kelompok"].map((k) => (
+                    <label key={k} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="kategori"
+                        checked={kategoriPeserta === k}
+                        onChange={() => handleKategoriChange(k)}
+                        className="w-4 h-4 accent-[#641E20]"
+                      />
+                      <span className="capitalize">{k}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Industri - Dropdown with search */}
+              <div className="relative">
+                <label className="block mb-1 text-sm font-bold text-gray-700">
+                  Industri
+                </label>
+                <div className="relative w-full">
+                  {/* Trigger */}
+                  <div
+                    onClick={() => toggleDropdown("industri")}
+                    className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+                  >
+                    {selectedLabels.industri || "Pilih Industri"}
+                    <img
+                      src={arrow}
+                      alt="arrow"
+                      className={`w-4 h-4 ml-2 transition-transform duration-200 ${
+                        dropdownState.industri ? "rotate-180" : "rotate-0"
+                      }`}
+                    />
+                  </div>
+
+                  {dropdownState.industri && (
+                    <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-20">
+                      {/* Input Search */}
+                      <input
+                        type="text"
+                        placeholder="Cari Industri..."
+                        className="w-full px-3 py-2 border-b text-sm focus:outline-none"
+                        value={searchQueries.industri || ""}
+                        onChange={(e) => handleSearchChange("industri", e.target.value)}
+                      />
+
+                      <ul className="max-h-48 overflow-y-auto">
+                        {listIndustri
+                          .filter((opt) =>
+                            opt.label
+                              .toLowerCase()
+                              .includes((searchQueries.industri || "").toLowerCase())
+                          )
+                          .map((opt) => (
+                            <li
+                              key={opt.value}
+                              onClick={() => {
+                                handleIndustriChange(opt.value, opt.label);
+                                setDropdownState((prev) => ({
+                                  ...prev,
+                                  industri: false,
+                                }));
+                                handleSearchChange("industri", "");
+                              }}
+                              className="px-4 py-2 cursor-pointer hover:bg-orange-50"
+                            >
+                              {opt.label}
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info Kelas User */}
+              {userKelasNama && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">Kelas Anda:</span> {userKelasNama}
+                  </p>
+                  {userJurusanId && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {kelasIdsInJurusan.length} kelas dengan jurusan sama | {availableSiswa.length} siswa tersedia (tidak termasuk Anda)
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Siswa - Only for kelompok mode */}
+              {kategoriPeserta === "kelompok" && (
+                <div>
+                  <label className="block mb-1 text-sm font-bold text-gray-700">
+                    Pilih Siswa
+                    {availableSiswa.length > 0 && (
+                      <span className="text-sm font-normal text-gray-500 ml-2">
+                        ({availableSiswa.length} siswa tersedia)
+                      </span>
+                    )}
+                  </label>
+
+                  {selectedSiswa.map((val, idx) => (
+                    <div key={idx} className="relative mb-2">
+                      <div className="flex gap-2">
+                        {/* Student Dropdown Trigger */}
+                        <div className="flex-1">
+                          <div
+                            onClick={() => toggleStudentDropdown(idx)}
+                            className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+                          >
+                            {selectedLabels[`siswa_${idx}`] || "Pilih Siswa"}
+                            <img
+                              src={arrow}
+                              alt="arrow"
+                              className={`w-4 h-4 ml-2 transition-transform duration-200 ${
+                                studentDropdownState[idx] ? "rotate-180" : "rotate-0"
+                              }`}
+                            />
+                          </div>
+
+                          {studentDropdownState[idx] && (
+                            <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-20">
+                              {/* Input Search */}
+                              <input
+                                type="text"
+                                placeholder="Cari Siswa..."
+                                className="w-full px-3 py-2 border-b text-sm focus:outline-none"
+                                value={studentSearchQueries[idx] || ""}
+                                onChange={(e) => handleStudentSearchChange(idx, e.target.value)}
+                              />
+
+                              <ul className="max-h-48 overflow-y-auto">
+                                {availableSiswa
+                                  .filter((opt) =>
+                                    opt.label
+                                      .toLowerCase()
+                                      .includes((studentSearchQueries[idx] || "").toLowerCase())
+                                  )
+                                  .map((opt) => (
+                                    <li
+                                      key={opt.value}
+                                      onClick={() => {
+                                        handleSiswaChange(idx, opt.value, opt.label);
+                                      }}
+                                      className="px-4 py-2 cursor-pointer hover:bg-orange-50"
+                                    >
+                                      {opt.label}
+                                    </li>
+                                  ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+
+                        <button 
+                          onClick={() => handleHapusSiswa(idx)}
+                          className="p-4 text-red-600 hover:text-red-800 transition-colors flex-shrink-0 border border-[#C9CFCF] rounded-lg"
+                          type="button"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={handleTambahSiswa}
+                    className="flex items-center gap-2 text-[#641E20] hover:text-[#831e20] transition-colors mt-2"
+                    type="button"
+                    disabled={isLoadingData || availableSiswa.length === 0}
+                  >
+                    <Plus size={20} /> Tambah siswa
+                  </button>
+
+                  {!isLoadingData && availableSiswa.length === 0 && (
+                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        Tidak ada siswa lain yang tersedia untuk jurusan Anda.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Catatan */}
+              <div>
+                <label className="block mb-1 text-sm font-bold text-gray-700">
+                  Catatan (Opsional)
+                </label>
+                <textarea
+                  value={catatan}
+                  onChange={handleCatatanChange}
+                  className="w-full p-4 border border-[#C9CFCF] rounded-lg bg-white
+                    focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none"
+                  placeholder="Tambahkan catatan jika diperlukan..."
+                  rows="4"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* FOOTER */}
-        <div className="border-t p-6 flex justify-end gap-4">
+        {/* Footer */}
+        <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
           <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-3 !bg-gray-600 text-white rounded-lg"
+            type="button"
+            onClick={handleResetClick}
+            className="px-6 py-3 rounded-lg"
+            style={{
+              backgroundColor: "#3A3D3D",
+              color: "white",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = "#5d6464ff"}
+            onMouseLeave={(e) => e.target.style.backgroundColor = "#3A3D3D"}
           >
-            Batal
+            Reset
           </button>
+
           <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="px-6 py-3 !bg-[#EC933A] text-white rounded-lg"
+            type="button"
+            onClick={() => setIsSaveModalOpen(true)}
+            disabled={isLoading || isLoadingData}
+            className="px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: "#EC933A",
+              color: "white",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = "#f4d0adff"}
+            onMouseLeave={(e) => e.target.style.backgroundColor = "#EC933A"}
           >
             {isLoading ? "Mengirim..." : "Simpan"}
           </button>
         </div>
+
+        {/* Modals */}
+        <DeleteConfirmationModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onDelete={() => {
+            setIsModalOpen(false);
+            navigate(-1);
+          }}
+          imageSrc={cancelImg}
+          title={modalText.title}
+          subtitle={modalText.subtitle}
+        />
+
+        <SaveConfirmationModal
+          isOpen={isSaveModalOpen}
+          onClose={() => setIsSaveModalOpen(false)}
+          onConfirm={() => {
+            setIsSaveModalOpen(false);
+            handleSubmit();
+          }}
+          imageSrc={confirmSave}
+          title="Apakah Anda yakin ingin menyimpan data ini?"
+          subtitle="Pastikan semua data sudah benar sebelum disimpan."
+        />
       </div>
     </div>
   );

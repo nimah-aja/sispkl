@@ -308,7 +308,7 @@ const RiwayatPindahPKL = () => {
               Riwayat Pindah PKL
             </h2>
 
-            <div className="relative" ref={exportRef}>
+            {/* <div className="relative" ref={exportRef}>
               <button
                 onClick={() => setOpenExport(!openExport)}
                 className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full -ml-300"
@@ -332,7 +332,7 @@ const RiwayatPindahPKL = () => {
                   </button>
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
 
           <SearchBar

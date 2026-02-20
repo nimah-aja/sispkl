@@ -80,7 +80,7 @@ const RiwayatPengajuan = () => {
         // APPROVED / REJECTED
         if (item.decided_at) {
           const namaGuru =
-            guruMap[item.processed_by] || "Kaprog";
+            guruMap[item.processed_by] || "Kepala Program Keahlian";
 
           riwayatList.push({
             id: `decide-${item.id}`,
@@ -214,6 +214,11 @@ const RiwayatPengajuan = () => {
     return null;
   };
 
+  const statusPKL ={
+    approved : "Disetujui",
+    rejected : "Ditolak",
+    pending : "Diproses"
+  }
   return (
     <div className="bg-white min-h-screen w-full">
       <Header query={query} setQuery={setQuery} user={user}  notifications={notifications}/>
@@ -320,13 +325,14 @@ const RiwayatPengajuan = () => {
               }}
               initialData={{
                 nama_industri: safeValue(detailData.namaIndustri),
-                status: safeValue(detailData.status),
+                status: safeValue(statusPKL[detailData.status?.toLowerCase()]),
                 tanggal_permohonan: safeValue(dayjs(
                   detailData.tanggal_permohonan || detailData.decided_at
                 ).format("DD MMMM YYYY HH:mm")),
                 tanggal_mulai: safeValue(detailData.tanggal_mulai),
                 tanggal_selesai: safeValue(detailData.tanggal_selesai),
                 pembimbing: safeValue(detailData.namaGuru),
+                dokumen_urls : safeValue(detailData.dokumen_urls || [])
               }}
               fields={[
                 { name: "nama_industri", label: "Industri", full: true },
@@ -335,6 +341,7 @@ const RiwayatPengajuan = () => {
                 { name: "tanggal_mulai", label: "Tanggal Mulai PKL" },
                 { name: "tanggal_selesai", label: "Tanggal Selesai PKL" },
                 { name: "pembimbing", label: "Pembimbing " },
+                { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
               ]}
             />,
             document.body

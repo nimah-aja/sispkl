@@ -110,7 +110,7 @@ export default function ProfileRolePopup({
       <div className="border border-gray-300 bg-white w-[340px] rounded-xl shadow-lg mt-5 ml-280 overflow-hidden"  onClick={(e) => e.stopPropagation()}>
         
         {/* HEADER */}
-        <p className="ml-5 mt-3 text-md font-medium text-gray-400">Ganti Role</p>
+        <p className="ml-5 mt-3 text-md font-medium text-gray-400">Ganti Peran</p>
 
         {/* ROLE LIST */}
         <div className=" px-2 py-2">

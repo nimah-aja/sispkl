@@ -16,6 +16,7 @@ import { getPengajuanMe } from "../utils/services/siswa/pengajuan_pkl";
 import {getIndustri} from "../utils/services/admin/get_industri";
 import {getGuru} from "../utils/services/admin/get_guru";
 import { getActiveKegiatanPKL } from "../utils/services/siswa/kegiatan";
+import { getActivePKL } from "../utils/services/siswa/active"; // Import the new utility
 import { createPortal } from "react-dom";
 import Detail from "./components/Detail";
 import IzinCard from "./components/DetailIzin";
@@ -48,6 +49,7 @@ export default function DashboardSiswa() {
   const [guruMap, setGuruMap] = useState({});
   const [aktivitas, setAktivitas] = useState([]);
   const [activePKLData, setActivePKLData] = useState(null);
+  const [activePKLDetails, setActivePKLDetails] = useState(null); // New state for JadwalPKLCard
   const [user] = useState(
     JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "Siswa" }
   );
@@ -93,6 +95,21 @@ useEffect(() => {
   };
 
   fetchGuru();
+}, []);
+
+// Fetch active PKL details for JadwalPKLCard
+useEffect(() => {
+  const fetchActivePKLDetails = async () => {
+    try {
+      const response = await axios.get("/api/pkl/active/me");
+      setActivePKLDetails(response.data);
+    } catch (err) {
+      console.error("Gagal mengambil detail PKL aktif", err);
+      setActivePKLDetails(null);
+    }
+  };
+
+  fetchActivePKLDetails();
 }, []);
 
 useEffect(() => {
@@ -327,6 +344,11 @@ useEffect(() => {
     return value;
   };
 
+  const StatusMap = {
+    Approved : "Disetuju",
+    Rejected : "Ditolak",
+    Pending : "Diproses"
+  }
 
   return (
     <div className="flex h-screen bg-white">
@@ -349,9 +371,9 @@ useEffect(() => {
             <StatusPengajuanPKL dataPKL={activePKLData} />
           </div>
 
-          {/* KANAN */}
+          {/* KANAN - Now using activePKLDetails */}
           <div>
-            <JadwalPKLCard dataPKL={activePKLData} />
+            <JadwalPKLCard dataPKL={activePKLDetails} />
           </div>
 
         </div>
@@ -418,7 +440,7 @@ useEffect(() => {
               }}
               initialData={{
                 nama_industri: safeValue(detailData.namaIndustri),
-                status: safeValue(detailData.status),
+                status: safeValue(StatusMap[detailData.status]),
                 tanggal_permohonan: safeValue(dayjs(
                   detailData.tanggal_permohonan
                 ).format("DD MMMM YYYY HH:mm")),
@@ -433,6 +455,7 @@ useEffect(() => {
                 tanggal_diproses: safeValue(dayjs(
                   detailData.decided_at
                 ).format("DD MMMM YYYY HH:mm")),
+                dokumen_urls : safeValue(detailData.dokumen_urls || [])
               }}
               fields={[
                 { name: "nama_industri", label: "Industri", full: true },
@@ -443,6 +466,7 @@ useEffect(() => {
                 { name: "tanggal_selesai", label: "Tanggal Selesai PKL" },
                 { name: "pembimbing", label: "Pembimbing" },
                 { name: "diproses_oleh", label: "Diproses Oleh" },
+                { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
               ]}
             />,
             document.body

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Users, User, Search } from "lucide-react";
-import logoSmk from "../../assets/LOGOPROV.png";
+import { generateAndDownloadLembarPersetujuan } from "../../utils/lettersApi";
 
 export default function EditPengajuan({
   selectedSurat,
@@ -14,12 +14,90 @@ export default function EditPengajuan({
   const [editMode, setEditMode] = useState("individu");
   const [editableSurat, setEditableSurat] = useState(null);
   const [selectedSiswaForGroup, setSelectedSiswaForGroup] = useState([]);
-  const [tempatTanggalSurat1, setTempatTanggalSurat1] = useState("");
-  const [tempatTanggalSurat2, setTempatTanggalSurat2] = useState("");
+  
+  // State untuk logo
+  const [logo] = useState({
+    preview: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpw9WUZEt_KLkOKZNKN_3Qq_Ygpp6EB5Rv0Q&s"
+  });
+  
+  // State untuk tempat dan tanggal (date) Surat 1
+  const [tempatSurat1, setTempatSurat1] = useState("");
+  const [tanggalSurat1, setTanggalSurat1] = useState("");
+  
+  // State untuk tempat dan tanggal (date) Surat 2
+  const [tempatSurat2, setTempatSurat2] = useState("");
+  const [tanggalSurat2, setTanggalSurat2] = useState("");
+  
+  // State untuk jabatan kepala sekolah
+  const [jabatanKepsek, setJabatanKepsek] = useState("Pembina Utama Muda (IV/c)");
+  
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false); // State untuk loading
 
   // Default active tab ke "surat1"
   const [activeTab, setActiveTab] = useState("surat1");
+
+  // Fungsi untuk mengkonversi tanggal dari input date ke format teks Indonesia
+  const formatDateToIndonesian = (dateString) => {
+    if (!dateString) return "";
+    
+    try {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const monthNames = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    } catch (err) {
+      return dateString;
+    }
+  };
+
+  // Fungsi untuk memformat nama dengan benar (hanya huruf pertama setiap kata yang kapital)
+  const formatNama = (str) => {
+    if (!str) return "";
+    
+    // Pisahkan berdasarkan spasi
+    const words = str.split(' ');
+    
+    // Format setiap kata: huruf pertama kapital, sisanya kecil
+    const formattedWords = words.map(word => {
+      if (word.length === 0) return word;
+      
+      // Handle kata dengan apostrof (seperti Ni'mah) - hanya huruf pertama kata yang kapital
+      if (word.includes("'")) {
+        // Ambil huruf pertama sebelum apostrof, kapitalkan
+        const beforeApostrophe = word.substring(0, word.indexOf("'"));
+        const afterApostrophe = word.substring(word.indexOf("'") + 1);
+        
+        // Format bagian sebelum apostrof: huruf pertama kapital, sisanya kecil
+        const formattedBefore = beforeApostrophe.charAt(0).toUpperCase() + 
+                                beforeApostrophe.slice(1).toLowerCase();
+        
+        // Bagian setelah apostrof tetap seperti aslinya (kecil semua)
+        const formattedAfter = afterApostrophe.toLowerCase();
+        
+        return `${formattedBefore}'${formattedAfter}`;
+      }
+      
+      // Handle kata dengan tanda hubung - kapital di awal kata saja
+      if (word.includes("-")) {
+        const parts = word.split("-");
+        const formattedParts = parts.map(part => 
+          part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        );
+        return formattedParts.join("-");
+      }
+      
+      // Normal: huruf pertama kapital, sisanya kecil
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    });
+    
+    return formattedWords.join(' ');
+  };
 
   // Inisialisasi data
   useEffect(() => {
@@ -32,7 +110,7 @@ export default function EditPengajuan({
           "JTV MALANG",
         periode:
           selectedSurat.tanggal_mulai && selectedSurat.tanggal_selesai
-            ? `${formatTanggal(selectedSurat.tanggal_mulai)} - ${formatTanggal(selectedSurat.tanggal_selesai)}`
+            ? `${formatDateToIndonesian(selectedSurat.tanggal_mulai)} - ${formatDateToIndonesian(selectedSurat.tanggal_selesai)}`
             : "",
         nama_kaprog: guruDetail?.nama || "",
         nip_kaprog: guruDetail?.nip || "",
@@ -47,14 +125,25 @@ export default function EditPengajuan({
 
       setEditableSurat(initialData);
 
-      // Set default tempat tanggal untuk masing-masing surat
-      setTempatTanggalSurat1(`Singosari, .................................... 2025`);
-      setTempatTanggalSurat2(`Malang, .................................... 2026`);
+      // Set default tempat kosong (nanti otomatis jadi titik-titik)
+      setTempatSurat1("");
+      setTempatSurat2("");
+      
+      // Kosongkan tanggal (nanti otomatis jadi titik-titik)
+      setTanggalSurat1("");
+      setTanggalSurat2("");
 
-      // Saat pertama kali buka, otomatis pilih siswa yang sedang diedit
-      setSelectedSiswaForGroup([selectedSurat]);
+      // Set default jabatan - PASTIKAN INI MENGGUNAKAN NILAI YANG ADA
+      if (selectedSurat.jabatan_kepsek) {
+        setJabatanKepsek(selectedSurat.jabatan_kepsek);
+      } else {
+        setJabatanKepsek("Pembina Utama Muda (IV/c)");
+      }
+
+      // Saat pertama kali buka, otomatis pilih SEMUA siswa untuk mode kelompok
+      setSelectedSiswaForGroup(allSiswa);
     }
-  }, [selectedSurat, guruDetail]);
+  }, [selectedSurat, guruDetail, allSiswa]);
 
   // Filter siswa berdasarkan search query
   const filteredSiswa = allSiswa.filter((siswa) => {
@@ -84,6 +173,21 @@ export default function EditPengajuan({
     }
   };
 
+  // Fungsi untuk mendapatkan format tempat dan tanggal dengan titik-titik jika kosong
+  const getFormattedTempatTanggal = (tempat, tanggal) => {
+    // Format tempat: jika kosong, pakai titik-titik
+    const formattedTempat = tempat && tempat.trim() !== "" ? tempat : "............";
+    
+    // Format tanggal: jika kosong, pakai titik-titik
+    if (!tanggal || tanggal.trim() === "") {
+      return `${formattedTempat}, ................................. ${new Date().getFullYear()}`;
+    }
+    
+    // Konversi tanggal dari format YYYY-MM-DD ke format Indonesia
+    const formattedDate = formatDateToIndonesian(tanggal);
+    return `${formattedTempat}, ${formattedDate}`;
+  };
+
   const handleCheckboxChange = (siswa) => {
     setSelectedSiswaForGroup((prev) => {
       const exists = prev.find((s) => s.id === siswa.id);
@@ -107,82 +211,122 @@ export default function EditPengajuan({
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!editableSurat) {
       alert("Data tidak ditemukan!");
       return;
     }
 
-    const currentData = { ...editableSurat };
-    let siswaUntukExport = [];
+    setLoading(true);
 
-    if (editMode === "kelompok") {
-      if (selectedSiswaForGroup.length === 0) {
-        alert("Silakan pilih minimal 1 siswa untuk mode kelompok!");
-        return;
-      }
-      siswaUntukExport = selectedSiswaForGroup.map((siswa) => {
-        if (siswa.id === currentData.id) {
-          return {
-            ...siswa,
-            name: currentData.name || siswa.name,
-            class: currentData.class || siswa.class,
-            nisn: currentData.nisn || siswa.nisn,
-            jurusan: currentData.jurusan || siswa.jurusan,
-            nama_perusahaan: currentData.nama_perusahaan || currentData.industri || siswa.nama_perusahaan,
-          };
+    try {
+      const currentData = { ...editableSurat };
+      let siswaUntukExport = [];
+
+      if (editMode === "kelompok") {
+        if (selectedSiswaForGroup.length === 0) {
+          alert("Silakan pilih minimal 1 siswa untuk mode kelompok!");
+          setLoading(false);
+          return;
         }
-        return {
-           ...siswa,
-           nama_perusahaan: currentData.nama_perusahaan || currentData.industri || siswa.nama_perusahaan
-        };
-      });
-    } else {
-      siswaUntukExport = [{
-          ...currentData,
-          nama_perusahaan: currentData.nama_perusahaan || currentData.industri || "JTV MALANG"
-      }];
-    }
+        siswaUntukExport = selectedSiswaForGroup.map((siswa) => {
+          if (siswa.id === currentData.id) {
+            return {
+              ...siswa,
+              name: currentData.name || siswa.name,
+              class: currentData.class || siswa.class,
+              nisn: currentData.nisn || siswa.nisn,
+              jurusan: currentData.jurusan || siswa.jurusan,
+              nama_perusahaan: currentData.nama_perusahaan || currentData.industri || siswa.nama_perusahaan,
+            };
+          }
+          return {
+             ...siswa,
+             nama_perusahaan: currentData.nama_perusahaan || currentData.industri || siswa.nama_perusahaan
+          };
+        });
+      } else {
+        if (editMode === "individu" && !editableSurat.id) {
+          alert("Silakan pilih siswa terlebih dahulu!");
+          setLoading(false);
+          return;
+        }
+        siswaUntukExport = [{
+            ...currentData,
+            nama_perusahaan: currentData.nama_perusahaan || currentData.industri || "JTV MALANG"
+        }];
+      }
 
-    const students = siswaUntukExport.map((siswa) => ({
-      nama: (siswa.name || "NAMA SISWA").toUpperCase(),
-      nisn: siswa.nisn || "",
-      kelas: siswa.class || "",
-      jurusan: siswa.jurusan || "",
-    }));
+      // ============ PERBAIKAN UTAMA ============
+      // Format students sesuai API dengan format nama yang benar
+      // SERTAKAN KELAS DAN JURUSAN
+      const students = siswaUntukExport.map((siswa) => ({
+        nama: formatNama(siswa.name || "NAMA SISWA"),
+        kelas: siswa.class || "", // TAMBAHKAN INI
+        jurusan: siswa.jurusan || "" // TAMBAHKAN INI
+      }));
 
-    const payload = {
-      ...currentData, // Sertakan semua data editan (nomor surat, kepsek, nip, dll)
-      nama_perusahaan: currentData.nama_perusahaan || currentData.industri || "JTV MALANG",
-      school_info: {
-        nama_sekolah: "SMK NEGERI 2 SINGOSARI",
-        alamat_jalan: "Jalan Perusahaan No. 20",
-        kab_kota: "Kab. Malang",
-        provinsi: "Jawa Timur",
-        kode_pos: "65153",
-        telepon: "(0341) 458823",
-        logo_url: "https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_SMKN_2_Singosari.png",
-      },
-      students: students,
-      // Gunakan tempat tanggal yang sesuai dengan tab aktif
-      tempat_tanggal: activeTab === "surat1" ? tempatTanggalSurat1 : tempatTanggalSurat2,
-      periode_pkl: currentData.periode || "",
-      jenis_surat: activeTab, // Tentukan jenis surat yang aktif
-      // Data khusus surat 1
-      tanggal_mulai: currentData.tanggal_mulai,
-      tanggal_selesai: currentData.tanggal_selesai,
-      nama_kepala_sekolah: currentData.nama_kepala_sekolah,
-      nip_kepala_sekolah: currentData.nip_kepala_sekolah,
-      nomor_surat: currentData.nomor_surat
-    };
+      // Format tempat tanggal sesuai API
+      const tempatTanggal = getFormattedTempatTanggal(
+        activeTab === "surat1" ? tempatSurat1 : tempatSurat2,
+        activeTab === "surat1" ? tanggalSurat1 : tanggalSurat2
+      );
 
-    console.log("Export dengan tab:", activeTab);
-    console.log("Jenis surat:", payload.jenis_surat);
+      // Buat payload untuk API dengan logo baru
+      const apiPayload = {
+        nama_perusahaan: currentData.nama_perusahaan || currentData.industri || "JTV MALANG",
+        school_info: {
+          nama_sekolah: "SMK NEGERI 2 SINGOSARI",
+          alamat_jalan: "Jalan Perusahaan No. 20",
+          kab_kota: "Kab. Malang",
+          provinsi: "Jawa Timur",
+          kode_pos: "65153",
+          telepon: "(0341) 458823",
+          logo_url: logo.preview
+        },
+        students: students,
+        tempat_tanggal: tempatTanggal
+      };
 
-    if (onExportPDF) {
-      onExportPDF(payload, editMode === "kelompok", siswaUntukExport, activeTab);
-    } else {
-      alert("Fungsi export tidak tersedia!");
+      console.log("Mengirim payload ke API:", apiPayload);
+
+      if (activeTab === "surat1") {
+        // Untuk Surat Permohonan - masih pakai generate manual (belum ada API)
+        if (onExportPDF) {
+          // CEK NILAI JABATAN SEBELUM DIKIRIM
+          console.log("Nilai jabatanKepsek sebelum dikirim:", jabatanKepsek);
+          
+          const payload = {
+            ...currentData,
+            nama_perusahaan: currentData.nama_perusahaan || currentData.industri || "JTV MALANG",
+            students: students, // SEKARANG students SUDAH PUNYA kelas DAN jurusan
+            tempat_tanggal: tempatTanggal,
+            periode_pkl: currentData.periode || "",
+            jenis_surat: activeTab,
+            tanggal_mulai: currentData.tanggal_mulai,
+            tanggal_selesai: currentData.tanggal_selesai,
+            nama_kepala_sekolah: currentData.nama_kepala_sekolah,
+            nip_kepala_sekolah: currentData.nip_kepala_sekolah,
+            nomor_surat: currentData.nomor_surat,
+            jabatan_kepsek: jabatanKepsek // PASTIKAN INI MENGGUNAKAN STATE
+          };
+          
+          console.log("Mengirim payload ke onExportPDF dengan jabatan:", payload.jabatan_kepsek);
+          onExportPDF(payload, editMode === "kelompok", siswaUntukExport, activeTab);
+        } else {
+          alert("Fungsi untuk Surat Permohonan belum tersedia");
+        }
+      } else {
+        // Untuk Lembar Persetujuan - pakai API, TIDAK pakai onExportPDF lagi
+        await generateAndDownloadLembarPersetujuan(apiPayload);
+        // Tidak memanggil onExportPDF di sini
+      }
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert(`Gagal membuat PDF: ${error.message || "Terjadi kesalahan"}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -190,7 +334,7 @@ export default function EditPengajuan({
   const KopSurat = () => (
     <div className="flex items-start justify-between border-b-4 border-black pb-2 mb-1 border-double">
       <div className="flex-shrink-0 -mt-2 -ml-2">
-        <img src={logoSmk} alt="Logo" className="w-24 h-auto object-contain" />
+        <img src={logo.preview} alt="Logo" className="object-contain" style={{ width: "15mm", height: "auto" }} />
       </div>
       <div className="flex-1 text-center -ml-10">
         <p className="font-bold text-sm uppercase">PEMERINTAH PROVINSI JAWA TIMUR</p>
@@ -217,6 +361,10 @@ export default function EditPengajuan({
   const displayStudents = editMode === "kelompok" && selectedSiswaForGroup.length > 0
     ? selectedSiswaForGroup
     : [{ ...editableSurat, id: editableSurat.id || 999 }];
+
+  // Format tempat tanggal untuk preview
+  const previewTempatTanggalSurat1 = getFormattedTempatTanggal(tempatSurat1, tanggalSurat1);
+  const previewTempatTanggalSurat2 = getFormattedTempatTanggal(tempatSurat2, tanggalSurat2);
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -272,9 +420,9 @@ export default function EditPengajuan({
               {/* KOP SURAT */}
               <KopSurat />
 
-              {/* TANGGAL SURAT */}
+              {/* TANGGAL SURAT - menggunakan preview yang sudah diformat */}
               <div className="text-right mt-2 mb-4">
-                <p>{tempatTanggalSurat1}</p>
+                <p>{previewTempatTanggalSurat1}</p>
               </div>
 
               {/* META DATA SURAT */}
@@ -349,8 +497,8 @@ export default function EditPengajuan({
                 Demikian surat permohonan ini kami ajukan. Atas perhatian dan kerjasama yang baik, kami sampaikan terima kasih.
               </p>
 
-              {/* TANDA TANGAN */}
-              <div className="flex justify-end mt-4">
+              {/* TANDA TANGAN - menggunakan jabatan dari state */}
+              <div className="flex justify-end mt-4 -mr-16">
                 <div className="text-left w-64">
                   <p>Kepala SMK Negeri 2 Singosari,</p>
                   <br />
@@ -358,7 +506,7 @@ export default function EditPengajuan({
                   <br />
                   <br />
                   <p className="font-bold underline">{editableSurat.nama_kepala_sekolah}</p>
-                  <p>Pembina Utama Muda (IV/c)</p>
+                  <p>{jabatanKepsek}</p>
                   <p>NIP. {editableSurat.nip_kepala_sekolah}</p>
                 </div>
               </div>
@@ -420,11 +568,11 @@ export default function EditPengajuan({
                 </div>
               </div>
 
-              {/* TANDA TANGAN PIHAK DU/DI */}
+              {/* TANDA TANGAN PIHAK DU/DI - menggunakan preview yang sudah diformat */}
               <div className="mt-8 text-right">
-                <p className="mb-2">{tempatTanggalSurat2}</p>
-                <p className="mb-12">Bapak / Ibu Pimpinan</p>
-                <div className="mr-10">
+                <p className="mb-2 mr-5">{previewTempatTanggalSurat2}</p>
+                <p className="mb-12 mr-15">Bapak / Ibu Pimpinan</p>
+                <div className="ml-10">
                   <p>( ................................................................ )</p>
                 </div>
               </div>
@@ -529,17 +677,37 @@ export default function EditPengajuan({
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tanggal Pembuatan Surat (Singosari, ...)
-                    </label>
-                    <input
-                      type="text"
-                      value={tempatTanggalSurat1}
-                      onChange={(e) => setTempatTanggalSurat1(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Contoh: Singosari, .................................... 2025"
-                    />
+                  {/* Input terpisah untuk Tempat dan Tanggal (type="date") Surat 1 */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tempat
+                      </label>
+                      <input
+                        type="text"
+                        value={tempatSurat1}
+                        onChange={(e) => setTempatSurat1(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Kosongkan untuk titik-titik"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        *Kosongkan untuk otomatis titik-titik
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal
+                      </label>
+                      <input
+                        type="date"
+                        value={tanggalSurat1}
+                        onChange={(e) => setTanggalSurat1(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        *Kosongkan untuk otomatis titik-titik
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -571,6 +739,7 @@ export default function EditPengajuan({
                     </div>
                   </div>
 
+                  {/* INPUT JABATAN KEPALA SEKOLAH */}
                   <h4 className="font-bold text-lg text-[#641E21] border-b pb-2 pt-4">
                     Tanda Tangan Kepala Sekolah
                   </h4>
@@ -587,6 +756,25 @@ export default function EditPengajuan({
                       }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Jabatan Kepala Sekolah
+                    </label>
+                    <input
+                      type="text"
+                      value={jabatanKepsek}
+                      onChange={(e) => {
+                        console.log("Mengubah jabatan menjadi:", e.target.value);
+                        setJabatanKepsek(e.target.value);
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Contoh: Pembina Utama Muda (IV/c)"
+                    />
+                    {/* <p className="text-xs text-gray-500 mt-1">
+                      *Jabatan yang akan ditampilkan di surat
+                    </p> */}
                   </div>
 
                   <div>
@@ -612,41 +800,88 @@ export default function EditPengajuan({
                     Detail Lembar Persetujuan
                   </h4>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tempat dan Tanggal Persetujuan
-                    </label>
-                    <input
-                      type="text"
-                      value={tempatTanggalSurat2}
-                      onChange={(e) => setTempatTanggalSurat2(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Contoh: Malang, .................................... 2026"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      *Tempat dan tanggal yang akan ditandatangani oleh pihak DU/DI
-                    </p>
+                  {/* Input terpisah untuk Tempat dan Tanggal (type="date") Surat 2 */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tempat
+                      </label>
+                      <input
+                        type="text"
+                        value={tempatSurat2}
+                        onChange={(e) => setTempatSurat2(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Kosongkan untuk titik-titik"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        *Kosongkan untuk otomatis titik-titik
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal
+                      </label>
+                      <input
+                        type="date"
+                        value={tanggalSurat2}
+                        onChange={(e) => setTanggalSurat2(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        *Kosongkan untuk otomatis titik-titik
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
 
+              {/* Mode Individu dengan DROPDOWN */}
               {editMode === "individu" && (
                 <div className="pt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nama Siswa *
+                    Pilih Siswa *
                   </label>
-                  <input
-                    type="text"
-                    value={editableSurat.name || ""}
+                  <select
+                    value={editableSurat.id || ""}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      setEditableSurat({
-                        ...editableSurat,
-                        name: value,
-                      });
+                      const selectedId = parseInt(e.target.value);
+                      const selectedSiswa = allSiswa.find(s => s.id === selectedId);
+                      if (selectedSiswa) {
+                        setEditableSurat({
+                          ...editableSurat,
+                          id: selectedSiswa.id,
+                          name: selectedSiswa.name,
+                          class: selectedSiswa.class,
+                          nisn: selectedSiswa.nisn,
+                          jurusan: selectedSiswa.jurusan,
+                          // Pertahankan data lain yang sudah diisi
+                          nama_perusahaan: editableSurat.nama_perusahaan,
+                          nomor_surat: editableSurat.nomor_surat,
+                          nama_kepala_sekolah: editableSurat.nama_kepala_sekolah,
+                          nip_kepala_sekolah: editableSurat.nip_kepala_sekolah,
+                          tanggal_mulai: editableSurat.tanggal_mulai,
+                          tanggal_selesai: editableSurat.tanggal_selesai
+                        });
+                      }
                     }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  >
+                    <option value="">-- Pilih Siswa --</option>
+                    {allSiswa.map((siswa) => (
+                      <option key={siswa.id} value={siswa.id}>
+                        {siswa.name} - {siswa.kelas} ({siswa.jurusan})
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* Preview data siswa yang dipilih (opsional) */}
+                  {editableSurat.id && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm">
+                      <p><span className="font-medium">NISN:</span> {editableSurat.nisn}</p>
+                      <p><span className="font-medium">Kelas:</span> {editableSurat.class}</p>
+                      <p><span className="font-medium">Jurusan:</span> {editableSurat.jurusan}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -732,16 +967,28 @@ export default function EditPengajuan({
 
               <button
                 onClick={handleExport}
-                className="px-6 py-3 !bg-[#EC933A] text-white rounded-lg hover:bg-orange-500 transition font-medium"
+                disabled={loading}
+                className={`px-6 py-3 !bg-[#EC933A] text-white rounded-lg hover:bg-orange-500 transition font-medium flex items-center gap-2 ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                {activeTab === "surat1" 
-                  ? (editMode === "kelompok" 
-                    ? `Cetak Surat 1 (${selectedSiswaForGroup.length} siswa)` 
-                    : "Cetak Surat 1")
-                  : (editMode === "kelompok" 
-                    ? `Cetak Surat 2 (${selectedSiswaForGroup.length} siswa)` 
-                    : "Cetak Surat 2")
-                }
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  activeTab === "surat1" 
+                    ? (editMode === "kelompok" 
+                      ? `Cetak Surat 1 (${selectedSiswaForGroup.length} siswa)` 
+                      : "Cetak Surat 1")
+                    : (editMode === "kelompok" 
+                      ? `Cetak Surat 2 (${selectedSiswaForGroup.length} siswa)` 
+                      : "Cetak Surat 2")
+                )}
               </button>
             </div>
           </div>
@@ -749,4 +996,4 @@ export default function EditPengajuan({
       </div>
     </div>
   );
-}
+} 

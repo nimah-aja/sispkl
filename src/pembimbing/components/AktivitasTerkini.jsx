@@ -122,7 +122,7 @@ export default function AktivitasTerkini({
       {/* FOOTER */}
       {showFooter && items.length > 0 && (
         <div
-          onClick={() => navigate("/siswa/riwayat_pengajuan")}
+          onClick={() => navigate("/guru/pembimbing/kegiatan")}
           className="
             mt-4
             py-3

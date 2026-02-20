@@ -12,23 +12,28 @@ import {
 import { getIzinMe } from "../../utils/services/siswa/izin";
 import { getPindahPKLMe } from "../../utils/services/siswa/perpindahan";
 import { getPengajuanMe } from "../../utils/services/siswa/pengajuan_pkl";
-
-
+import { getActivePKL } from "../../utils/services/siswa/active";
 
 export default function QuickActions({ onAction, isPKLActive }) {
   const navigate = useNavigate();
   const [todayIzin, setTodayIzin] = useState(null);
   const [pengajuanPKLStatus, setPengajuanPKLStatus] = useState(null);
   const [hasPindahPKL, setHasPindahPKL] = useState(false);
+  const [hasActivePKL, setHasActivePKL] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // State untuk bukti diterima
+  const [buktiDiterimaData, setBuktiDiterimaData] = useState({
+    canUpload: false,
+    hasUploaded: false,
+    pklId: null
+  });
 
-  // ===============================
-  // 🔑 CEK PENGAJUAN PINDAH PKL
-  // ===============================
+  // CEK PENGAJUAN PINDAH PKL
   useEffect(() => {
     const fetchPindahPKL = async () => {
       try {
         const res = await getPindahPKLMe();
-        // kalau tidak null berarti sudah pernah / sedang mengajukan
         setHasPindahPKL(!!res);
       } catch (error) {
         console.error("Gagal mengambil data pindah PKL:", error);
@@ -39,15 +44,12 @@ export default function QuickActions({ onAction, isPKLActive }) {
     fetchPindahPKL();
   }, []);
 
-
+  // CEK IZIN HARI INI
   useEffect(() => {
     const fetchIzin = async () => {
       try {
         const res = await getIzinMe();
-
-        // ⚠️ samakan dengan struktur API kamu
         const data = res?.data?.data || res || [];
-
         const today = dayjs().format("YYYY-MM-DD");
 
         const izinHariIni = data.find(
@@ -64,53 +66,151 @@ export default function QuickActions({ onAction, isPKLActive }) {
     fetchIzin();
   }, []);
 
-  // ===============================
-  // 🔑 CEK STATUS PENGAJUAN PKL (FIX)
-  // ===============================
+  // CEK STATUS PENGAJUAN PKL DAN BUKTI DITERIMA
   useEffect(() => {
-    const fetchPengajuanPKL = async () => {
+    const fetchPKLStatus = async () => {
+      setLoading(true);
       try {
-        const res = await getPengajuanMe();
-        const list = res?.data || [];
+        // STEP 1: Ambil data dari active/me
+        let activePKLData = null;
+        let activePKLExists = false;
+        
+        try {
+          const activeRes = await getActivePKL();
+          console.log("Active PKL Response:", activeRes);
+          
+          // Cek berbagai kemungkinan struktur response
+          if (activeRes) {
+            if (activeRes.status === "Approved") {
+              activePKLExists = true;
+              setHasActivePKL(true);
+              activePKLData = activeRes;
+            } else if (activeRes.data && activeRes.data.status === "Approved") {
+              activePKLExists = true;
+              setHasActivePKL(true);
+              activePKLData = activeRes.data;
+            }
+          }
+        } catch (activeError) {
+          console.log("Tidak ada PKL aktif:", activeError.message);
+          setHasActivePKL(false);
+        }
 
-        // cek apakah ada yang pending
-        const hasPending = list.some(
-          (item) => item.status?.toLowerCase() === "pending"
-        );
+        // STEP 2: Ambil data dari pengajuanMe
+        let latestApprovedPKL = null;
+        let hasPending = false;
+        let allApprovedPKLs = [];
+        
+        try {
+          const pengajuanRes = await getPengajuanMe();
+          console.log("Pengajuan Response:", pengajuanRes);
+          
+          // Handle berbagai kemungkinan struktur response
+          let list = [];
+          if (pengajuanRes?.data && Array.isArray(pengajuanRes.data)) {
+            list = pengajuanRes.data;
+          } else if (Array.isArray(pengajuanRes)) {
+            list = pengajuanRes;
+          } else if (pengajuanRes?.data?.data && Array.isArray(pengajuanRes.data.data)) {
+            list = pengajuanRes.data.data;
+          }
 
-        setPengajuanPKLStatus(hasPending ? "pending" : null);
+          // Cek apakah ada yang pending
+          hasPending = list.some(
+            (item) => item.status?.toLowerCase() === "pending"
+          );
+          setPengajuanPKLStatus(hasPending ? "pending" : null);
+
+          // Ambil semua PKL Approved dan sort by tanggal_permohonan terbaru
+          allApprovedPKLs = list
+            .filter(item => item.status === "Approved")
+            .sort((a, b) => dayjs(b.tanggal_permohonan).valueOf() - dayjs(a.tanggal_permohonan).valueOf());
+          
+          if (allApprovedPKLs.length > 0) {
+            latestApprovedPKL = allApprovedPKLs[0];
+          }
+        } catch (pengajuanError) {
+          console.error("Gagal mengambil pengajuan:", pengajuanError);
+        }
+
+        // STEP 3: Logic untuk Bukti Diterima
+        // Cek apakah ID dari activePKL sama dengan ID PKL terbaru
+        let targetPKL = null;
+        let idMatch = false;
+
+        if (activePKLData && latestApprovedPKL) {
+          // Jika ada activePKL dan latestApprovedPKL, cek apakah ID-nya sama
+          idMatch = activePKLData.id === latestApprovedPKL.id;
+          if (idMatch) {
+            targetPKL = activePKLData; // atau latestApprovedPKL (sama)
+          }
+        } else if (activePKLData && !latestApprovedPKL) {
+          // Hanya ada activePKL (seharusnya ini tidak terjadi karena activePKL pasti berasal dari pengajuan)
+          targetPKL = activePKLData;
+        } else if (!activePKLData && latestApprovedPKL) {
+          // Tidak ada PKL aktif, tapi ada PKL Approved terbaru
+          targetPKL = latestApprovedPKL;
+        }
+
+        if (targetPKL) {
+          const hasUploaded = targetPKL.dokumen_urls && targetPKL.dokumen_urls.length > 0;
+          
+          setBuktiDiterimaData({
+            canUpload: true,
+            hasUploaded: hasUploaded,
+            pklId: targetPKL.id,
+            idMatch: idMatch // untuk info tambahan
+          });
+        } else {
+          setBuktiDiterimaData({
+            canUpload: false,
+            hasUploaded: false,
+            pklId: null,
+            idMatch: false
+          });
+        }
+
       } catch (error) {
+        console.error("Error in fetchPKLStatus:", error);
+        setHasActivePKL(false);
         setPengajuanPKLStatus(null);
+        setBuktiDiterimaData({
+          canUpload: false,
+          hasUploaded: false,
+          pklId: null,
+          idMatch: false
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPengajuanPKL();
+    fetchPKLStatus();
   }, []);
 
-
-  // ===============================
-  // 🔑 LOGIC DISABLE IZIN PKL
-  // ===============================
+  // LOGIC DISABLE IZIN PKL
   const hasIzinToday = !!todayIzin;
   const izinStatus = todayIzin?.status?.toLowerCase();
 
-  // Disable jika hari ini ADA izin & status Pending / Approved
   const izinDisabled =
     hasIzinToday && ["pending", "approved", "rejected"].includes(izinStatus);
 
-  // ===============================
-  // 🔑 LOGIC DISABLE PENGAJUAN PKL (DIPERBAIKI)
-  // ===============================
-  // Disable jika:
-  // 1. isPKLActive = true (sudah aktif)
-  // 2. Status pengajuan = 'pending' (menunggu persetujuan)
+  // LOGIC DISABLE PENGAJUAN PKL
   const pengajuanPKLDisabled = 
-    isPKLActive || 
-    pengajuanPKLStatus === 'pending';
+    hasActivePKL || // Prioritas utama: cek PKL aktif
+    pengajuanPKLStatus === 'pending' || // Kedua: cek pengajuan pending
+    isPKLActive; // Ketiga: dari props (fallback)
 
-  // ===============================
+  // LOGIC DISABLE BUKTI DITERIMA
+  // Bisa upload jika:
+  // 1. Ada target PKL (canUpload = true)
+  // 2. Belum upload (hasUploaded = false)
+  // 3. ID cocok (untuk activePKL) ATAU tidak ada activePKL (berarti pakai latestApprovedPKL)
+  const buktiDiterimaDisabled = 
+    !buktiDiterimaData.canUpload || // Tidak ada PKL yang bisa diupload
+    buktiDiterimaData.hasUploaded; // Sudah pernah upload
+
   // ACTION LIST
-  // ===============================
   const actions = [
     {
       label: "Pengajuan PKL",
@@ -118,7 +218,7 @@ export default function QuickActions({ onAction, isPKLActive }) {
       icon: <FilePlus size={28} className="text-blue-600" />,
       bg: "bg-blue-100",
       key: "pengajuan_pkl",
-      disabled: pengajuanPKLDisabled, // Gunakan logika baru
+      disabled: pengajuanPKLDisabled,
     },
     {
       label: "Pengajuan Pindah PKL",
@@ -138,12 +238,35 @@ export default function QuickActions({ onAction, isPKLActive }) {
     },
     {
       label: "Kirim Bukti Diterima",
-      onClick: () => navigate("/siswa/bukti_terima"),
+      onClick: () => navigate("/siswa/bukti_terima", { 
+        state: { 
+          pklId: buktiDiterimaData.pklId,
+          idMatch: buktiDiterimaData.idMatch 
+        } 
+      }),
       icon: <CheckCircle size={28} className="text-orange-600" />,
       bg: "bg-orange-100",
       key: "bukti_diterima",
+      disabled: buktiDiterimaDisabled,
     },
   ];
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-white shadow-sm rounded-xl p-6 border border-[#6e0f0f]">
+        <h2 className="font-semibold text-lg mb-4">Fitur Utama</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="border border-[#6e0f0f] rounded-xl p-4 animate-pulse">
+              <div className="bg-gray-200 p-3 rounded-lg mb-2 h-16 w-16 mx-auto"></div>
+              <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-sm rounded-xl p-6 border border-[#6e0f0f]">
@@ -187,9 +310,11 @@ export default function QuickActions({ onAction, isPKLActive }) {
               {/* INFO LABEL UNTUK PENGAJUAN PKL */}
               {isDisabled && item.key === "pengajuan_pkl" && (
                 <span className="text-xs text-gray-500 mt-1 text-center">
-                  {isPKLActive 
-                    ? "Pengajuan PKL sedang aktif" 
-                    : "Pengajuan PKL sedang diproses"}
+                  {hasActivePKL 
+                    ? "Anda sedang dalam masa PKL aktif" 
+                    : pengajuanPKLStatus === 'pending'
+                    ? "Pengajuan PKL sedang diproses"
+                    : "Tidak dapat mengajukan PKL"}
                 </span>
               )}
 
@@ -200,12 +325,25 @@ export default function QuickActions({ onAction, isPKLActive }) {
                 </span>
               )}
 
+              {/* INFO LABEL UNTUK PINDAH PKL */}
               {isDisabled && item.key === "pindah_pkl" && (
                 <span className="text-xs text-gray-500 mt-1 text-center">
                   Pengajuan pindah PKL sudah diajukan
                 </span>
               )}
 
+              {/* INFO LABEL UNTUK BUKTI DITERIMA */}
+              {isDisabled && item.key === "bukti_diterima" && (
+                <span className="text-xs text-gray-500 mt-1 text-center">
+                  {!buktiDiterimaData.canUpload 
+                    ? "Belum ada PKL yang dapat diupload buktinya"
+                    : buktiDiterimaData.hasUploaded
+                    ? "Bukti diterima sudah diupload"
+                    : !buktiDiterimaData.idMatch && buktiDiterimaData.canUpload
+                    ? "ID PKL tidak cocok"
+                    : "Tidak dapat upload bukti"}
+                </span>
+              )}
             </div>
           );
         })}

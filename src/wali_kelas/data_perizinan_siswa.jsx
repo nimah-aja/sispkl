@@ -1,3 +1,4 @@
+// src/pages/guru/wali_kelas/dataperizinansiswa.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import dayjs from "dayjs";
@@ -26,6 +27,15 @@ import { getIzinWaliKelas } from "../utils/services/wakel/izin";
 import { getSiswa } from "../utils/services/admin/get_siswa";
 import { getKelas } from "../utils/services/admin/get_kelas";
 import { getGuru } from "../utils/services/admin/get_guru";
+
+// ================= UTIL =================
+const normalizeText = (text) =>
+  text
+    ? text
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "-";
 
 export default function DataPerizinanSiswa() {
   const [active, setActive] = useState("perizinan");
@@ -84,7 +94,9 @@ export default function DataPerizinanSiswa() {
           ? dayjs(i.decided_at).format("HH:mm")
           : "-",
 
-        alasan: i.jenis,
+        // 🔥 NORMALIZE JENIS IZIN (FIX DOUBLE)
+        alasan: normalizeText(i.jenis),
+
         keterangan: i.keterangan || "-",
 
         status,
@@ -110,20 +122,34 @@ export default function DataPerizinanSiswa() {
     fetchData();
   }, []);
 
-  // ================= FILTER =================
-  const jenisOptions = [...new Set(data.map((d) => d.alasan))];
-  const kelasOptions = [...new Set(data.map((d) => d.kelas))];
-  const statusOptions = [...new Set(data.map((d) => d.statusLabel))];
+  // ================= FILTER OPTIONS (HILANGKAN YG "-") =================
+  const validData = data.filter(i => i.nama !== "-" && i.kelas !== "-");
+  
+  const jenisOptions = [
+    ...new Set(validData.map((d) => d.alasan).filter(Boolean)),
+  ];
 
-  const filtered = data.filter((i) => {
-    const q = search.toLowerCase();
-    return (
-      (i.nama + i.kelas + i.alasan).toLowerCase().includes(q) &&
-      (filterJenis ? i.alasan === filterJenis : true) &&
-      (filterKelas ? i.kelas === filterKelas : true) &&
-      (filterStatus ? i.statusLabel === filterStatus : true)
-    );
-  });
+  const kelasOptions = [
+    ...new Set(validData.map((d) => d.kelas).filter(Boolean)),
+  ];
+
+  const statusOptions = [
+    ...new Set(validData.map((d) => d.statusLabel).filter(Boolean)),
+  ];
+
+  // ================= FILTER DATA =================
+  // HANYA MENGHILANGKAN DATA YANG TIDAK MEMILIKI NAMA ATAU KELAS
+  const filtered = data
+    .filter(i => i.nama !== "-" && i.kelas !== "-") // <-- FILTER INI SAJA YANG DITAMBAHKAN
+    .filter((i) => {
+      const q = search.toLowerCase();
+      return (
+        (i.nama + i.kelas + i.alasan).toLowerCase().includes(q) &&
+        (filterJenis ? i.alasan === filterJenis : true) &&
+        (filterKelas ? i.kelas === filterKelas : true) &&
+        (filterStatus ? i.statusLabel === filterStatus : true)
+      );
+    });
 
   // ================= EXPORT DATA =================
   const exportData = filtered.map((i, idx) => ({
@@ -160,7 +186,6 @@ export default function DataPerizinanSiswa() {
     doc.save("perizinan_pkl.pdf");
   };
 
-  // ================= UTIL =================
   const getStatusIcon = (s) =>
     s === "approved" ? (
       <CheckCircle className="text-green-600" />
@@ -187,30 +212,32 @@ export default function DataPerizinanSiswa() {
         <main className="flex-1 p-10 bg-[#641E21] rounded-l-3xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-white font-bold text-lg">
-              Perizinan PKL (Wali Kelas)
+              Perizinan PKL
             </h2>
 
-            <div className="relative " ref={exportRef}>
+            <div className="relative" ref={exportRef}>
               <button
                 onClick={() => setOpenExport(!openExport)}
-                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full -ml-290"
+                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full -ml-315"
               >
                 <Download />
               </button>
 
               {openExport && (
-                <div className="absolute  mt-2 bg-white rounded-lg shadow-md p-2 z-50 -ml-290">
+                <div className="absolute mt-2 bg-white rounded-lg shadow-md p-2 z-50 -ml-315">
                   <button
                     onClick={exportExcel}
                     className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100"
                   >
-                    <FileSpreadsheet size={16} className="text-green-600"/> Excel
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Excel
                   </button>
                   <button
                     onClick={exportPDF}
                     className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100"
                   >
-                    <FileText size={16} className="text-red-600"/> PDF
+                    <FileText size={16} className="text-red-600" />
+                    PDF
                   </button>
                 </div>
               )}
@@ -221,15 +248,32 @@ export default function DataPerizinanSiswa() {
             query={search}
             setQuery={setSearch}
             filters={[
-              { label: "Status", value: filterStatus, options: statusOptions, onChange: setFilterStatus },
-              { label: "Jenis", value: filterJenis, options: jenisOptions, onChange: setFilterJenis },
-              { label: "Kelas", value: filterKelas, options: kelasOptions, onChange: setFilterKelas },
+              {
+                label: "Status",
+                value: filterStatus,
+                options: statusOptions,
+                onChange: setFilterStatus,
+              },
+              {
+                label: "Jenis",
+                value: filterJenis,
+                options: jenisOptions,
+                onChange: setFilterJenis,
+              },
+              {
+                label: "Kelas",
+                value: filterKelas,
+                options: kelasOptions,
+                onChange: setFilterKelas,
+              },
             ]}
           />
 
           {Object.entries(groupedByDate).map(([tanggal, items]) => (
             <div key={tanggal}>
-              <h2 className="text-white font-semibold mb-3 mt-6">{tanggal}</h2>
+              <h2 className="text-white font-semibold mb-3 mt-6">
+                {tanggal}
+              </h2>
 
               <div className="space-y-3">
                 {items.map((item) => (
@@ -253,7 +297,9 @@ export default function DataPerizinanSiswa() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm text-gray-500">{item.jam}</span>
+                      <span className="text-sm text-gray-500">
+                        {item.jam}
+                      </span>
                     </div>
                   </div>
                 ))}

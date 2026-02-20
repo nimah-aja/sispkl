@@ -171,6 +171,16 @@ export default function PKLDashboard() {
     }, 300);
   };
 
+  const activeMap = {
+    active : "Aktif"
+  }
+
+  const statusMap = {
+    Approved : "Disetujui",
+    Rejected : "Ditolak",
+    Pending : "Diproses"
+  }
+
   // Fetch data aktivitas (kegiatan aktif dan realisasi)
   useEffect(() => {
     const fetchAktivitas = async () => {
@@ -656,7 +666,7 @@ export default function PKLDashboard() {
                 industri: selectedSiswa?.industri_ssw,
                 tanggal_mulai: dayjs(selectedSiswa?.tanggal_mulai).format("DD-MM-YYYY"),
                 tanggal_selesai: dayjs(selectedSiswa?.tanggal_selesai).format("DD-MM-YYYY"),
-                status: selectedSiswa?.status || "Approved",
+                status: statusMap[selectedSiswa?.status || "-"],
               } :
               detailType === 'industri' ? {
                 nama: selectedIndustri?.nama,
@@ -669,7 +679,7 @@ export default function PKLDashboard() {
                 deskripsi: selectedAktivitas?.data?.deskripsi || "-",
                 tanggal_mulai: dayjs(selectedAktivitas?.data?.tanggal_mulai).format("DD-MM-YYYY"),
                 tanggal_selesai: dayjs(selectedAktivitas?.data?.tanggal_selesai).format("DD-MM-YYYY"),
-                status: selectedAktivitas?.data?.status,
+                status: activeMap[selectedAktivitas?.data?.status],
                 created_by: selectedAktivitas?.data?.created_by,
                 created_at: dayjs(selectedAktivitas?.data?.created_at).format("DD-MM-YYYY HH:mm"),
               } :
@@ -687,7 +697,7 @@ export default function PKLDashboard() {
             }
             fields={
               detailType === 'siswa' ? [
-                { name: "username", label: "Username", type: "text" },
+                { name: "username", label: "Nama Pengguna", type: "text" },
                 { name: "nama", label: "Nama Siswa", type: "text" },
                 { name: "industri", label: "Industri PKL", type: "text" },
                 // { name: "tanggal_mulai", label: "Tanggal Mulai", type: "date" },
