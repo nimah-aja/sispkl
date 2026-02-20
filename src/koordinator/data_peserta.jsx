@@ -139,12 +139,12 @@ useEffect(() => {
       options: [...new Set(peserta.map((p) => p.industri))],
       onChange: setIndustri,
     },
-    {
-      label: "Status",
-      value: status,
-      options: [...new Set(peserta.map((p) => p.status))],
-      onChange: setStatus,
-    },
+    // {
+    //   label: "Status",
+    //   value: status,
+    //   options: [...new Set(peserta.map((p) => p.status))],
+    //   onChange: setStatus,
+    // },
   ];
 
   // ===============================
@@ -176,7 +176,7 @@ useEffect(() => {
     { label: "Industri", key: "industri" },
     { label: "Kelas", key: "kelas" },
     { label: "Guru", key: "guru" },
-    { label: "Status", key: "status" },
+    // { label: "Status", key: "status" },
   ];
 
   // ===============================

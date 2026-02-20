@@ -171,6 +171,9 @@ export default function Add({
     const errors = {};
 
     fields.forEach((field) => {
+      // Skip validasi untuk field read-only
+      if (field.readOnly) return;
+
       let value;
       if (field.type === "multiselect") {
         value = formData.getAll(field.name);
@@ -376,7 +379,12 @@ export default function Add({
                     {field.label}
                   </label>
 
-                  {field.type === "select" ? (
+                  {/* READ ONLY FIELD */}
+                  {field.readOnly ? (
+                    <div className="w-full p-3 border rounded-lg bg-gray-100 text-gray-700 border-gray-300">
+                      {initialData[field.name] || "-"}
+                    </div>
+                  ) : field.type === "select" ? (
                     <div className="relative w-full max-w-[600px]">
                       {/* Trigger */}
                       <div
@@ -723,5 +731,3 @@ export default function Add({
   );
   
 }
-
-

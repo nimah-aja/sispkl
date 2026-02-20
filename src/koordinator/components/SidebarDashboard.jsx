@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { getSekolah } from "../../utils/services/admin/sekolah";
 import { useNavigate } from "react-router-dom";
 
 // import assets
@@ -15,29 +16,47 @@ import logo from "../../assets/logo.png"
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
+  const [sekolah, setSekolah] = useState(null);
 
   const items = [
     { title: "Beranda", icon: sidebarDashboard, route: "/guru/koordinator", key: "sidebarDashboard" },
     { title: "Siswa", icon: sidebarUsers, route: "/guru/koordinator/pesertaPKL", key: "sidebarUsers" },
     // lembar persetujuan
-    { title: "Pengajuan PKL", icon: pengajuanPKL, route: "/guru/koordinator/pengajuanPKL", key: "pengajuanPKL" },
+    { title: "Surat Persetujuan PKL", icon: pengajuanPKL, route: "/guru/koordinator/pengajuanPKL", key: "pengajuanPKL" },
     { title: "Pembimbing", icon: Pembimbing, route: "/guru/koordinator/pembimbing", key: "Pembimbing" },
     // s. tugas
     { title: "Surat Tugas", icon: suratPengantaran, route: "/guru/koordinator/suratPengantaran", key: "suratPengantaran" },
     //  input nilai
-    { title: "Penilaian", icon: monitoring, route: "/guru/koordinator/monitoring", key: "penilaian" },
+    // { title: "Penilaian", icon: monitoring, route: "/guru/koordinator/monitoring", key: "penilaian" },
     // kegiatan
     // { title: "Surat Penjemputan", icon: suratPenjemputan, route: "/guru/koordinator/suratPenjemputan", key: "suratPenjemputan" },
     { title: "Perpindahan PKL", icon: perpindahanPKL, route: "/guru/koordinator/perpindahanPKL", key: "perpindahanPKL" },
     // { title: "Pembekalan", icon: pembekalan, route: "/guru/koordinator/pembekalan", key: "pembekalan" },
   ];
 
+  // logo dan nama sekolah
+    useEffect(() => {
+      const fetchSekolah = async () => {
+        try {
+          const res = await getSekolah();
+          // asumsi API kamu return { success, data }
+          setSekolah(res.data);
+        } catch (err) {
+          console.error("Gagal ambil data sekolah", err);
+        } finally {
+          setLoadingSekolah(false);
+        }
+      };
+  
+      fetchSekolah();
+    }, []);
+
   // main
   return (
     <aside className="w-20 bg-[#5F1A1E] h-screen flex flex-col items-center py-8 space-y-6">
 
       <div className="w-12 h-12 rounded-full flex items-center justify-center">
-        <img src={logo} alt="Logo" className="w-12" />
+        <img src={sekolah?.logo_url || logo} alt="Logo" className="w-12" />
       </div>
       
       {items.map((item) => (

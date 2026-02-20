@@ -1,10 +1,11 @@
 import { Bell } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, CheckCircle, XCircle } from "lucide-react";
 
 // helpers
 import { removeTokens } from "../../utils/authHelper";
+import { getSekolah } from "../../utils/services/admin/sekolah";
 
 // components
 import LogoutModal from "../components/Logout";
@@ -26,7 +27,8 @@ export default function HeaderKoordinator({
   const navigate = useNavigate();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-
+  const [sekolah, setSekolah] = useState(null);
+  
   useEffect(() => {
     const unread = (notifications || []).some(
       (n) => n.is_read === false || n.is_read === undefined
@@ -71,6 +73,22 @@ export default function HeaderKoordinator({
         : "#3b82f6",
   }));
 
+    // logo dan nama sekolah
+    useEffect(() => {
+      const fetchSekolah = async () => {
+        try {
+          const res = await getSekolah();
+          // asumsi API kamu return { success, data }
+          setSekolah(res.data);
+        } catch (err) {
+          console.error("Gagal ambil data sekolah", err);
+        } finally {
+          setLoadingSekolah(false);
+        }
+      };
+  
+      fetchSekolah();
+    }, []);
 
 
   return (
@@ -79,7 +97,7 @@ export default function HeaderKoordinator({
         {/* Logo + Title */}
         <div className="flex items-center space-x-3">
           <div className="-mr-23 w-14 h-14 rounded-full flex items-center justify-center">
-            <img src={logo} alt="Logo" />
+            <img src={sekolah?.logo_url || logo} alt="Logo" />
           </div>
           <h1 className="ml-30 font-bold text-[#641E20]" style={{ fontSize: "30px" }}>
             SISTEM PENGELOLAAN PKL

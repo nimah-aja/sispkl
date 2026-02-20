@@ -40,8 +40,17 @@ export default function EditPengajuanPKL() {
       required: true,
     },
     {
+      name: "bukti_lama",
+      label: "Bukti Sebelumnya",
+      type: "textarea", // Asumsi ada tipe khusus untuk preview
+      width: "full",
+      required: false,
+      readOnly: true,
+      disabled: true,
+    },
+    {
       name: "files",
-      label: "Unggah Bukti Baru (opsional)",
+      label: "Unggah Bukti Baru",
       type: "file",
       width: "full",
       required: true,
@@ -71,17 +80,30 @@ export default function EditPengajuanPKL() {
   const handleSubmit = async (formData) => {
     if (isSubmitting) return;
 
-    const files = formData.getAll("files").filter((f) => f?.name);
+    const newFiles = formData.getAll("files").filter((f) => f?.name);
 
     setIsSubmitting(true);
 
     try {
-      await updateIzin(izin.id, {
+      const payload = {
         tanggal: dayjs(izin.tanggal).format("YYYY-MM-DD"),
         jenis: formData.get("jenis"),
         keterangan: formData.get("keterangan"),
-        files: files.length ? files : undefined,
-      });
+      };
+
+      // Logika pengiriman file
+      if (newFiles.length > 0) {
+        // Jika ada file baru, kirim file baru
+        payload.files = newFiles;
+        // Opsional: kirim juga informasi bahwa file lama akan diganti
+        payload.hapus_file_lama = true;
+      } else {
+        // Jika tidak ada file baru, kirim file lama
+        // Asumsi backend bisa menerima array of strings (URL)
+        payload.files = izin.bukti_foto_urls; // Kirim file lama
+      }
+
+      await updateIzin(izin.id, payload);
 
       toast.success("Pengajuan izin berhasil diperbarui");
       navigate(-1);
@@ -105,6 +127,8 @@ export default function EditPengajuanPKL() {
       initialData={{
         jenis: izin.jenis,
         keterangan: izin.keterangan,
+        // field bukti_lama tidak perlu di initialData karena sudah punya value sendiri
+        bukti_lama: izin.bukti_foto_urls  
       }}
       onSubmit={handleSubmit}
       onCancel={() => navigate(-1)}

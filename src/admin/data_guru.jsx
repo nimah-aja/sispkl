@@ -112,7 +112,7 @@ export default function GuruPage() {
     { label: "Nama Guru", key: "nama" },
     { label: "NIP", key: "nip", sortable: false },
     { label: "No. Telp", key: "no_telp", sortable: false },
-    { label: "Role", key: "roles", type: "select" },
+    { label: "Peran", key: "roles", type: "select" },
   ];
 
   // input
@@ -123,7 +123,7 @@ export default function GuruPage() {
     { label: "No. Telp", name: "no_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
     { label: "Password", name: "password", type: "password", width: "full", minLength: 6, placeholder : "Min 6 digit" },
     {
-      label: "Role",
+      label: "Peran",
       name: "roles",
       type: "multiselect",
       width: "full",
@@ -460,7 +460,7 @@ const handleExportExcel = () => {
             placeholder="Pencarian"
             filters={[
               {
-                label: "Role",
+                label: "Peran",
                 value: filterGuru,
                 options: roleOptions,
                 onChange: setFilterGuru,

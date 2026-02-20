@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/id";
 import calender from "../../assets/calendar.svg";
 import arrow from "../../assets/arrow.svg";
-import { Clock, Palette, Edit2, Trash2, ChevronLeft } from "lucide-react";
+import { Clock, Palette, Edit2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 
 // Import service untuk tahun ajaran dan kegiatan
@@ -90,6 +90,11 @@ const CalendarPKL = ({ pklData }) => {
       return [];
     }
   };
+  
+  const upcomingEvents = events
+    .filter(ev => dayjs(ev.date).isAfter(dayjs(), "day"))
+    .sort((a, b) => dayjs(a.date).diff(dayjs(b.date)))
+    .slice(0, 5);
 
   // Load tahun ajaran dari API
   useEffect(() => {
@@ -565,121 +570,74 @@ const CalendarPKL = ({ pklData }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6">
       {/* LEFT SIDE */}
-      <div className="px-4 pb-4 pt-5 bg-white rounded-2xl shadow-sm border border-[#641E21]">
-        <div className="flex justify-between items-center mb-1">
-          <button
-            className="!text-4xl font-bold !bg-transparent leading-none"
-            onClick={prevMonth}
-          >
-            ‹
-          </button>
-          <h2 className="font-bold text-lg leading-none">
-            {currentMonth.format("MMMM YYYY")}
-          </h2>
-          <button
-            className="!text-4xl font-bold !bg-transparent leading-none"
-            onClick={nextMonth}
-          >
-            ›
-          </button>
-        </div>
-
-        {/* HEADER HARI */}
-        <div className="grid grid-cols-7 text-center font-semibold mb-2">
-          {weekdayLabels.map((d, i) => (
-            <div
-              key={d}
-              className={
-                i === mappedTodayIndex
-                  ? "font-extrabold text-purple-700"
-                  : "text-gray-700"
-              }
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-
-        {/* DAYS */}
-        <div className="grid grid-cols-7 text-center gap-1">
-          {days.map((day, idx) => {
-            const isToday =
-              day.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
-            const dayEvent = events.find(
-              (ev) => ev.date === day.format("YYYY-MM-DD")
-            );
-
-            return (
-              <div
-                key={idx}
-                onClick={() => handleDayClick(day)}
-                className={`p-2 cursor-pointer transition w-10 h-10 mx-auto flex items-center justify-center
-                  rounded-full
-                  ${day.month() !== currentMonth.month() ? "text-gray-300" : ""}
-                  ${isToday ? "border-2 border-purple-600 font-bold" : "hover:bg-purple-200"}`}
-                style={{
-                  backgroundColor: !isToday && dayEvent ? dayEvent.color : "",
-                }}
-              >
-                {day.date()}
+      <div className="flex flex-col gap-6">
+              {/* HARI INI */}
+              <div className="bg-white rounded-2xl border-2 border-[#641E21] p-5">
+                <h3 className="font-bold text-lg text-center mb-4">Acara Hari Ini</h3>
+                {todayEvents.length === 0 ? (
+                  <p className="text-center text-sm text-gray-500">
+                    Tidak ada acara hari ini
+                  </p>
+                ) : (
+                  todayEvents.map((e) => (
+                    <div key={e.id} className="flex gap-3 mb-3">
+                      <span
+                        className="w-2 rounded-full"
+                        style={{ backgroundColor: e.color }}
+                      />
+                      <div>
+                        <p className="font-semibold">{e.title}</p>
+                        <p className="text-xs text-gray-600"> {getJenisKegiatanLabel(e.jenisKegiatan)} • {e.tahunAjaranNama || "Tahun Ajaran"}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* BADGES */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {monthEvents.slice(0, 5).map((ev) => (
-            <span
-              key={ev.id}
-              className="px-3 py-1 text-sm text-white rounded-full"
-              style={{ backgroundColor: ev.color }}
-            >
-              {ev.title}
-            </span>
-          ))}
-          {monthEvents.length > 5 && (
-            <span className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-full">
-              +{monthEvents.length - 5} lagi
-            </span>
-          )}
-        </div>
-
-        {/* ACARA HARI INI */}
-        <div className="mt-6 p-4 border rounded-xl bg-gray-50">
-          <div className="flex items-center gap-3 mb-3">
-            <img src={calender} alt="Calendar Icon" className="w-5 h-5" />
-            <h3 className="font-bold text-lg">Acara Hari Ini</h3>
-          </div>
-
-          <div className="max-h-[8rem] overflow-y-auto pr-1">
-            {todayEvents.length === 0 ? (
-              <p className="text-gray-500 text-sm">Tidak ada acara hari ini.</p>
-            ) : (
-              todayEvents.map((ev) => (
-                <div key={ev.id} className="mb-3 flex items-start gap-2">
-                  <div
-                    className="w-1.5 rounded-lg"
-                    style={{ backgroundColor: ev.color, height: "2.2rem" }}
-                  ></div>
-                  <div className="flex-1">
-                    <p className="font-semibold truncate">{ev.title}</p>
-                    <p className="text-sm text-gray-600">
-                      {getJenisKegiatanLabel(ev.jenisKegiatan)} • {ev.tahunAjaranNama || "Tahun Ajaran"}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+      
+              {/* MENDATANG */}
+              <div className="bg-white rounded-2xl border-2 border-[#641E21] p-5">
+                <h3 className="font-bold text-lg text-center mb-4">
+                  Acara Mendatang
+                </h3>
+                {upcomingEvents.length === 0 ? (
+                  <p className="text-center text-sm text-gray-500">
+                    Tidak ada acara
+                  </p>
+                ) : (
+                  upcomingEvents.map((e) => (
+                    <div key={e.id} className="flex gap-3 mb-3">
+                      <span
+                        className="w-2 rounded-full"
+                        style={{ backgroundColor: e.color }}
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold truncate">{e.title}</p>
+                        <p className="text-sm text-gray-600">
+                          {getJenisKegiatanLabel(e.jenisKegiatan)} • {e.tahunAjaranNama || "Tahun Ajaran"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+      
+              </div>
+            </div>
 
       {/* RIGHT SIDE */}
       <div className="p-4 pt-10 bg-white rounded-2xl shadow-sm border border-[#641E21]">
-        <h2 className="font-bold text-lg text-center mb-3">
-          {currentMonth.format("MMMM YYYY")}
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+                  <button onClick={prevMonth} className="p-1 hover:text-purple-600 !bg-transparent">
+                    <ChevronLeft size={20} />
+                  </button>
+        
+                  <h2 className="font-bold text-lg">
+                    {currentMonth.format("MMMM YYYY")}
+                  </h2>
+        
+                  <button onClick={nextMonth} className="p-1 hover:text-purple-600 !bg-transparent">
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
 
         <div className="grid grid-cols-7 text-center font-semibold mb-2">
           {weekdayLabels.map((d, i) => (
@@ -710,7 +668,16 @@ const CalendarPKL = ({ pklData }) => {
                 className="p-2 border h-24 relative hover:bg-purple-50 transition rounded-xl cursor-pointer"
                 onClick={() => openEventsModal(day)}
               >
-                <div className="text-left font-bold text-xl">{day.date()}</div>
+                <div
+                  className={
+                    day.isSame(dayjs(), "day")
+                      ? "text-left font-extrabold text-2xl text-purple-700" // +4 SIZE
+                      : "text-left font-bold text-xl"
+                  }
+                >
+                  {day.date()}
+                </div>
+
 
                 {firstThree.map((ev) => (
                   <div
@@ -736,7 +703,7 @@ const CalendarPKL = ({ pklData }) => {
       {/* MODAL ADD/EDIT EVENT */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center !z-[9999]">
-          <div className="bg-[#641E21] w-[480px] overflow-hidden rounded-lg">
+          <div className="bg-[#641E21] w-[530px] overflow-hidden rounded-lg">
             {/* HEADER */}
             <div className="flex justify-between items-center px-5 py-4">
               <div className="flex items-center gap-3 w-full">
@@ -814,12 +781,12 @@ const CalendarPKL = ({ pklData }) => {
               </div>
             )}
 
-            {/* BODY */}
+            {/* BODY - PERBAIKAN DENGAN GRID */}
             <div className="px-5 py-4 space-y-4">
               {/* TANGGAL MULAI & SELESAI */}
-              <div className="flex items-center gap-3">
-                <span className="text-white font-medium">Tanggal :</span>
-                <div className="flex gap-2 flex-1">
+              <div className="grid grid-cols-[110px_1fr] items-center gap-3">
+                <span className="text-white font-medium">Tanggal <span className="ml-10">:</span></span>
+                <div className="flex gap-2 items-center">
                   <input
                     type="date"
                     className="!text-white px-3 py-2 rounded-lg focus:outline-none flex-1 bg-[#641E21] border border-white/30"
@@ -830,7 +797,8 @@ const CalendarPKL = ({ pklData }) => {
                     })}
                   />
                   
-                  <span className="text-white self-center">s/d</span>
+                  <span className="text-white">s/d</span>
+                  
                   <input
                     type="date"
                     className="px-3 !text-white py-2 rounded-lg focus:outline-none flex-1 bg-[#641E21] border border-white/30"
@@ -844,31 +812,29 @@ const CalendarPKL = ({ pklData }) => {
               </div>
 
               {/* TAHUN AJARAN */}
-              <div className="flex items-center gap-3">
+              <div className="grid grid-cols-[110px_1fr] items-center gap-3">
                 <span className="text-white font-medium">Tahun Ajaran :</span>
-                <div className="flex-1 bg-[#641E21] border border-white/30 px-3 py-2 rounded-lg">
-                  <select
-                    value={newEvent.tahunAjaranId}
-                    onChange={(e) => setNewEvent({
-                      ...newEvent,
-                      tahunAjaranId: e.target.value
-                    })}
-                    className="w-full focus:outline-none !text-white bg-[#641E21]"
-                  >
-                    <option value="" className="text-gray-400">Pilih Tahun Ajaran</option>
-                    {tahunAjaranList.map(tahun => (
-                      <option key={tahun.id} value={tahun.id} className="!text-white">
-                        {tahun.nama} {tahun.status === 'aktif' ? '(Aktif)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={newEvent.tahunAjaranId}
+                  onChange={(e) => setNewEvent({
+                    ...newEvent,
+                    tahunAjaranId: e.target.value
+                  })}
+                  className="w-full px-3 py-2 focus:outline-none !text-white bg-[#641E21] border border-white/30 rounded-lg"
+                >
+                  <option value="" className="text-gray-400">Pilih Tahun Ajaran</option>
+                  {tahunAjaranList.map(tahun => (
+                    <option key={tahun.id} value={tahun.id} className="!text-white">
+                      {tahun.nama} {tahun.status === 'aktif' ? '(Aktif)' : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* COLOR PICKER */}
-              <div className="flex items-center gap-3 ">
-                <Palette className="text-white" size={20} /> <span className="!text-white"> : </span>
-                <div className="flex items-center gap-2 bg-[#641E21] border border-white/30 px-3 py-2 rounded-lg w-full">
+              {/* <div className="grid grid-cols-[70px_1fr] items-center gap-3">
+                <span className="text-white font-medium">Warna :</span>
+                <div className="flex items-center gap-2 bg-[#641E21] border border-white/30 px-3 py-2 rounded-lg">
                   <input
                     type="color"
                     value={newEvent.color}
@@ -881,14 +847,14 @@ const CalendarPKL = ({ pklData }) => {
                     {newEvent.color}
                   </span>
                 </div>
-              </div>
+              </div> */}
 
               {/* DESKRIPSI */}
-              <div className="flex items-start gap-3">
-                <span className="text-white font-medium mt-2">Deskripsi :</span>
+              <div className="grid grid-cols-[110px_1fr] gap-3">
+                <span className="text-white font-medium pt-2">Deskripsi <span className="ml-7">:</span></span>
                 <textarea
                   placeholder="Tambahkan Deskripsi (opsional)..."
-                  className="flex-1 px-3 py-2 !text-white !placeholder-gray-400 rounded-lg focus:outline-none h-20 resize-none bg-[#641E21] border border-white/30"
+                  className="w-full px-3 py-2 !text-white !placeholder-gray-400 rounded-lg focus:outline-none h-20 resize-none bg-[#641E21] border border-white/30"
                   value={newEvent.description}
                   onChange={(e) => setNewEvent({
                     ...newEvent,
@@ -904,7 +870,7 @@ const CalendarPKL = ({ pklData }) => {
                 onClick={saveEvent}
                 className="text-[#EC933A] font-bold text-lg w-full !bg-transparent"
               >
-                {editingEvent ? "Update Acara" : "Buat Acara"}
+                {editingEvent ? "Ubah Acara" : "Buat Acara"}
               </button>
             </div>
           </div>

@@ -1,38 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
-import { useRef } from "react";
-import Detail from "./components/Detail";
+
+import { getGuruTasks } from "../utils/services/pembimbing/guru";
+
 import Add from "./components/Add";
-import SaveConfirmationModal from "./components/Save";
-
-import saveImg from "../assets/save.svg";
-import editGrafik from "../assets/editGrafik.svg";
-
-
-// Components
+import Detail from "./components/Detail"; // ✅ DETAIL DIPANGGIL
 import Sidebar from "./components/SidebarBiasa";
 import Header from "./components/HeaderBiasa";
-import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Pagination from "./components/Pagination";
 
+import editGrafik from "../assets/editGrafik.svg";
+
+const STORAGE_KEY = "data_permasalahan_siswa";
+
 export default function DataPermasalahanSiswa() {
   const exportRef = useRef(null);
-  const [openExport, setOpenExport] = useState(false);
 
+  const [openExport, setOpenExport] = useState(false);
   const [active, setActive] = useState("permasalahan");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
-  const [dataPermasalahan, setDataPermasalahan] = useState([]);
-  const [mode, setMode] = useState("list");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [detailMode, setDetailMode] = useState("view");
 
+  const [dataPermasalahan, setDataPermasalahan] = useState([]);
+  const [mode, setMode] = useState("list"); // list | add | edit | detail
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [detailMode, setDetailMode] = useState("view"); // ✅ WAJIB
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [siswaOptions, setSiswaOptions] = useState([]);
+  const [industriOptions, setIndustriOptions] = useState([]);
 
   const itemsPerPage = 10;
 
@@ -41,399 +40,296 @@ export default function DataPermasalahanSiswa() {
     role: "Pembimbing",
   };
 
-
-  //  DUMMY DATA 
-  const dummyDataPermasalahan = [
-    {
-      pelapor: "Pembimbing",
-      nama: "Firli Zulfa Azzahra",
-      tanggal: "01/05/2025",
-      industri: "PT Astra Honda",
-      masalah: "Kesulitan memahami materi Matematika",
-      status: "Proses",
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Budi Santoso",
-      tanggal: "20/11/2025",
-      industri: "PT Astra Honda",
-      masalah: "Nilai rapor menurun drastis",
-      status: "Selesai",
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Maya Anggraini",
-      tanggal: "28/11/2025",
-      industri: "PT Astra Honda",
-      masalah: "Kesulitan adaptasi di sekolah baru",
-      status: "Proses",
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Putri Maharani",
-      tanggal: "05/12/2025",
-      industri: "PT Astra Honda",
-      masalah: "Bolos sekolah tanpa keterangan",
-      status: "Selesai",
-    },
-    {
-      pelapor: "Pembimbing",
-      nama: "Andi Pratama",
-      tanggal: "15/11/2025",
-      industri: "PT Astra Honda",
-      masalah: "Konflik dengan teman sekelas",
-      status: "Proses",
-    },
-  ];
-
-  
-
-
-
-
-
-  const getInitials = (name = "") =>
-    name
-      .split(" ")
-      .map(w => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
-
-  const avatarColors = [
-    "bg-orange-500",
-    "bg-blue-500",
-    "bg-green-500",
-    "bg-purple-500",
-    "bg-pink-500",
-  ];
-
-  const handleProcess = (index) => {
-    setDataPermasalahan(prev =>
-      prev.map((item, i) =>
-        i === index ? { ...item, status: "Selesai" } : item
-      )
-    );
-  };
-
-
-  //  LOAD DATA 
+  /* =====================
+     LOAD STORAGE
+  ===================== */
   useEffect(() => {
-    setDataPermasalahan(dummyDataPermasalahan);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) setDataPermasalahan(JSON.parse(saved));
   }, []);
 
-  // reset pagination jika filter berubah
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter, dateFilter]);
-
-  //  HELPER 
-  const parseDate = (dateStr) => {
-    const [day, month, year] = dateStr.split("/");
-    return new Date(`${year}-${month}-${day}`);
+  const saveToStorage = (data) => {
+    setDataPermasalahan(data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
-  //  FILTER DATA 
-  const filteredData = dataPermasalahan.filter((item) => {
+  /* =====================
+     LOAD SISWA & INDUSTRI
+  ===================== */
+  useEffect(() => {
+    const fetchGuruTasks = async () => {
+      try {
+        const res = await getGuruTasks();
+
+        const industri = res.data.map((i) => ({
+          label: i.industri.nama,
+          value: i.industri.nama,
+        }));
+
+        const siswa = res.data
+          .flatMap((i) => i.siswa)
+          .reduce((acc, s) => {
+            if (!acc.find((x) => x.value === s.nama)) {
+              acc.push({
+                label: `${s.nama} (${s.kelas})`,
+                value: s.nama,
+              });
+            }
+            return acc;
+          }, []);
+
+        setIndustriOptions(industri);
+        setSiswaOptions(siswa);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    fetchGuruTasks();
+  }, []);
+
+  /* =====================
+     FILTER & PAGINATION
+  ===================== */
+  const filteredData = dataPermasalahan.filter((i) => {
     const q = search.toLowerCase();
-
-    const matchSearch =
-      item.nama.toLowerCase().includes(q) ||
-      item.pelapor.toLowerCase().includes(q) ||
-      item.masalah.toLowerCase().includes(q);
-
-    const matchStatus = statusFilter ? item.status === statusFilter : true;
-
-    const matchDate = dateFilter
-      ? parseDate(item.tanggal).toDateString() ===
-        new Date(dateFilter).toDateString()
-      : true;
-
-    return matchSearch && matchStatus && matchDate;
+    return (
+      i.nama.toLowerCase().includes(q) ||
+      i.masalah.toLowerCase().includes(q)
+    );
   });
 
-  // nomor urut
-  const dataWithNo = filteredData.map((item, i) => ({
-    ...item,
-    no: i + 1,
-  }));
-
-  // pagination
-  const totalPages = Math.ceil(dataWithNo.length / itemsPerPage);
-  const paginatedData = dataWithNo.slice(
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  //  TABLE 
-  const columns = [
-    { label: "Pelapor", key: "pelapor" },
-    { label: "Nama", key: "nama" },
-    { label: "Tanggal", key: "tanggal" },
-    { label: "Masalah", key: "masalah" },
-    { label: "Status", key: "status" },
-  ];
-
-  const statusOptions = [...new Set(dataPermasalahan.map((d) => d.status))];
-
-  const exportData = filteredData.map((item, i) => ({
-    No: i + 1,
-    Pelapor: item.pelapor,
-    Nama: item.nama,
-    Tanggal: item.tanggal,
-    Masalah: item.masalah,
-    Status: item.status,
-  }));
-
-  const handleExportExcel = () => {
-    if (!exportData.length) return;
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Permasalahan Siswa");
-    XLSX.writeFile(wb, "data_permasalahan_siswa.xlsx");
+  /* =====================
+     ACTIONS
+  ===================== */
+  const handleDelete = (item) => {
+    if (!window.confirm("Yakin ingin menghapus data ini?")) return;
+    saveToStorage(dataPermasalahan.filter((i) => i !== item));
+    setSelectedItem(null);
+    setMode("list");
   };
 
-  const handleExportPDF = () => {
-    if (!exportData.length) return;
-    const doc = new jsPDF();
-    doc.text("Data Permasalahan Peserta Didik", 14, 15);
-    autoTable(doc, {
-      startY: 20,
-      head: [Object.keys(exportData[0])],
-      body: exportData.map((d) => Object.values(d)),
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [100, 30, 33] },
-    });
-    doc.save("data_permasalahan_siswa.pdf");
+  const handleEditSubmit = (payload) => {
+    const updated = dataPermasalahan.map((i) =>
+      i === selectedItem ? { ...i, ...payload } : i
+    );
+
+    saveToStorage(updated);
+    setSelectedItem(null);
+    setMode("list");
+    setDetailMode("view");
   };
 
-  const addFields = [
-    {
-      label: "Nama Siswa",
-      name: "nama",
-      width: "full",
-    },
-    {
-      label: "Industri",
-      name: "industri",
-      width: "full",
-    },
-    {
-      label: "Permasalahan Siswa",
-      name: "masalah",
-      width: "full",
-      type: "textarea",
-      rows: 4,
-    },
-  ];
-
+  /* =====================
+     ADD MODE
+  ===================== */
   if (mode === "add") {
-  return (
-    <Add
-      title="Tambah Permasalahan Siswa"
-      fields={addFields}
-      image={editGrafik}
-      onSubmit={(formData) => {
-        const raw = Object.fromEntries(formData);
-
-        if (!raw.masalah) return;
-
-        setDataPermasalahan(prev => [
+    return (
+      <Add
+        title="Tambah Permasalahan Siswa"
+        image={editGrafik}
+        fields={[
           {
-            pelapor: "Pembimbing",
-            tanggal: new Date().toLocaleDateString("id-ID"),
-            status: "Proses",
-            ...raw,
+            label: "Nama Siswa",
+            name: "nama",
+            type: "select",
+            options: siswaOptions,
+            width: "full",
           },
-          ...prev,
-        ]);
+          {
+            label: "Industri",
+            name: "industri",
+            type: "select",
+            options: industriOptions,
+            width: "full",
+          },
+          {
+            label: "Permasalahan Siswa",
+            name: "masalah",
+            type: "textarea",
+            rows: 4,
+            width: "full",
+          },
+        ]}
+        onSubmit={(formData) => {
+          const raw = Object.fromEntries(formData);
 
-        setMode("list");
-      }}
-      onCancel={() => setMode("list")}
-    />
-  );
-}
+          saveToStorage([
+            {
+              pelapor: "Pembimbing",
+              tanggal: new Date().toLocaleDateString("id-ID"),
+              status: "Proses",
+              ...raw,
+            },
+            ...dataPermasalahan,
+          ]);
 
+          setMode("list");
+        }}
+        onCancel={() => setMode("list")}
+      />
+    );
+  }
 
+  /* =====================
+     EDIT MODE
+  ===================== */
+  if (mode === "edit" && selectedItem) {
+    return (
+      <Add
+        title="Edit Permasalahan Siswa"
+        image={editGrafik}
+        initialData={selectedItem}
+        fields={[
+          {
+            label: "Nama Siswa",
+            name: "nama",
+            type: "select",
+            options: siswaOptions,
+            width: "full",
+          },
+          {
+            label: "Industri",
+            name: "industri",
+            type: "select",
+            options: industriOptions,
+            width: "full",
+          },
+          {
+            label: "Permasalahan Siswa",
+            name: "masalah",
+            type: "textarea",
+            rows: 4,
+            width: "full",
+          },
+        ]}
+        onSubmit={(formData) => {
+          const raw = Object.fromEntries(formData);
+          handleEditSubmit(raw);
+        }}
+        onCancel={() => {
+          setSelectedItem(null);
+          setMode("list");
+        }}
+      />
+    );
+  }
 
+  /* =====================
+     DETAIL MODE (INI DOANG YANG NGERENDER DETAIL)
+  ===================== */
+  if (mode === "detail" && selectedItem) {
+    return (
+      <Detail
+        title="Detail Permasalahan Siswa"
+        mode={detailMode}
+        initialData={selectedItem}
+        onClose={() => {
+          setSelectedItem(null);
+          setMode("list");
+        }}
+        onChangeMode={setDetailMode}
+        onSubmit={handleEditSubmit}
+        onDelete={() => handleDelete(selectedItem)}
+        fields={[
+          { name: "nama", label: "Nama Siswa" },
+          { name: "industri", label: "Nama Industri" },
+          {
+            name: "masalah",
+            label: "Permasalahan Siswa",
+          },
+          { name: "tanggal", label: "Tanggal" },
+        ]}
+      />
+    );
+  }
+
+  /* =====================
+     LIST VIEW
+  ===================== */
   return (
-    <div className="bg-white min-h-screen w-full">
+    <div className="bg-white min-h-screen">
       <Header user={user} />
 
       <div className="flex">
-        <div className="hidden md:block">
-          <Sidebar active={active} setActive={setActive} />
-        </div>
+        <Sidebar active={active} setActive={setActive} />
 
-        <main className="flex-1 p-6 md:p-10 bg-[#641E21] rounded-l-3xl">
-          <div className="flex items-center mb-6 gap-1 w-full relative">
-            <h2 className="text-white font-bold text-lg">
-              Data Permasalahan
-            </h2>
+        <main className="flex-1 p-6 bg-[#641E21] rounded-l-3xl">
+          <h2 className="text-white font-bold text-lg mb-4">
+            Data Permasalahan Siswa
+          </h2>
 
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setOpenExport(!openExport)}
-                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
-              >
-                <Download size={18} />
-              </button>
-
-              {openExport && (
-                <div className="absolute left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
-                  <button
-                    onClick={() => {
-                      handleExportExcel();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileSpreadsheet size={16} className="text-green-600" />
-                    Excel
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      handleExportPDF();
-                      setOpenExport(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                  >
-                    <FileText size={16} className="text-red-600" />
-                    PDF
-                  </button>
-                </div>
-              )}
-            </div>
-            </div>
-
-
-          {/* SEARCH & FILTER */}
           <SearchBar
-          onAddClick={() => setMode("add")}
+            onAddClick={() => setMode("add")}
             query={search}
             setQuery={setSearch}
-            placeholder="Cari nama / pelapor / masalah"
-            filters={[
-              {
-                label: "Status",
-                value: statusFilter,
-                options: statusOptions,
-                onChange: setStatusFilter,
-              },
-              {
-                label: "Tanggal",
-                type: "date",
-                value: dateFilter,
-                onChange: setDateFilter,
-              },
-            ]}
+            placeholder="Cari nama / masalah"
           />
 
-          {/* TABLE */}
           <div className="mt-6 space-y-4">
-            {filteredData.map((item, index) => (
+            {paginatedData.map((item, idx) => (
               <div
-                key={index}
+                key={idx}
                 onClick={() => {
                   setSelectedItem(item);
                   setDetailMode("view");
+                  setMode("detail");
                 }}
-                className="bg-white rounded-xl p-4 hover:shadow-md transition-all cursor-pointer"
+                className="bg-white rounded-xl p-4 hover:shadow-md flex justify-between cursor-pointer"
               >
-
-                {/* HEADER */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-4">
-                    {/* AVATAR ORANGE FIX */}
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500 text-white font-bold text-sm"
-                    >
-                      {getInitials(item.nama)}
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-sm">
-                        {item.nama}
-                      </h3>
-                      <p className="text-xs text-gray-600">
-                        Pelapor: {item.pelapor}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {item.masalah}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Tanggal di kanan atas */}
-                  <span className="text-xs text-gray-500">
-                    {item.tanggal}
-                  </span>
+                <div>
+                  <h3 className="font-bold text-sm">{item.nama}</h3>
+                  <p className="text-xs text-gray-600">
+                    Industri : {item.industri}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Permasalahan : {item.masalah}
+                  </p>
                 </div>
 
-                {/* ACTION */}
-                <div className="flex justify-between items-center mt-3 ml-15">
-                  {/* Tombol Proses di kiri */}
-                  {item.status === "Proses" && (
-                    <button
-                      onClick={() => handleProcess(index)}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-                      style={{ backgroundColor: "#EC933A" }}
-                    >
-                      Proses
-                    </button>
-                  )}
-
-                  {/* Status di kanan */}
-                  <span
-                    className={`text-xs font-semibold ${
-                      item.status === "Selesai"
-                        ? "text-green-600"
-                        : "text-orange-500"
-                    }`}
+                <div
+                  className="flex gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => {
+                      setSelectedItem(item);
+                      setMode("edit");
+                    }}
+                    className="px-3 py-1 h-10 text-sm rounded !bg-orange-500 text-white"
                   >
-                    {item.status}
-                  </span>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    className="px-3 py-1 h-10 text-sm rounded !bg-red-600 text-white"
+                  >
+                    Hapus
+                  </button>
                 </div>
               </div>
             ))}
           </div>
-            
 
-          
-                    {totalPages > 1 && (
-                                <div className="flex justify-between items-center mt-4 text-white">
-                                  <span>
-                                    Halaman {currentPage} dari {totalPages}
-                                  </span>
-                                  <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={setCurrentPage}
-                                  />
-                                </div>
-                              )}
+          {totalPages > 1 && (
+            <div className="mt-4 text-white flex justify-between">
+              <span>
+                Halaman {currentPage} dari {totalPages}
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
         </main>
-        {selectedItem && (
-          <Detail
-            title="Detail Permasalahan Siswa"
-            initialData={selectedItem}
-            mode={detailMode}
-            onClose={() => setSelectedItem(null)}
-            onChangeMode={setDetailMode}
-            onSubmit={() => setSelectedItem(null)}
-            fields={[
-              { name: "nama", label: "Nama Siswa" },
-              { name: "industri", label: "Nama Industri" },
-              { name: "masalah", label: "Permasalahan Siswa", full: true },
-              { name: "tanggal", label: "Tanggal" },
-              { name: "status", label: "Status" },
-            ]}
-          />
-        )}
-
-        
       </div>
     </div>
   );

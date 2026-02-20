@@ -6,7 +6,8 @@ import {
   FilePlus,
   Search
 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { getSekolah } from "../../utils/services/admin/sekolah";
 
 
 // helper
@@ -30,11 +31,29 @@ export default function Header({ query, setQuery, user: propUser, notifications 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+  const [sekolah, setSekolah] = useState(null);
 
   const user = propUser || JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
     role: "Unknown",
   };
+
+  // logo dan nama sekolah
+      useEffect(() => {
+        const fetchSekolah = async () => {
+          try {
+            const res = await getSekolah();
+            // asumsi API kamu return { success, data }
+            setSekolah(res.data);
+          } catch (err) {
+            console.error("Gagal ambil data sekolah", err);
+          } finally {
+            setLoadingSekolah(false);
+          }
+        };
+    
+        fetchSekolah();
+      }, []);
 
   const handleLogout = () => {
     removeTokens();
@@ -79,7 +98,7 @@ export default function Header({ query, setQuery, user: propUser, notifications 
         {/* Logo + Title */}
         <div className="flex items-center space-x-3">
           <div className="mt-2 -ml-3 w-14 h-14 rounded-full flex items-center justify-center">
-            <img src={logo} alt="Logo" />
+            <img src={sekolah?.logo_url || logo} alt="Logo" />
           </div>
           <h1 className="font-bold text-[#641E20]" style={{ fontSize: "30px" }}>
             SISTEM PENGELOLAAN PKL

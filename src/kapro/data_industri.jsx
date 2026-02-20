@@ -55,11 +55,51 @@ export default function DataIndustriKaprog() {
 ];
 
   const inputFieldsKuota = [
+    // Field read-only untuk Nama Industri
+    {
+      label: "Nama Industri",
+      name: "nama",
+      type: "text",
+      readOnly: true,
+      disabled: true,
+    },
+    // Field read-only untuk Pengajuan Pending
+    {
+      label: "Pengajuan Pending",
+      name: "pending_applications",
+      type: "number",
+      readOnly: true,
+      disabled: true,
+    },
+    // Field read-only untuk Pengajuan Disetujui
+    {
+      label: "Pengajuan Disetujui",
+      name: "approved_applications",
+      type: "number",
+      readOnly: true,
+      disabled: true,
+    },
+    // Field read-only untuk Siswa Aktif
+    {
+      label: "Siswa Aktif",
+      name: "active_students",
+      type: "number",
+      readOnly: true,
+      disabled: true,
+    },
+    // Field read-only untuk Sisa Kuota
+    {
+      label: "Sisa Kuota",
+      name: "remaining_slots",
+      type: "number",
+      readOnly: true,
+      disabled: true,
+    },
+    // Field yang bisa diedit (Kuota Siswa)
     {
       label: "Kuota Siswa",
       name: "kuota_siswa",
       type: "number",
-      width: "full",
       min: 0,
     },
   ];
@@ -156,10 +196,15 @@ export default function DataIndustriKaprog() {
       return (
         <>
           <Add
-            title={`Edit Kuota Siswa`}
+            title={`Ubah Kuota Siswa`}
             fields={inputFieldsKuota}
             image={editGrafik}
             initialData={{
+              nama: selectedRow.nama,
+              pending_applications: selectedRow.pending_applications,
+              approved_applications: selectedRow.approved_applications,
+              active_students: selectedRow.active_students,
+              remaining_slots: selectedRow.remaining_slots,
               kuota_siswa: selectedRow.kuota_siswa,
             }}
             onSubmit={async (formData, setFieldErrors) => {
@@ -184,7 +229,7 @@ export default function DataIndustriKaprog() {
               }
             }}
             onCancel={() => setMode("list")}
-            containerStyle={{ maxHeight: "400px" }}
+            containerStyle={{ maxHeight: "550px" }}
             backgroundStyle={{ backgroundColor: "#641E21" }}
           />
 

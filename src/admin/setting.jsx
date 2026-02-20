@@ -526,7 +526,7 @@ export default function Setting() {
                     </div>
 
                     {/* Maskot */}
-                    <div>
+                    {/* <div>
                       <div className="flex justify-between items-center mb-3">
                         <p className="text-sm font-medium">Maskot</p>
                         {maskot && (
@@ -576,7 +576,7 @@ export default function Setting() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* right section */}
@@ -664,7 +664,7 @@ export default function Setting() {
                     </div>
 
                     {/* Maskot */}
-                    <div>
+                    {/* <div>
                       <p className="text-sm font-medium mb-3">Maskot</p>
                       <div className="border-2 border-dashed rounded-lg p-6 md:p-8 bg-gray-50 text-center">
                         {maskot ? (
@@ -682,7 +682,7 @@ export default function Setting() {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* right section */}
@@ -711,7 +711,7 @@ export default function Setting() {
                     className="px-6 md:px-8 py-3 !border-2 !border-gray-800 !bg-transparent hover:bg-gray-50 rounded-full transition-colors flex items-center justify-center gap-2"
                   >
                     <Pencil size={18} />
-                    <span>Edit Profil</span>
+                    <span>Ubah Profil</span>
                   </button>
                 </div>
               </div>

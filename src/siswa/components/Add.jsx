@@ -456,16 +456,21 @@ export default function Add({
                         (Opsional)
                       </span>
                     )}
+                    {field.readOnly && (
+                      <span className="text-gray-500 text-xs font-normal ml-1">
+                        {/* (Read Only) */}
+                      </span>
+                    )}
                   </label>
 
                   {field.type === "select" ? (
                     <div className="relative w-full max-w-[600px]">
                       {/* Trigger */}
                       <div
-                        onClick={() => toggleDropdown(field.name)}
+                        onClick={() => !field.readOnly && toggleDropdown(field.name)}
                         className={`cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center ${
                           optionalFields.includes(field.name) ? "border-gray-300" : ""
-                        }`}
+                        } ${field.readOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                       >
                         {selectedLabels[field.name] || `Pilih ${field.label}`}
                         <img
@@ -477,7 +482,7 @@ export default function Add({
                         />
                       </div>
 
-                      {dropdownState[field.name] && (
+                      {dropdownState[field.name] && !field.readOnly && (
                         <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
                           {/* Input Search */}
                           <input
@@ -536,10 +541,10 @@ export default function Add({
                     </div>
                   ) : field.type === "switch" ? (
                     <div
-                      onClick={() => handleToggle(field.name)}
+                      onClick={() => !field.readOnly && handleToggle(field.name)}
                       className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition ${
                         switchValues[field.name] ? "bg-[#641E20]" : "bg-[#E1D6C4]"
-                      }`}
+                      } ${field.readOnly ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div
                         className={`bg-white w-6 h-6 rounded-full shadow-md transform transition ${
@@ -550,6 +555,7 @@ export default function Add({
                         type="hidden"
                         name={field.name}
                         value={switchValues[field.name] ? "true" : "false"}
+                        readOnly={field.readOnly}
                       />
                     </div>
                   ) : field.type === "multiselect" ? (
@@ -562,8 +568,8 @@ export default function Add({
                             : optionalFields.includes(field.name) 
                               ? "border-gray-300" 
                               : "border-gray-300 focus:ring-orange-500"
-                        }`}
-                        onClick={() => setFocusedIdx(focusedIdx === idx ? null : idx)}
+                        } ${field.readOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                        onClick={() => !field.readOnly && setFocusedIdx(focusedIdx === idx ? null : idx)}
                       >
                         {selectedValues.length > 0 ? (
                           selectedValues.map((val, i) => (
@@ -572,25 +578,27 @@ export default function Add({
                               className="pl-2 pb-1 flex items-center bg-[#651C23] text-white px-1 rounded-full text-sm"
                             >
                               {val}
-                              <div
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleOption(field.name, val);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
+                              {!field.readOnly && (
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
                                     e.stopPropagation();
                                     toggleOption(field.name, val);
-                                  }
-                                }}
-                                className="h-8 text-white font-bold hover:text-gray-700 flex items-center gap-2 cursor-pointer select-none pl-1 pr-1"
-                              >
-                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]">
-                                  <img src={silang} alt="remove" />
-                                </span>
-                              </div>
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.stopPropagation();
+                                      toggleOption(field.name, val);
+                                    }
+                                  }}
+                                  className="h-8 text-white font-bold hover:text-gray-700 flex items-center gap-2 cursor-pointer select-none pl-1 pr-1"
+                                >
+                                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]">
+                                    <img src={silang} alt="remove" />
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           ))
                         ) : (
@@ -610,10 +618,10 @@ export default function Add({
                       </div>
 
                       {selectedValues.map((val, i) => (
-                        <input key={i} type="hidden" name={field.name} value={val} />
+                        <input key={i} type="hidden" name={field.name} value={val} readOnly={field.readOnly} />
                       ))}
 
-                      {focusedIdx === idx && (
+                      {focusedIdx === idx && !field.readOnly && (
                         <div className="absolute z-50 bg-white border-[#641E20] rounded-lg shadow-md mt-1 max-h-40 overflow-y-auto w-full">
                           {field.options?.map((opt, i) => {
                             const val = opt.value || opt;
@@ -650,8 +658,9 @@ export default function Add({
                           : optionalFields.includes(field.name) 
                             ? "border-gray-300" 
                             : "border-gray-300 focus:ring-orange-500"
-                      }`}
+                      } ${field.readOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                       placeholder={optionalFields.includes(field.name) ? `(${field.label} - Opsional)` : field.placeholder}
+                      readOnly={field.readOnly}
                     />
                   ) : field.type === "password" ? (
                     <div className="relative w-full">
@@ -667,25 +676,30 @@ export default function Add({
                             : optionalFields.includes(field.name) 
                               ? "border-gray-300" 
                               : "border-gray-300 focus:ring-orange-500"
-                        }`}
+                        } ${field.readOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                         placeholder={optionalFields.includes(field.name) ? `(${field.label} - Opsional)` : field.placeholder}
+                        readOnly={field.readOnly}
                       />
-                      <button
-                        type="button"
-                        className="password-toggle-btn absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                      </button>
+                      {!field.readOnly && (
+                        <button
+                          type="button"
+                          className="password-toggle-btn absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
+                      )}
                     </div>
                   ) : field.type === "date" ? (
                     <div>
                       <DatePicker
                         selected={dateValues[field.name]}
                         onChange={(date) =>
-                          setDateValues((prev) => ({ ...prev, [field.name]: date }))
+                          !field.readOnly && setDateValues((prev) => ({ ...prev, [field.name]: date }))
                         }
-                        className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
+                        className={`min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500 ${
+                          field.readOnly ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         calendarClassName="w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
                         dayClassName={() =>
                           "hover:!bg-[#EC933A] hover:!text-white rounded-full"
@@ -712,7 +726,7 @@ export default function Add({
                         customInput={
                           <DateInput
                             clearValue={() =>
-                              setDateValues((prev) => ({ ...prev, [field.name]: null }))
+                              !field.readOnly && setDateValues((prev) => ({ ...prev, [field.name]: null }))
                             }
                           />
                         }
@@ -724,6 +738,7 @@ export default function Add({
                               onClick={decreaseMonth}
                               type="button"
                               className="border-none outline-none focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent"
+                              disabled={field.readOnly}
                             >
                               ◀
                             </button>
@@ -734,11 +749,14 @@ export default function Add({
                               onClick={increaseMonth}
                               type="button"
                               className="border-none outline-none focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent"
+                              disabled={field.readOnly}
                             >
                               ▶
                             </button>
                           </div>
                         )}
+                        readOnly={field.readOnly}
+                        disabled={field.readOnly}
                       />
                       {/* hidden input */}
                       <input
@@ -753,7 +771,7 @@ export default function Add({
                     </div>
                   ) : field.type === "file" ? (
                     <div className="mt-5 file-upload-wrapper">
-                      <label className="file-label w-20 h-10 !bg-[#EC933A] pl-2 pr-2 pt-2 pb-2 rounded-md !text-white mr-3">
+                      <label className={`file-label w-20 h-10 !bg-[#EC933A] pl-2 pr-2 pt-2 pb-2 rounded-md !text-white mr-3 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         Pilih File
                         <input
                           type="file"
@@ -762,9 +780,11 @@ export default function Add({
                           required={!optionalFields.includes(field.name) && field.required}
                           hidden
                           onChange={(e) => {
+                            if (field.readOnly) return;
                             field.onChange?.(e);
                             setFileName(e.target.files[0]?.name || "");
                           }}
+                          disabled={field.readOnly}
                         />
                       </label>
 
@@ -786,8 +806,9 @@ export default function Add({
                           : optionalFields.includes(field.name) 
                             ? "border-gray-300" 
                             : "border-gray-300 focus:ring-orange-500"
-                      }`}
+                      } ${field.readOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                       placeholder={optionalFields.includes(field.name) ? `(${field.label} - Opsional)` : field.placeholder}
+                      readOnly={field.readOnly}
                     />
                   )}
 

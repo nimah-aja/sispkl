@@ -110,7 +110,7 @@ export default function DataPeserta() {
 
   // KOLOM TABEL
   const columns = [
-    { label: "Username", key: "username" },
+    { label: "Nama Pengguna", key: "username" },
     { label: "Nama", key: "nama" },
     { label: "NISN", key: "nisn" },
     { label: "Kelas", key: "kelas" },

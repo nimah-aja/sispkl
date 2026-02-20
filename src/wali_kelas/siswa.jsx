@@ -89,6 +89,22 @@ export default function SiswaPage() {
     currentPage * itemsPerPage
   );
 
+  // ================= STATUS BADGE COMPONENT =================
+  const getStatusBadge = (status) => {
+    if (status === "Sedang PKL") {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold text-white bg-emerald-500">
+          Sedang PKL
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-semibold text-white bg-red-600">
+        Belum PKL
+      </span>
+    );
+  };
+
   // ================= TABLE COLUMN =================
   const columns = [
     { label: "NISN", key: "nisn" },
@@ -96,7 +112,11 @@ export default function SiswaPage() {
     { label: "Kelas", key: "kelas" },
     { label: "Industri", key: "industri" },
     { label: "Pembimbing", key: "pembimbing" },
-    { label: "Status PKL", key: "status" },
+    { 
+      label: "Status PKL", 
+      key: "status",
+      render: (value) => getStatusBadge(value)
+    },
   ];
 
   // ================= EXPORT =================
@@ -180,7 +200,10 @@ export default function SiswaPage() {
             ]}
           />
 
-          <Table columns={columns} data={paginatedData} />
+          <Table 
+            columns={columns} 
+            data={paginatedData} 
+          />
 
           {totalPages > 1 && (
             <Pagination

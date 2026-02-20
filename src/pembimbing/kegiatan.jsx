@@ -819,7 +819,7 @@ const handlePrintPDF = () => {
                           </button>
 
                           {/* BUTTON PRINT */}
-                        <button
+                        {/* <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCetakBeritaAcara(item);
@@ -830,7 +830,7 @@ const handlePrintPDF = () => {
 
                           <FileText className="w-3.5 h-3.5" />
                           Cetak
-                        </button>
+                        </button> */}
                         </div>
 
                       </div>

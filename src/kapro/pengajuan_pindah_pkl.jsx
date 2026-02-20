@@ -33,7 +33,7 @@ const KaproPindahPKL = () => {
   const [detailData, setDetailData] = useState(null);
   const [openExport, setOpenExport] = useState(false);
   const exportRef = useRef(null);
-  const [active, setActive] = useState("perpindahanPKL");
+  const [active, setActive] = useState("pindah_pkl");
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
@@ -210,58 +210,68 @@ const KaproPindahPKL = () => {
           />
 
           <div className="mt-6 space-y-3">
-            {filtered.map((s) => (
-              <div
-                key={s.id}
-                className="bg-white rounded-lg p-4 cursor-pointer"
-                onClick={() => {
-                  setDetailData(s.raw);
-                  setDetailMode("view");
-                  setOpenDetail(true);
-                }}
-              >
-                <div className="flex justify-between">
-                  <div className="flex gap-3">
-                    {getIcon(s.type)}
-                    <div>
-                      <p className="font-bold">{s.name}</p>
-                      <p className="text-sm text-gray-600">{s.description}</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    {dayjs(s.time).format("HH:mm")}
-                  </span>
-                </div>
-
-                {s.hasActions && (
-                  <div className="flex gap-2 mt-3 ml-9">
-                    <button
-                      className="px-4 py-2 rounded-lg text-white !bg-[#EC933A]"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetailData(s.raw);
-                        setDetailMode("approve");
-                        setOpenDetail(true);
-                      }}
-                    >
-                      Terima
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-lg text-white !bg-[#BC2424]"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetailData(s.raw);
-                        setDetailMode("reject");
-                        setOpenDetail(true);
-                      }}
-                    >
-                      Tolak
-                    </button>
-                  </div>
-                )}
+            {filtered.length === 0 ? (
+              <div className="bg-white rounded-lg p-8 text-center text-gray-500">
+                <p className="text-lg font-semibold">Tidak ada data pengajuan</p>
+                <p className="text-sm mt-1">
+                  Belum ada pengajuan pindah PKL yang masuk
+                </p>
               </div>
-            ))}
+            ) : (
+              filtered.map((s) => (
+                <div
+                  key={s.id}
+                  className="bg-white rounded-lg p-4 cursor-pointer"
+                  onClick={() => {
+                    setDetailData(s.raw);
+                    setDetailMode("view");
+                    setOpenDetail(true);
+                  }}
+                >
+                  <div className="flex justify-between">
+                    <div className="flex gap-3">
+                      {getIcon(s.type)}
+                      <div>
+                        <p className="font-bold">{s.name}</p>
+                        <p className="text-sm text-gray-600">{s.description}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {dayjs(s.time).format("HH:mm")}
+                    </span>
+                  </div>
+
+                  {s.hasActions && (
+                    <div className="flex gap-2 mt-3 ml-9">
+                      <button
+                        className="px-4 py-2 rounded-lg text-white !bg-[#EC933A]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetailData(s.raw);
+                          setDetailMode("approve");
+                          setOpenDetail(true);
+                        }}
+                      >
+                        Terima
+                      </button>
+                      <button
+                        className="px-4 py-2 rounded-lg text-white !bg-[#BC2424]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetailData(s.raw);
+                          setDetailMode("reject");
+                          setOpenDetail(true);
+                        }}
+                      >
+                        Tolak
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
+
         </main>
       </div>
 

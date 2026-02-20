@@ -7,6 +7,7 @@ import { removeTokens } from "../../utils/authHelper";
 
 // components
 import LogoutModal from "../components/Logout";
+import { getSekolah } from "../../utils/services/admin/sekolah";
 
 // asset
 import logo from "../../assets/logo.png";
@@ -17,6 +18,7 @@ export default function Header({ query, setQuery, user: propUser }) {
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [sekolah, setSekolah] = useState(null);
 
   const user = propUser || JSON.parse(localStorage.getItem("user")) || {
     name: "Pengguna",
@@ -25,6 +27,23 @@ export default function Header({ query, setQuery, user: propUser }) {
 
   const getInitial = (name = "") =>
     name?.trim()?.[0]?.toUpperCase() || "U";
+
+  // logo dan nama sekolah
+    useEffect(() => {
+      const fetchSekolah = async () => {
+        try {
+          const res = await getSekolah();
+          // asumsi API kamu return { success, data }
+          setSekolah(res.data);
+        } catch (err) {
+          console.error("Gagal ambil data sekolah", err);
+        } finally {
+          setLoadingSekolah(false);
+        }
+      };
+  
+      fetchSekolah();
+    }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -64,7 +83,7 @@ export default function Header({ query, setQuery, user: propUser }) {
         {/* LOGO */}
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 flex items-center justify-center">
-            <img src={logo} alt="Logo" />
+            <img src={sekolah?.logo_url || logo} alt="Logo" />
           </div>
           <h3 className="font-bold text-[#641E20] text-[30px]">
             SISTEM PENGELOLAAN PKL
