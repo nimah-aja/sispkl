@@ -12,6 +12,7 @@ import suratPenjemputan from "../../assets/surat_penjemputan.svg";
 import perpindahanPKL from "../../assets/perpindahan_pkl.svg";
 import pembekalan from "../../assets/pembekalan.svg";
 import logo from "../../assets/logo.png"
+import sidebarCorporate from "../../assets/sidebarCorporate.svg";
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function Sidebar({ active, setActive }) {
       // lembar persetujuan/permohonan
       { title: "Surat Persetujuan PKL", icon: pengajuanPKL, route: "/guru/koordinator/pengajuanPKL", key: "pengajuanPKL" },
       { title: "Pembimbing", icon: Pembimbing, route: "/guru/koordinator/pembimbing", key: "Pembimbing" },
+      { title: "Industri", icon: sidebarCorporate, route: "/guru/koordinator/industri", key: "sidebarCorporate" },
       // surat tugas
       { title: "Surat Tugas", icon: suratPengantaran, route: "/guru/koordinator/suratPengantaran", key: "suratPengantaran" },
       // form input nilai
