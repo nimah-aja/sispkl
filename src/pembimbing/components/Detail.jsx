@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { LucideAArrowDown, X } from "lucide-react";
+import { X } from "lucide-react";
 import FloatingField from "./FloatingField";
 import {
   ArrowLeft,
@@ -28,14 +28,11 @@ export default function Detail({
   const isViewMode    = mode === "view";
   const [previewImage, setPreviewImage] = useState(null);
 
-
-
   const [formData, setFormData] = useState(initialData || {});
 
   useEffect(() => {
     setFormData(initialData);
   }, [initialData, fields]);
-
 
   const handleSubmit = () => {
     const errors = {};
@@ -65,11 +62,49 @@ export default function Detail({
     onSubmit(mode, formData);
   };
 
+  // Fungsi untuk merender nilai berdasarkan tipe field
+  const renderValue = (field, value) => {
+    // Handle array of images
+    if (Array.isArray(value) && value.every(val => typeof val === "string" && val.startsWith("http"))) {
+      return (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {value.map((url, idx) => (
+            <img
+              key={idx}
+              src={url}
+              alt={`${field.label} ${idx + 1}`}
+              onClick={() => setPreviewImage(url)}
+              className="
+                w-32 h-32 object-cover rounded shadow
+                cursor-pointer
+                hover:opacity-80
+                transition
+              "
+            />
+          ))}
+        </div>
+      );
+    }
 
+    // Handle textarea / teks panjang
+    if (field.type === "textarea" || (value && value.length > 50)) {
+      return (
+        <div className="font-semibold text-gray-800 whitespace-pre-wrap break-words max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
+          {value || "-"}
+        </div>
+      );
+    }
 
+    // Default text
+    return (
+      <p className="font-semibold text-gray-800 truncate hover:text-clip hover:overflow-visible hover:whitespace-normal transition-all" title={value}>
+        {value || "-"}
+      </p>
+    );
+  };
 
   return (
-    <div className="fixed inset-0  flex items-center justify-end z-[11]">
+    <div className="fixed inset-0 flex items-center justify-end z-[11]">
       
       {/* BACKDROP / PORTAL */}
       <div
@@ -92,9 +127,10 @@ export default function Detail({
           bg-white
           shadow-lg
           transition
+          cursor-pointer
         "
       >
-        <X className="text-black w-5 h-5 " />
+        <X className="text-black w-5 h-5" />
       </div>
 
       {/* SIDE PANEL */}
@@ -114,7 +150,7 @@ export default function Detail({
           <h2 className="!text-2xl font-bold">{title}</h2>
         </div>
 
-       {/* BODY */}
+        {/* BODY */}
         <div className="p-6 overflow-y-auto h-[calc(100%-150px)]">
           <div
             className={`grid gap-4 ${
@@ -136,37 +172,15 @@ export default function Detail({
                       <span>{field.label}</span>
                     </div>
 
-                    {/* TAMPILKAN IMAGE JIKA ARRAY URL */}
-                    {Array.isArray(initialData[field.name]) && initialData[field.name].every(val => typeof val === "string" && val.startsWith("http")) ? (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {initialData[field.name].map((url, idx) => (
-                          <img
-                              key={idx}
-                              src={url}
-                              alt={`${field.label} ${idx + 1}`}
-                              onClick={() => setPreviewImage(url)}
-                              className="
-                                w-32 h-32 object-cover rounded shadow
-                                cursor-pointer
-                                hover:opacity-80
-                                transition
-                              "
-                            />
-
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="font-semibold text-gray-800">
-                        {initialData[field.name] || "-"}
-                      </p>
-                    )}
+                    {/* RENDER VALUE BASED ON TYPE */}
+                    {renderValue(field, initialData[field.name])}
                   </>
                 )}
 
                 {(isApproveMode || isRejectMode) && (
                   <FloatingField
                     label={field.label}
-                    type={field.type}
+                    type={field.type || "text"}
                     value={formData[field.name]} 
                     required={field.required}
                     error={fieldErrors[field.name]}
@@ -181,44 +195,25 @@ export default function Detail({
                 )}
               </div>
             ))}
-
           </div>
         </div>
 
         {/* PENDING VIEW */}
         {mode === "view" && isPending && (
           <div className="px-6 py-4 flex justify-end gap-3">
-            {/* <button 
-               type="button"
-              className="!bg-[#EC933A] text-white px-6 py-2 rounded-xl"
-              onClick={() => onChangeMode("approve")}
-            >
-              Terima 
-            </button>
-            <button
-             type="button"
-              className="!bg-[#BC2424] text-white px-6 py-2 rounded-xl"
-              onClick={() => onChangeMode("reject")}
-            >
-              Tolak
-            </button> */}
+            {/* Tombol aksi untuk pending status bisa ditambahkan di sini */}
           </div>
         )}
 
         {/* APPROVE */}
         {mode === "approve" && (
           <div className="gap-120 px-6 py-4 flex justify-end">
-           {/* BACK */}
-            {/* <button
+            <button 
               type="button"
-              onClick={() => onChangeMode("view")}
-              className="!bg-black flex items-center gap-2 text-white"
+              onClick={handleSubmit} 
+              className="!bg-[#EC933A] flex items-center gap-2 text-white rounded-xl px-4 py-2"
             >
-              <ArrowLeft className="w-5 h-5" /> Kembali
-            </button> */}
-            <button type="button"onClick={handleSubmit} className="!bg-[#EC933A] flex items-center gap-2 text-white rounded-xl">
-               Proses <ArrowRight 
-                /> 
+              Proses <ArrowRight /> 
             </button>
           </div>
         )}
@@ -226,21 +221,18 @@ export default function Detail({
         {/* REJECT */}
         {mode === "reject" && (
           <div className="gap-120 px-6 py-4 flex justify-end">
-            {/* BACK */}
-            {/* <button
-              type="button"
-              onClick={() => onChangeMode("view")}
-              className="!bg-black flex items-center gap-2 text-white"
+            <button   
+              type="button" 
+              onClick={handleSubmit} 
+              className="!bg-[#BC2424] flex items-center gap-2 text-white rounded-xl px-4 py-2"
             >
-              <ArrowLeft className="w-5 h-5" /> Kembali
-            </button> */}
-            <button   type="button" onClick={handleSubmit} className="!bg-[#BC2424] flex items-center gap-2 text-white rounded-xl">
               Proses <ArrowRight />
             </button>
           </div>
         )}
-
       </div>
+
+      {/* IMAGE PREVIEW MODAL */}
       {previewImage && (
         <div
           className="
@@ -278,7 +270,6 @@ export default function Detail({
           </button>
         </div>
       )}
-
     </div>
   );
 }

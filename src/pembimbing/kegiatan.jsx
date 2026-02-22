@@ -131,6 +131,49 @@ const handleHapusGuru = (index) => {
   setFormData(updatedFormData);
 };
 
+  // const fetchTugas = async () => {
+  //   try {
+  //     const tasksRes = await getGuruTasks();
+  //     const realisasiRes = await getMyRealisasiKegiatan();
+
+  //     const completedTasks = new Set(
+  //       (realisasiRes || []).map(r => `${r.kegiatan_id}-${r.industri_id}`)
+  //     );
+
+  //     const filteredTasks = tasksRes.data.flatMap((industriGroup) =>
+  //       industriGroup.tasks
+  //         .filter(task => {
+  //           const kegiatanId = task.kegiatan?.id;
+  //           const industriId = industriGroup.industri?.id;
+  //           const taskKey = `${kegiatanId}-${industriId}`;
+  //           const isCompleted = completedTasks.has(taskKey);
+            
+  //           return !isCompleted;
+  //         })
+  //         .map((task) => ({
+  //           id: task.kegiatan?.id,
+  //           nama: task.kegiatan?.jenis || "Tidak ada nama",
+  //           deskripsi: task.kegiatan?.deskripsi || "Tidak ada deskripsi",
+  //           tanggal_mulai: task.kegiatan?.tanggal_mulai,
+  //           tanggal_selesai: task.kegiatan?.tanggal_selesai,
+  //           is_active: task.kegiatan?.is_active || false,
+  //           industri_id: industriGroup.industri?.id,
+  //           industri_nama: industriGroup.industri?.nama || "Tidak diketahui",
+  //           alamat : industriGroup.industri?.alamat || "Tidak diketahui",
+  //           jenis_industri : industriGroup.industri?.jenis_industri || "Tidak Diketahui",
+  //           siswa: industriGroup.siswa || [],
+  //           jumlahSiswa: industriGroup.siswa_count || 0,
+  //           task_key: `${task.kegiatan?.id}-${industriGroup.industri?.id}`
+  //         }))
+  //     );
+
+  //     setTugasData(filteredTasks);
+  //   } catch (err) {
+  //     console.error("Gagal ambil data tugas", err);
+  //     toast.error("Gagal memuat data tugas");
+  //   }
+  // };
+
   const fetchTugas = async () => {
     try {
       const tasksRes = await getGuruTasks();
@@ -148,7 +191,16 @@ const handleHapusGuru = (index) => {
             const taskKey = `${kegiatanId}-${industriId}`;
             const isCompleted = completedTasks.has(taskKey);
             
-            return !isCompleted;
+            // CEK APAKAH INI KEGIATAN PEMBEKALAN (case insensitive)
+            const isPembekalan = 
+              task.kegiatan?.jenis?.toLowerCase().includes("pembekalan") ||
+              task.kegiatan?.deskripsi?.toLowerCase().includes("pembekalan") ||
+              task.kegiatan?.jenis_kegiatan?.toLowerCase().includes("pembekalan") ||
+              task.kegiatan?.nama?.toLowerCase().includes("pembekalan");
+            
+            // HANYA FILTER KEGIATAN PEMBEKALAN, sisanya tetap ditampilkan
+            // Tampilkan SEMUA kegiatan KECUALI yang pembekalan
+            return !isPembekalan;
           })
           .map((task) => ({
             id: task.kegiatan?.id,
@@ -167,6 +219,10 @@ const handleHapusGuru = (index) => {
           }))
       );
 
+      // Log untuk debugging
+      console.log(`Total tasks awal: ${tasksRes.data.flatMap(g => g.tasks).length}`);
+      console.log(`Tasks setelah filter (tanpa pembekalan): ${filteredTasks.length}`);
+      
       setTugasData(filteredTasks);
     } catch (err) {
       console.error("Gagal ambil data tugas", err);

@@ -13,6 +13,7 @@ import cancelImg from "../../assets/cancel.svg";
 
 // import components
 import DeleteConfirmationModal from "../components/Cancel"; 
+
 export default function Add({
   title,
   fields = [],
@@ -28,6 +29,7 @@ export default function Add({
   submitText = "Simpan",   
   cancelText = "Batal",    
   submitButtonProps = {},
+  children, // <-- TAMBAHKAN INI
 }) {
   const navigate = useNavigate();
   const [modalText, setModalText] = useState({
@@ -338,7 +340,7 @@ export default function Add({
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
           {/* kiri */}
-          <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-300 ">
+          <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-300 overflow-y-auto">
             {leftContent ? (
               leftContent
             ) : (
@@ -348,31 +350,29 @@ export default function Add({
             )}
           </div>
 
-
           {/* kanan */}
-          <div className="flex w-full md:w-1/2 p-15 overflow-hidden">
+          <div className="w-full lg:w-1/2 overflow-y-auto p-6">
+            {/* Form fields */}
             <form
               id="addForm"
               onSubmit={handleSubmit}
-              className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 p-1 gap-4 overflow-y-auto"
-              style={{ maxHeight: "100%" }}
+              className="w-full grid grid-cols-1 md:grid-cols-2 gap-4"
             > 
-              
               {fields.map((field, idx) => (
                 <div
                   key={field.name}
-                  className={field.width === "full" ? "col-span-2 relative" : "relative"}
+                  className={field.width === "full" ? "col-span-2" : ""}
                 >
                   <label className="block mb-1 text-sm font-bold text-gray-700">
                     {field.label}
                   </label>
 
                   {field.type === "select" ? (
-                    <div className="relative w-full max-w-[600px]">
+                    <div className="relative w-full">
                       {/* Trigger */}
                       <div
                         onClick={() => toggleDropdown(field.name)}
-                        className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+                        className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-3 bg-white text-sm flex justify-between items-center"
                       >
                         {selectedLabels[field.name] || `Pilih ${field.label}`}
                         <img
@@ -423,7 +423,7 @@ export default function Add({
                         </div>
                       )}
                     </div>
-                    ) : field.type === "switch" ? (
+                  ) : field.type === "switch" ? (
                     <div
                       onClick={() => handleToggle(field.name)}
                       className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition ${
@@ -513,11 +513,12 @@ export default function Add({
                       ref={(el) => (inputRefs.current[idx] = el)}
                       defaultValue={initialData[field.name] || ""}
                       onKeyDown={(e) => handleKeyDown(e, idx)}
+                      disabled={field.disabled}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                         fieldErrors[field.name]
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300 focus:ring-orange-500"
-                      }`}
+                      } ${field.disabled ? 'bg-gray-100 text-gray-600' : ''}`}
                     />
                   ) : field.type === "password" ? (
                     <div className="relative w-full">
@@ -527,11 +528,12 @@ export default function Add({
                         ref={(el) => (inputRefs.current[idx] = el)}
                         defaultValue={initialData[field.name] || ""}
                         onKeyDown={(e) => handleKeyDown(e, idx)}
+                        disabled={field.disabled}
                         className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                           fieldErrors[field.name]
                             ? "border-red-500 focus:ring-red-500"
                             : "border-gray-300 focus:ring-orange-500"
-                        }`}
+                        } ${field.disabled ? 'bg-gray-100 text-gray-600' : ''}`}
                       />
                       <button
                         type="button"
@@ -541,7 +543,7 @@ export default function Add({
                         {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                       </button>
                     </div>
-                  ): field.type === "date" ? (
+                  ) : field.type === "date" ? (
                     <div>
                       <DatePicker
                         selected={dateValues[field.name]}
@@ -572,6 +574,7 @@ export default function Add({
                         withPortal
                         locale={id} 
                         placeholderText={field.placeholder || `Pilih ${field.label}`}
+                        disabled={field.disabled}
                         customInput={
                           <DateInput
                             clearValue={() =>
@@ -615,11 +618,12 @@ export default function Add({
                       ref={(el) => (inputRefs.current[idx] = el)}
                       defaultValue={initialData[field.name] || ""}
                       onKeyDown={(e) => handleKeyDown(e, idx)}
+                      disabled={field.disabled}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                         fieldErrors[field.name]
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300 focus:ring-orange-500"
-                      }`}
+                      } ${field.disabled ? 'bg-gray-100 text-gray-600' : ''}`}
                     />
                   )}
 
@@ -629,6 +633,13 @@ export default function Add({
                 </div>
               ))}
             </form>
+
+            {/* Render children DI SINI, setelah form tapi masih di area kanan */}
+            {children && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                {children}
+              </div>
+            )}
           </div>
         </div>
 
@@ -661,7 +672,6 @@ export default function Add({
           >
             {submitText}
           </button>
-
         </div>
 
         <DeleteConfirmationModal
@@ -675,11 +685,7 @@ export default function Add({
           title={modalText.title}
           subtitle={modalText.subtitle}
         />
-
       </div>
     </div>
   );
-  
 }
-
-

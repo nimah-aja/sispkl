@@ -32,3 +32,16 @@ export const getRealisasiById = async (id) => {
     throw error;
   }
 };
+
+
+export const updateRealisasiFoto = async (id, bukti_foto_urls) => {
+  try {
+    const response = await axios.put(`/api/realisasi-kegiatan/${id}`, {
+      bukti_foto_urls
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating realisasi foto:", error);
+    throw error;
+  }
+};

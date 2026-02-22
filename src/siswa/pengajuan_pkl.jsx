@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { X, Plus, ArrowLeft, Eye, EyeOff, Calendar } from "lucide-react";
+import { X, Plus, ArrowLeft, Eye, EyeOff, Calendar, User, Users } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
@@ -403,7 +403,7 @@ export default function PengajuanPKL() {
   });
 
   return (
-    <div className="flex h-screen w-screen justify-center items-center bg-[#F4EFE6] p-4">
+    <div className="flex h-screen w-screen justify-center items-center bg-[#E1D6C4] p-4">
       <div className="flex flex-col w-full max-w-6xl h-[90vh] bg-white rounded-2xl shadow-lg overflow-hidden">
         
         {/* Header */}
@@ -414,7 +414,7 @@ export default function PengajuanPKL() {
           >
             <ArrowLeft size={20} />
           </div>
-          <h1 className="text-2xl font-bold">Pengajuan PKL</h1>
+          <h2 className="text-3xl font-bold">Pengajuan PKL</h2>
         </div>
 
         {/* Body */}
@@ -434,30 +434,65 @@ export default function PengajuanPKL() {
             <div className="w-full p-8 overflow-y-auto space-y-6">
               
               {/* Kategori Peserta */}
-              <div>
-                <label className="block mb-1 text-sm font-bold text-gray-700">
-                  Kategori Peserta
-                </label>
-                <div className="flex gap-6">
-                  {["individu", "kelompok"].map((k) => (
-                    <label key={k} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="kategori"
-                        checked={kategoriPeserta === k}
-                        onChange={() => handleKategoriChange(k)}
-                        className="w-4 h-4 accent-[#641E20]"
-                      />
-                      <span className="capitalize">{k}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              {/* <div>
+                  <label className="block mb-3 text-sm font-bold text-gray-700">
+                    Kategori Peserta
+                  </label>
+                  <div className="flex gap-4">
+                    {[
+                      { 
+                        value: "individu", 
+                        title: "Individu", 
+                        desc: "Pilih untuk 1 siswa",
+                        icon: User
+                      },
+                      { 
+                        value: "kelompok", 
+                        title: "Kelompok", 
+                        desc: "Pilih untuk beberapa siswa",
+                        icon: Users
+                      }
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div
+                          key={item.value}
+                          onClick={() => handleKategoriChange(item.value)}
+                          className={`flex-1 p-4 rounded-xl cursor-pointer transition-all ${
+                            kategoriPeserta === item.value
+                              ? " bg-[#FDF0EE]"
+                              : " bg-gray-100 hover:bg-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <Icon 
+                              className={`mt-3 w-6 h-6 ${
+                                kategoriPeserta === item.value ? "text-[#641E20]" : "text-gray-600"
+                              }`} 
+                            />
+                            <div>
+                              <h3 className={`font-semibold ${
+                                kategoriPeserta === item.value ? "text-[#641E20]" : "text-gray-700"
+                              }`}>
+                                {item.title}
+                              </h3>
+                              <p className={`text-sm mt-1 ${
+                                kategoriPeserta === item.value ? "text-[#641E20]" : "text-gray-500"
+                              }`}>
+                                {item.desc}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div> */}
 
               {/* Industri - Dropdown with search */}
               <div className="relative">
                 <label className="block mb-1 text-sm font-bold text-gray-700">
-                  Industri
+                  Nama Industri
                 </label>
                 <div className="relative w-full">
                   {/* Trigger */}
@@ -516,18 +551,18 @@ export default function PengajuanPKL() {
               </div>
 
               {/* Info Kelas User */}
-              {userKelasNama && (
+              {/* {userKelasNama && (
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
                     <span className="font-semibold">Kelas Anda:</span> {userKelasNama}
                   </p>
                   {userJurusanId && (
                     <p className="text-xs text-blue-600 mt-1">
-                      {kelasIdsInJurusan.length} kelas dengan jurusan sama | {availableSiswa.length} siswa tersedia (tidak termasuk Anda)
+                      {kelasIdsInJurusan.length} kelas dengan jurusan sama | {availableSiswa.length} siswa tersedia 
                     </p>
                   )}
                 </div>
-              )}
+              )} */}
 
               {/* Siswa - Only for kelompok mode */}
               {kategoriPeserta === "kelompok" && (
@@ -596,7 +631,7 @@ export default function PengajuanPKL() {
 
                         <button 
                           onClick={() => handleHapusSiswa(idx)}
-                          className="p-4 text-red-600 hover:text-red-800 transition-colors flex-shrink-0 border border-[#C9CFCF] rounded-lg"
+                          className="!bg-transparent p-4 text-red-600 hover:text-red-800 transition-colors flex-shrink-0 border border-[#C9CFCF] rounded-lg"
                           type="button"
                         >
                           <X size={20} />
@@ -607,7 +642,7 @@ export default function PengajuanPKL() {
 
                   <button
                     onClick={handleTambahSiswa}
-                    className="flex items-center gap-2 text-[#641E20] hover:text-[#831e20] transition-colors mt-2"
+                    className="!bg-[#1447E6] flex items-center gap-2 text-white hover:text-[#831e20] transition-colors mt-2"
                     type="button"
                     disabled={isLoadingData || availableSiswa.length === 0}
                   >
@@ -647,27 +682,27 @@ export default function PengajuanPKL() {
           <button
             type="button"
             onClick={handleResetClick}
-            className="px-6 py-3 rounded-lg"
+            className="button-radius"
             style={{
-              backgroundColor: "#3A3D3D",
-              color: "white",
-              transition: "all 0.2s",
+              "--btn-bg": "#3A3D3D",
+              "--btn-active": "#5d6464ff",
+              "--btn-text": "white",
             }}
             onMouseEnter={(e) => e.target.style.backgroundColor = "#5d6464ff"}
             onMouseLeave={(e) => e.target.style.backgroundColor = "#3A3D3D"}
           >
-            Reset
+            Atur Ulang
           </button>
 
           <button
             type="button"
             onClick={() => setIsSaveModalOpen(true)}
             disabled={isLoading || isLoadingData}
-            className="px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="button-radius"
             style={{
-              backgroundColor: "#EC933A",
-              color: "white",
-              transition: "all 0.2s",
+              "--btn-bg": "#EC933A",
+              "--btn-active": "#f4d0adff",
+              "--btn-text": "white",
             }}
             onMouseEnter={(e) => e.target.style.backgroundColor = "#f4d0adff"}
             onMouseLeave={(e) => e.target.style.backgroundColor = "#EC933A"}

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, useNavigate } from "react-router-dom"; 
 import { Toaster } from "react-hot-toast";
 
 // Login
@@ -34,6 +34,7 @@ import DataPenjemputan from "./koordinator/data_penjemputan"
 import PindahPKL from "./koordinator/data_pindah_pkl"
 import Pembekalan from "./koordinator/jadwal_pembekalan"
 import PreviewPengajuan from "./koordinator/components/editPengajuan"; 
+import DataIndustri from "./koordinator/data_industri";
 
 // kapro
 import KaprodiDashboard from "./kapro/dashboard_kaprog";
@@ -57,6 +58,7 @@ import UploadPengantaran from "./pembimbing/upload_pengantaran";
 import CetakDokumen from "./pembimbing/cetak_dokumen"
 import TugasTerbaruPage from "./pembimbing/components/TugasTerbaruPage";
 import BeritaAcara from "./pembimbing/berita_acara"
+import EditRealisasi from "./pembimbing/EditRealisasi";
   
 // siswa
 import DashboardSiswa from "./siswa/dashboard_siswa";
@@ -135,6 +137,7 @@ function AppContent() {
             path="/guru/pembimbing/berita_acara"
             element={<BeritaAcara />}
           />
+          <Route path="/guru/pembimbing/edit-realisasi" element={<EditRealisasi />} />
 
 
         {/* Koordinator */}
@@ -148,6 +151,7 @@ function AppContent() {
         <Route path = "/guru/koordinator/perpindahanPKL" element = {<PindahPKL/>}/>
         <Route path = "/guru/koordinator/pembekalan" element = {<Pembekalan/>}/>
         <Route path = "/guru/koordinator/editPengajuan" element = {<PreviewPengajuan/>}/>
+        <Route path = "/guru/koordinator/industri" element = {<DataIndustri/>}/>
 
         {/* Kapro */}
         <Route path="/guru/kaprodi" element={<KaprodiDashboard/>}/>
