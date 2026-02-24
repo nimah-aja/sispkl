@@ -16,7 +16,7 @@ import SaveConfirmationModal from "./components/Save";
 import DeleteConfirmation from "./components/Delete";
 
 // utils API
-import { getPKLApplications } from "../utils/services/kapro/pengajuanPKL";
+import { getApprovedPKL } from "../utils/services/koordinator/pengajuan"; // Ganti import
 import { getPembimbingList } from "../utils/services/kapro/pembimbing";
 
 // assets
@@ -57,71 +57,61 @@ export default function DataPeserta() {
   // ===============================
   // FETCH DATA PESERTA PKL (API)
   // ===============================
-  // ===============================
-// FETCH DATA PESERTA PKL (API)
-// ===============================
-useEffect(() => {
-  const fetchPeserta = async () => {
-    try {
-      const [appRes, pembimbingList] = await Promise.all([
-        getPKLApplications(),
-        getPembimbingList(),
-      ]);
+  useEffect(() => {
+    const fetchPeserta = async () => {
+      try {
+        const [appRes, pembimbingList] = await Promise.all([
+          getApprovedPKL(), // Ganti dengan getApprovedPKL
+          getPembimbingList(),
+        ]);
 
-      // =============================
-      // MAP PEMBIMBING ID -> NAMA
-      // =============================
-      const pembimbingMap = {};
-      pembimbingList.forEach((g) => {
-        pembimbingMap[g.id] = g.nama;
-      });
-
-      // =============================
-      // AMBIL ARRAY DATA
-      // =============================
-      const list = appRes?.data || [];
-
-      // =============================
-      // DEDUPLIKASI BERDASARKAN NISN
-      // =============================
-      const pesertaMap = new Map();
-
-      list.forEach((item) => {
-        const statusRaw = item.application?.status;
-        const nisn = item.siswa_nisn;
-
-        if (!nisn) return;
-
-        pesertaMap.set(nisn, {
-          nisn: item.siswa_nisn || "-",
-          nama: item.siswa_username || "-",
-          industri: item.industri_nama || "-",
-          kelas: item.kelas_nama || "-",
-          guru:
-            pembimbingMap[item.application?.pembimbing_guru_id] || "-",
-          status:
-            statusLabelMap[statusRaw] || "Menunggu",
+        // =============================
+        // MAP PEMBIMBING ID -> NAMA
+        // =============================
+        const pembimbingMap = {};
+        pembimbingList.forEach((g) => {
+          pembimbingMap[g.id] = g.nama;
         });
-      });
 
-      setPeserta(Array.from(pesertaMap.values()));
-    } catch (err) {
-      console.error("Gagal load peserta PKL:", err);
-    }
-  };
+        // =============================
+        // AMBIL ARRAY DATA
+        // =============================
+        const list = appRes?.data || [];
 
-  fetchPeserta();
-}, []);
+        // =============================
+        // DEDUPLIKASI BERDASARKAN NISN
+        // =============================
+        const pesertaMap = new Map();
 
+        list.forEach((item) => {
+          const nisn = item.siswa_nisn;
 
+          if (!nisn) return;
+
+          pesertaMap.set(nisn, {
+            nisn: item.siswa_nisn || "-",
+            nama: item.siswa_username || "-",
+            industri: item.industri_nama || "-",
+            kelas: item.kelas_nama || "-",
+            jurusan: item.jurusan_nama || "-", // Ganti guru dengan jurusan
+            status: item.status || "Menunggu",
+          });
+        });
+
+        setPeserta(Array.from(pesertaMap.values()));
+      } catch (err) {
+        console.error("Gagal load peserta PKL:", err);
+      }
+    };
+
+    fetchPeserta();
+  }, []);
 
   const statusLabelMap = {
     Approved: "Disetujui",
     Rejected: "Ditolak",
     Pending: "Menunggu",
   };
-
-
 
   // ===============================
   // FILTER OPTIONS (DINAMIS)
@@ -175,7 +165,7 @@ useEffect(() => {
     { label: "Nama", key: "nama" },
     { label: "Industri", key: "industri" },
     { label: "Kelas", key: "kelas" },
-    { label: "Guru", key: "guru" },
+    { label: "Jurusan", key: "jurusan" }, // Ganti Guru dengan Jurusan
     // { label: "Status", key: "status" },
   ];
 
@@ -188,7 +178,7 @@ useEffect(() => {
     Nama: item.nama,
     Industri: item.industri,
     Kelas: item.kelas,
-    Guru: item.guru,
+    Jurusan: item.jurusan, // Ganti Guru dengan Jurusan
     Status: item.status,
   }));
 

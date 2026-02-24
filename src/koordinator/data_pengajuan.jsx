@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getPKLApplications } from "../utils/services/kapro/pengajuanPKL";
+import { getApprovedPKL } from "../utils/services/koordinator/pengajuan"; // Ganti import
 import { Edit, Printer, Users, X, Search as SearchIcon } from "lucide-react";
 import {
   fetchGuruById,
@@ -37,27 +37,32 @@ export default function DataPengajuan() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [pklRes, guruRes] = await Promise.all([getPKLApplications(), getAllGuru()]);
+        const [pklRes, guruRes] = await Promise.all([getApprovedPKL(), getAllGuru()]); // Ganti dengan getApprovedPKL
         setGuruList(guruRes || []);
-        const approvedList = (pklRes?.data || [])
-          .filter((item) => item.application?.status === "Approved")
-          .map((item) => ({
-            id: item.application.id,
-            name: item.siswa_username,
-            class: item.kelas_nama,
-            nisn: item.siswa_nisn,
-            industri: item.industri_nama,
-            jurusan: item.jurusan_nama,
-            tanggal_mulai: item.application.tanggal_mulai,
-            tanggal_selesai: item.application.tanggal_selesai,
-            processed_by: item.application.processed_by,
-            description: `PKL di ${item.industri_nama} telah disetujui`,
-            nama_perusahaan: item.industri_nama,
-            alamat_perusahaan: item.industri_alamat || "Jl. Contoh No. 123",
-          }));
+        
+        // Langsung ambil data dari response, tanpa filter status karena sudah Approved dari endpoint
+        const approvedList = (pklRes?.data || []).map((item) => ({
+          id: item.application_id, // Sesuaikan dengan response
+          name: item.siswa_username,
+          class: item.kelas_nama,
+          nisn: item.siswa_nisn,
+          industri: item.industri_nama,
+          jurusan: item.jurusan_nama,
+          tanggal_mulai: item.tanggal_mulai,
+          tanggal_selesai: item.tanggal_selesai,
+          processed_by: item.processed_by, // Jika ada di response
+          description: `PKL di ${item.industri_nama} telah disetujui`,
+          nama_perusahaan: item.industri_nama,
+          alamat_perusahaan: item.industri_alamat || "Jl. Contoh No. 123",
+        }));
+        
         setPengajuanList(approvedList);
         setFilteredPengajuanList(approvedList);
-      } catch (err) { console.error("Fetch error:", err); } finally { setLoading(false); }
+      } catch (err) { 
+        console.error("Fetch error:", err); 
+      } finally { 
+        setLoading(false); 
+      }
     };
     fetchData();
   }, []);
@@ -109,7 +114,7 @@ export default function DataPengajuan() {
     }
   }, [query, pengajuanList]);
 
-  // MODIFIED: Group data by perusahaan with unique students per company
+  // Group data by perusahaan dengan deduplikasi siswa per NISN
   const groupedByPerusahaan = filteredPengajuanList.reduce((acc, item) => {
     if (!acc[item.nama_perusahaan]) {
       acc[item.nama_perusahaan] = {
@@ -119,12 +124,12 @@ export default function DataPengajuan() {
       };
     }
     
-    // Check if student with same NISN already exists in this company
+    // Cek apakah siswa dengan NISN yang sama sudah ada di perusahaan ini
     const isSiswaExists = acc[item.nama_perusahaan].siswa.some(
       existingSiswa => existingSiswa.nisn === item.nisn
     );
     
-    // Only add if student with this NISN doesn't exist in this company
+    // Hanya tambahkan jika NISN belum ada di perusahaan ini
     if (!isSiswaExists) {
       acc[item.nama_perusahaan].siswa.push(item);
     }

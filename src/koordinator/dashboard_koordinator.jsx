@@ -15,7 +15,7 @@ import Detail from "./components/Detail";
 import { getSiswa } from "../utils/services/admin/get_siswa";
 import { getPKLApplicationSummary } from "../utils/services/kapro/pengajuanPKL";
 import { getTotalPembimbing } from "../utils/services/kapro/pembimbing";
-import { getPKLApplications } from "../utils/services/kapro/pengajuanPKL"; 
+import { getApprovedPKL } from "../utils/services/koordinator/pengajuan";
 
 // assets
 import sidebarUsers from "../assets/sidebarUsers.svg";
@@ -45,31 +45,48 @@ export default function KoordinatorDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [
-          siswa,
-          pengajuanSummary,
-          totalPembimbing,
-          pengajuanPKL,
-        ] = await Promise.all([
-          getSiswa(),
-          getPKLApplicationSummary(),
-          getTotalPembimbing(),
-          getPKLApplications(), // ⬅ LIST PENGAJUAN
-        ]);
+        // Ambil data pengajuan PKL yang sudah disetujui
+        const approvedPKLResponse = await getApprovedPKL();
+        const approvedPKL = approvedPKLResponse.data || []; // Ambil array data dari response
+        const totalApprovedPKL = approvedPKLResponse.total || approvedPKL.length; // Ambil total dari response
+
+        // Hitung jumlah siswa UNIK dari data pengajuan PKL
+        const uniqueSiswa = new Map(); // Gunakan Map untuk menyimpan siswa unik
+        
+        approvedPKL.forEach(item => {
+          const siswaId = item.siswa_id;
+          const siswaNISN = item.siswa_nisn;
+          const uniqueKey = siswaId || siswaNISN; // Gunakan ID atau NISN sebagai kunci unik
+          
+          if (!uniqueSiswa.has(uniqueKey)) {
+            uniqueSiswa.set(uniqueKey, {
+              id: siswaId,
+              nisn: siswaNISN,
+              nama: item.siswa_username,
+              kelas: item.kelas_nama,
+              jurusan: item.jurusan_nama
+            });
+          }
+        });
+
+        const totalUniqueSiswa = uniqueSiswa.size;
+
+        // Ambil total pembimbing
+        const totalPembimbing = await getTotalPembimbing();
 
         // DASHBOARD CARD
         setDataDisplay([
           {
             title: "Data Siswa",
             icon: sidebarUsers,
-            value: siswa.length,
-            description: `${siswa.length} siswa terdaftar`,
+            value: totalUniqueSiswa,
+            description: `${totalUniqueSiswa} siswa aktif PKL`,
           },
           {
             title: "Pengajuan PKL",
             icon: applicationPKL,
-            value: pengajuanSummary.total,
-            description: `${pengajuanSummary.pending} menunggu`,
+            value: totalApprovedPKL,
+            description: `${totalApprovedPKL} total pengajuan`,
           },
           {
             title: "Pembimbing",
@@ -90,24 +107,28 @@ export default function KoordinatorDashboard() {
         // =========================
         const sevenDaysAgo = dayjs().subtract(7, "day");
 
-        const aktivitas7Hari = pengajuanPKL
+        const aktivitas7Hari = approvedPKL
           .filter((item) =>
-            dayjs(item.tanggal_pengajuan).isAfter(sevenDaysAgo)
+            dayjs(item.tanggal_permohonan).isAfter(sevenDaysAgo)
           )
           .map((item) => ({
-            id: item.id,
-            type: item.status ?? "Tertunda",
-            title: "Pengajuan PKL",
-            description: `${item.nama_siswa} mengajukan PKL di ${item.nama_industri}`,
-            time: dayjs(item.tanggal_pengajuan).format(
+            id: item.application_id,
+            type: item.status,
+            title: "Pengajuan PKL Disetujui",
+            description: `${item.siswa_username} mengajukan PKL di ${item.industri_nama}`,
+            time: dayjs(item.tanggal_permohonan).format(
               "DD MMM YYYY HH:mm"
             ),
-            nama_siswa: item.nama_siswa,
-            industri: item.nama_industri,
-            kelas: item.kelas,
-            jurusan: item.jurusan,
-            nisn: item.nisn,
-          }));
+            nama_siswa: item.siswa_username,
+            industri: item.industri_nama,
+            kelas: item.kelas_nama,
+            jurusan: item.jurusan_nama,
+            nisn: item.siswa_nisn,
+            siswa_id: item.siswa_id,
+            tanggal_mulai: item.tanggal_mulai,
+            tanggal_selesai: item.tanggal_selesai,
+          }))
+          .sort((a, b) => dayjs(b.time).diff(dayjs(a.time))); // Urutkan dari terbaru
 
         setAktivitas(aktivitas7Hari);
       } catch (err) {
@@ -190,6 +211,8 @@ export default function KoordinatorDashboard() {
                 jurusan: detailAktivitas.jurusan,
                 status: detailAktivitas.type,
                 tanggal_permohonan: detailAktivitas.time,
+                tanggal_mulai: detailAktivitas.tanggal_mulai,
+                tanggal_selesai: detailAktivitas.tanggal_selesai,
               }}
               fields={[
                 { name: "nama_industri", label: "Industri" },
@@ -199,6 +222,8 @@ export default function KoordinatorDashboard() {
                 { name: "jurusan", label: "Konsentrasi Keahlian" },
                 { name: "status", label: "Status" },
                 { name: "tanggal_permohonan", label: "Tanggal Pengajuan" },
+                { name: "tanggal_mulai", label: "Tanggal Mulai" },
+                { name: "tanggal_selesai", label: "Tanggal Selesai" },
               ]}
             />,
             document.body

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { X, Plus, ArrowLeft, Eye, EyeOff, Calendar, User, Users } from "lucide-react";
@@ -25,7 +25,6 @@ import SaveConfirmationModal from "./components/Save";
 
 export default function PengajuanPKL() {
   const navigate = useNavigate();
-  const arrowRef = useRef(null); // Ref untuk arrow button
 
   const [listIndustri, setListIndustri] = useState([]);
   const [allKelas, setAllKelas] = useState([]);
@@ -65,12 +64,6 @@ export default function PengajuanPKL() {
 
   // Date states
   const [dateValues, setDateValues] = useState({});
-
-  // Modal text
-  const [modalText, setModalText] = useState({
-    title: "Apakah Anda yakin untuk kembali?",
-    subtitle: "Data yang sudah diisi akan terhapus."
-  });
 
   /* ================= GET LOGGED-IN USER'S DATA FROM LOCALSTORAGE ================= */
   useEffect(() => {
@@ -329,16 +322,7 @@ export default function PengajuanPKL() {
     }
   };
 
-  // PERBAIKAN UTAMA: Handler untuk tombol kembali dengan event prevention
-  const handleCancelClick = (e) => {
-    // Mencegah event bubbling dan default behavior
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    console.log("Cancel button clicked - modal should open now");
-    
+  const handleCancelClick = () => {
     let title = "Apakah Anda yakin untuk kembali?";
     let subtitle = "Data yang sudah diisi akan terhapus.";
 
@@ -352,20 +336,6 @@ export default function PengajuanPKL() {
 
     setModalText({ title, subtitle });
     setIsModalOpen(true);
-  };
-
-  // Handler untuk modal close
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-  };
-
-  // Handler untuk modal confirm
-  const handleModalConfirm = () => {
-    setIsModalOpen(false);
-    // Gunakan setTimeout untuk memastikan modal benar-benar tertutup sebelum navigasi
-    setTimeout(() => {
-      navigate(-1);
-    }, 50);
   };
 
   const handleResetClick = () => {
@@ -411,7 +381,6 @@ export default function PengajuanPKL() {
             <X
               onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 clearValue();
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 cursor-pointer"
@@ -419,11 +388,7 @@ export default function PengajuanPKL() {
           ) : (
             <Calendar
               className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500 cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClick();
-              }}
+              onClick={onClick}
             />
           )}
         </div>
@@ -431,18 +396,21 @@ export default function PengajuanPKL() {
     }
   );
 
+  // Modal text
+  const [modalText, setModalText] = useState({
+    title: "Apakah Anda yakin untuk kembali?",
+    subtitle: "Data yang sudah diisi akan terhapus."
+  });
+
   return (
     <div className="flex h-screen w-screen justify-center items-center bg-[#E1D6C4] p-4">
       <div className="flex flex-col w-full max-w-6xl h-[90vh] bg-white rounded-2xl shadow-lg overflow-hidden">
         
-        {/* Header - PERBAIKAN: Tambahkan stopPropagation di sini */}
+        {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
-            ref={arrowRef}
             onClick={handleCancelClick}
-            onMouseDown={(e) => e.preventDefault()} // Mencegah focus
-            className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer select-none"
-            style={{ pointerEvents: 'auto' }} // Pastikan elemen bisa diklik
+            className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
           >
             <ArrowLeft size={20} />
           </div>
@@ -465,8 +433,61 @@ export default function PengajuanPKL() {
           <div className="flex w-full md:w-1/2 overflow-hidden">
             <div className="w-full p-8 overflow-y-auto space-y-6">
               
-              {/* Kategori Peserta - Commented out as in original */}
-              {/* ... */}
+              {/* Kategori Peserta */}
+              {/* <div>
+                  <label className="block mb-3 text-sm font-bold text-gray-700">
+                    Kategori Peserta
+                  </label>
+                  <div className="flex gap-4">
+                    {[
+                      { 
+                        value: "individu", 
+                        title: "Individu", 
+                        desc: "Pilih untuk 1 siswa",
+                        icon: User
+                      },
+                      { 
+                        value: "kelompok", 
+                        title: "Kelompok", 
+                        desc: "Pilih untuk beberapa siswa",
+                        icon: Users
+                      }
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div
+                          key={item.value}
+                          onClick={() => handleKategoriChange(item.value)}
+                          className={`flex-1 p-4 rounded-xl cursor-pointer transition-all ${
+                            kategoriPeserta === item.value
+                              ? " bg-[#FDF0EE]"
+                              : " bg-gray-100 hover:bg-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <Icon 
+                              className={`mt-3 w-6 h-6 ${
+                                kategoriPeserta === item.value ? "text-[#641E20]" : "text-gray-600"
+                              }`} 
+                            />
+                            <div>
+                              <h3 className={`font-semibold ${
+                                kategoriPeserta === item.value ? "text-[#641E20]" : "text-gray-700"
+                              }`}>
+                                {item.title}
+                              </h3>
+                              <p className={`text-sm mt-1 ${
+                                kategoriPeserta === item.value ? "text-[#641E20]" : "text-gray-500"
+                              }`}>
+                                {item.desc}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div> */}
 
               {/* Industri - Dropdown with search */}
               <div className="relative">
@@ -498,7 +519,6 @@ export default function PengajuanPKL() {
                         className="w-full px-3 py-2 border-b text-sm focus:outline-none"
                         value={searchQueries.industri || ""}
                         onChange={(e) => handleSearchChange("industri", e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
                       />
 
                       <ul className="max-h-48 overflow-y-auto">
@@ -511,8 +531,7 @@ export default function PengajuanPKL() {
                           .map((opt) => (
                             <li
                               key={opt.value}
-                              onClick={(e) => {
-                                e.stopPropagation();
+                              onClick={() => {
                                 handleIndustriChange(opt.value, opt.label);
                                 setDropdownState((prev) => ({
                                   ...prev,
@@ -530,6 +549,20 @@ export default function PengajuanPKL() {
                   )}
                 </div>
               </div>
+
+              {/* Info Kelas User */}
+              {/* {userKelasNama && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">Kelas Anda:</span> {userKelasNama}
+                  </p>
+                  {userJurusanId && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {kelasIdsInJurusan.length} kelas dengan jurusan sama | {availableSiswa.length} siswa tersedia 
+                    </p>
+                  )}
+                </div>
+              )} */}
 
               {/* Siswa - Only for kelompok mode */}
               {kategoriPeserta === "kelompok" && (
@@ -571,7 +604,6 @@ export default function PengajuanPKL() {
                                 className="w-full px-3 py-2 border-b text-sm focus:outline-none"
                                 value={studentSearchQueries[idx] || ""}
                                 onChange={(e) => handleStudentSearchChange(idx, e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
                               />
 
                               <ul className="max-h-48 overflow-y-auto">
@@ -584,8 +616,7 @@ export default function PengajuanPKL() {
                                   .map((opt) => (
                                     <li
                                       key={opt.value}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
+                                      onClick={() => {
                                         handleSiswaChange(idx, opt.value, opt.label);
                                       }}
                                       className="px-4 py-2 cursor-pointer hover:bg-orange-50"
@@ -599,10 +630,7 @@ export default function PengajuanPKL() {
                         </div>
 
                         <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleHapusSiswa(idx);
-                          }}
+                          onClick={() => handleHapusSiswa(idx)}
                           className="!bg-transparent p-4 text-red-600 hover:text-red-800 transition-colors flex-shrink-0 border border-[#C9CFCF] rounded-lg"
                           type="button"
                         >
@@ -683,11 +711,14 @@ export default function PengajuanPKL() {
           </button>
         </div>
 
-        {/* Modals - PERBAIKAN: Tambahkan props yang benar */}
+        {/* Modals */}
         <DeleteConfirmationModal
           isOpen={isModalOpen}
-          onClose={handleModalClose}
-          onDelete={handleModalConfirm}
+          onClose={() => setIsModalOpen(false)}
+          onDelete={() => {
+            setIsModalOpen(false);
+            navigate(-1);
+          }}
           imageSrc={cancelImg}
           title={modalText.title}
           subtitle={modalText.subtitle}
