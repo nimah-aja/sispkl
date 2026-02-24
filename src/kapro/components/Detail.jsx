@@ -1,24 +1,118 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import FloatingField from "./FloatingField";
+import {
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
 
 export default function Detail({
-  title = "Rincian Pengajuan PKL",
+  title = "Detail Pengajuan PKL",
   fields = [],
   initialData = {},
   onClose,
-  size = "half", // "full" | "half"
+  size = "half",
+  mode = "view",
+  onChangeMode,
+  onSubmit,
+  
 }) {
+  const [fieldErrors, setFieldErrors] = useState({});
   const isFull = size === "full";
+  const isPending =
+    initialData?.status === "Pending" ||
+    initialData?.status === "pending";
+
+  const isApproveMode = mode === "approve";
+  const isRejectMode  = mode === "reject";
+  const isViewMode    = mode === "view";
   const [previewImage, setPreviewImage] = useState(null);
 
-  return (
-    <div className="fixed inset-0 z-[10000000] flex items-center justify-end">
-      {/* BACKDROP */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+  const [formData, setFormData] = useState(initialData || {});
 
-      {/* CLOSE BUTTON */}
+  useEffect(() => {
+    setFormData(initialData);
+  }, [initialData, fields]);
+
+  const handleSubmit = () => {
+    const errors = {};
+
+    fields.forEach((field) => {
+      const value = formData[field.name];
+
+      if (
+        field.required &&
+        (value === undefined || value === null || value === "")
+      ) {
+        errors[field.name] = `${field.label} wajib diisi`;
+      }
+
+      if (field.minLength && value && value.length < field.minLength) {
+        errors[field.name] =
+          `${field.label} minimal ${field.minLength} karakter`;
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors); 
+      return;
+    }
+
+    setFieldErrors({});
+    onSubmit(mode, formData);
+  };
+
+  // Fungsi untuk merender nilai berdasarkan tipe field
+  const renderValue = (field, value) => {
+    // Handle array of images
+    if (Array.isArray(value) && value.every(val => typeof val === "string" && val.startsWith("http"))) {
+      return (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {value.map((url, idx) => (
+            <img
+              key={idx}
+              src={url}
+              alt={`${field.label} ${idx + 1}`}
+              onClick={() => setPreviewImage(url)}
+              className="
+                w-32 h-32 object-cover rounded shadow
+                cursor-pointer
+                hover:opacity-80
+                transition
+              "
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Handle textarea / teks panjang
+    if (field.type === "textarea" || (value && value.length > 50)) {
+      return (
+        <div className="font-semibold text-gray-800 whitespace-pre-wrap break-words max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
+          {value || "-"}
+        </div>
+      );
+    }
+
+    // Default text
+    return (
+      <p className="font-semibold text-gray-800 truncate hover:text-clip hover:overflow-visible hover:whitespace-normal transition-all" title={value}>
+        {value || "-"}
+      </p>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-end z-[11]">
+      
+      {/* BACKDROP / PORTAL */}
       <div
+        className="absolute inset-0 bg-black/50"
         onClick={onClose}
+      />
+      <div
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
         className="
           absolute
           top-[10px]
@@ -33,13 +127,15 @@ export default function Detail({
           bg-white
           shadow-lg
           transition
+          cursor-pointer
         "
       >
-        <X className="text-black w-5 h-5 " />
+        <X className="text-black w-5 h-5" />
       </div>
 
       {/* SIDE PANEL */}
       <div
+        onClick={(e) => e.stopPropagation()} 
         className={`
           relative bg-white shadow-2xl
           rounded-2xl
@@ -48,6 +144,7 @@ export default function Detail({
           ${isFull ? "w-[calc(100%-3rem)]" : "w-full max-w-3xl"}
         `}
       >
+        
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="!text-2xl font-bold">{title}</h2>
@@ -63,43 +160,76 @@ export default function Detail({
             {fields.map((field) => (
               <div
                 key={field.name}
-                className={`border border-gray-200 rounded-xl p-4 ${
-                  field.full && !isFull ? "md:col-span-2" : ""
-                }`}
+                className={`mb-5 border border-gray-200 rounded-xl p-4
+                  ${fieldErrors[field.name] ? "border-red-500" : "border-gray-200"}
+                  ${field.full && !isFull ? "md:col-span-2" : ""}`}
               >
-                <div className="flex items-center gap-2 text-sm text-gray-800 mb-1">
-                  {field.icon && (
-                    <span className="text-gray-400">{field.icon}</span>
-                  )}
-                  <span>{field.label}</span>
-                </div>
+                {/* VIEW MODE */}
+                {isViewMode && (
+                  <>
+                    <div className="flex items-center gap-2 text-sm text-gray-800 mb-1">
+                      {field.icon && <span className="text-gray-400">{field.icon}</span>}
+                      <span>{field.label}</span>
+                    </div>
 
-                {/* IMAGE ARRAY SUPPORT */}
-                {Array.isArray(initialData[field.name]) ? (
-                  <div className="flex flex-wrap gap-3 mt-2">
-                    {initialData[field.name]?.length ? (
-                      initialData[field.name].map((url, i) => (
-                        <img
-                          key={i}
-                          src={url}
-                          alt={`img-${i}`}
-                          className="w-32 h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
-                          onClick={() => setPreviewImage(url)}
-                        />
-                      ))
-                    ) : (
-                      <p>-</p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="font-semibold text-gray-800">
-                    {initialData[field.name] || "-"}
-                  </p>
+                    {/* RENDER VALUE BASED ON TYPE */}
+                    {renderValue(field, initialData[field.name])}
+                  </>
+                )}
+
+                {(isApproveMode || isRejectMode) && (
+                  <FloatingField
+                    label={field.label}
+                    type={field.type || "text"}
+                    value={formData[field.name]} 
+                    required={field.required}
+                    error={fieldErrors[field.name]}
+                    options={field.options}   
+                    onChange={(val) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        [field.name]: val,
+                      }))
+                    }
+                  />
                 )}
               </div>
             ))}
           </div>
         </div>
+
+        {/* PENDING VIEW */}
+        {mode === "view" && isPending && (
+          <div className="px-6 py-4 flex justify-end gap-3">
+            {/* Tombol aksi untuk pending status bisa ditambahkan di sini */}
+          </div>
+        )}
+
+        {/* APPROVE */}
+        {mode === "approve" && (
+          <div className="gap-120 px-6 py-4 flex justify-end">
+            <button 
+              type="button"
+              onClick={handleSubmit} 
+              className="!bg-[#EC933A] flex items-center gap-2 text-white rounded-xl px-4 py-2"
+            >
+              Proses <ArrowRight /> 
+            </button>
+          </div>
+        )}
+
+        {/* REJECT */}
+        {mode === "reject" && (
+          <div className="gap-120 px-6 py-4 flex justify-end">
+            <button   
+              type="button" 
+              onClick={handleSubmit} 
+              className="!bg-[#BC2424] flex items-center gap-2 text-white rounded-xl px-4 py-2"
+            >
+              Proses <ArrowRight />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* IMAGE PREVIEW MODAL */}
@@ -108,7 +238,7 @@ export default function Detail({
           className="
             fixed inset-0
             bg-black/80
-            z-[99999999]
+            z-[9999]
             flex items-center justify-center
           "
           onClick={() => setPreviewImage(null)}

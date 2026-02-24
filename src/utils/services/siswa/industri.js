@@ -3,7 +3,7 @@ import axios from "../../axiosInstance";
 /*  LIST AVAILABLE INDUSTRI  */
 export const getAvailableIndustri = async () => {
   try {
-    const res = await axios.get("/api/pkl/industri/available");
+    const res = await axios.get("/api/pkl/industri/available?limit=100");
     return res.data;
   } catch (error) {
     console.error("Error fetching available industri:", error);
