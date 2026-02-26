@@ -14,7 +14,9 @@ import SearchBar from "./components/Search";
 import Table from "./components/Table";
 
 // services
-import { getGuruTasks } from "../utils/services/pembimbing/guru";
+import { getGuruSiswa } from "../utils/services/pembimbing/guru";
+import { getSiswa } from "../utils/services/admin/get_siswa";
+import { getKelasById } from "../utils/services/admin/get_kelas"; // Import getKelasById
 
 export default function DataPeserta() {
   const exportRef = useRef(null);
@@ -30,6 +32,7 @@ export default function DataPeserta() {
   const [status, setStatus] = useState("");
   const [peserta, setPeserta] = useState([]);
   const [kelasOptions, setKelasOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const namaGuru = localStorage.getItem("nama_guru") || "Guru SMK";
 
@@ -47,7 +50,7 @@ export default function DataPeserta() {
       case "Rejected":
         return "Ditolak";
       default:
-        return status;
+        return status || "-";
     }
   };
 
@@ -70,38 +73,161 @@ export default function DataPeserta() {
     currentPage * itemsPerPage
   );
 
-  // 🔥 AMBIL SISWA DARI getGuruTasks SAJA
+  // 🔥 Fungsi untuk mengambil NAMA KELAS berdasarkan ID
+  const getNamaKelas = async (kelasId) => {
+    if (!kelasId) return "-";
+    try {
+      const response = await getKelasById(kelasId);
+      console.log(`Response kelas ID ${kelasId}:`, response);
+      
+      // Response dari getKelasById - berdasarkan struktur yang Anda berikan
+      // Langsung mengembalikan object kelas, bukan { data: ... }
+      // Format: { id, jurusan_id, nama, created_at, updated_at, wali_kelas_guru_id }
+      if (response && response.nama) {
+        return response.nama; // Langsung return nama kelas
+      }
+      
+      // Fallback jika struktur berbeda
+      return `Kelas ${kelasId}`;
+    } catch (error) {
+      console.error(`Gagal fetch kelas dengan ID ${kelasId}:`, error);
+      return `Kelas ${kelasId}`; // Fallback
+    }
+  };
+
+  // 🔥 AMBIL SISWA DARI getGuruSiswa DAN GABUNGKAN DENGAN DETAIL DARI getSiswa
   useEffect(() => {
     const fetchPeserta = async () => {
+      setLoading(true);
       try {
-        const res = await getGuruTasks();
-        const tasksData = res.data || [];
-
-        const mappedPeserta = tasksData.flatMap((task) =>
-          (task.siswa || []).map((siswa) => ({
-            username: siswa.username,
-            nama: siswa.nama,
-            nisn: siswa.nisn || "-",
-            kelas: siswa.kelas || "-",
-            industri: task.industri?.nama || "-",
-            tanggal_mulai: task.tanggal_mulai
-              ? dayjs(task.tanggal_mulai).format("DD-MM-YYYY")
-              : "-",
-            tanggal_selesai: task.tanggal_selesai
-              ? dayjs(task.tanggal_selesai).format("DD-MM-YYYY")
-              : "-",
-            status: mapStatus("Approved"),
-          }))
+        console.log("Fetching peserta data...");
+        
+        // Ambil data siswa bimbingan dari getGuruSiswa
+        const guruSiswaResponse = await getGuruSiswa();
+        console.log("Guru Siswa response:", guruSiswaResponse);
+        
+        // Ambil data detail siswa dari getSiswa admin
+        const allSiswaResponse = await getSiswa();
+        console.log("All Siswa response:", allSiswaResponse);
+        
+        const guruSiswaData = guruSiswaResponse.data || [];
+        
+        // Buat map untuk memudahkan pencarian detail siswa berdasarkan id
+        const siswaDetailMap = new Map();
+        allSiswaResponse.forEach((siswa) => {
+          siswaDetailMap.set(siswa.id, siswa);
+        });
+        
+        // Kumpulkan semua kelas_id yang unik untuk di-fetch sekaligus
+        const uniqueKelasIds = [...new Set(
+          guruSiswaData
+            .map(item => {
+              const detailSiswa = siswaDetailMap.get(item.siswa_id);
+              return detailSiswa?.kelas_id;
+            })
+            .filter(id => id != null)
+        )];
+        
+        console.log("Unique kelas IDs:", uniqueKelasIds);
+        
+        // Fetch semua nama kelas sekaligus untuk optimasi
+        const kelasMap = new Map();
+        await Promise.all(
+          uniqueKelasIds.map(async (kelasId) => {
+            const namaKelas = await getNamaKelas(kelasId);
+            kelasMap.set(kelasId, namaKelas);
+          })
         );
+        
+        console.log("Kelas map:", Object.fromEntries(kelasMap));
+        
+        // Proses mapping dengan nama kelas dari map
+        const mappedPeserta = guruSiswaData.map((item) => {
+          // Cari detail siswa dari map berdasarkan siswa_id
+          const detailSiswa = siswaDetailMap.get(item.siswa_id);
+          
+          // Ambil nama kelas dari map jika ada kelas_id
+          let namaKelas = "-";
+          if (detailSiswa?.kelas_id && kelasMap.has(detailSiswa.kelas_id)) {
+            namaKelas = kelasMap.get(detailSiswa.kelas_id);
+          }
+          
+          return {
+            application_id: item.application_id,
+            siswa_id: item.siswa_id,
+            username: item.siswa_username,
+            nama: item.siswa_nama,
+            nisn: detailSiswa?.nisn || "-",
+            // Tampilkan NAMA KELAS yang sebenarnya
+            kelas: namaKelas,
+            kelas_id: detailSiswa?.kelas_id || null,
+            alamat: detailSiswa?.alamat || "-",
+            no_telp: detailSiswa?.no_telp || "-",
+            tanggal_lahir: detailSiswa?.tanggal_lahir 
+              ? dayjs(detailSiswa.tanggal_lahir).format("DD-MM-YYYY") 
+              : "-",
+            industri: item.industri_nama || "-",
+            industri_id: item.industri_id,
+            tanggal_mulai: item.tanggal_mulai
+              ? dayjs(item.tanggal_mulai).format("DD-MM-YYYY")
+              : "-",
+            tanggal_selesai: item.tanggal_selesai
+              ? dayjs(item.tanggal_selesai).format("DD-MM-YYYY")
+              : "-",
+            status: mapStatus(item.status),
+          };
+        });
 
+        console.log("Mapped peserta with real class names:", mappedPeserta);
         setPeserta(mappedPeserta);
 
+        // Extract unique kelas values untuk filter (sekarang berupa NAMA KELAS)
         const uniqueKelas = [
-          ...new Set(mappedPeserta.map((item) => item.kelas)),
+          ...new Set(mappedPeserta.map((item) => item.kelas).filter(k => k !== "-")),
         ];
         setKelasOptions(uniqueKelas);
+        
       } catch (err) {
         console.error("Gagal fetch peserta:", err);
+        
+        // Fallback
+        try {
+          console.log("Fallback: fetching hanya dari getGuruSiswa...");
+          const guruSiswaResponse = await getGuruSiswa();
+          const guruSiswaData = guruSiswaResponse.data || [];
+          
+          const fallbackPeserta = guruSiswaData.map((item) => ({
+            application_id: item.application_id,
+            siswa_id: item.siswa_id,
+            username: item.siswa_username,
+            nama: item.siswa_nama,
+            nisn: "-",
+            kelas: "-",
+            kelas_id: null,
+            alamat: "-",
+            no_telp: "-",
+            tanggal_lahir: "-",
+            industri: item.industri_nama || "-",
+            industri_id: item.industri_id,
+            tanggal_mulai: item.tanggal_mulai
+              ? dayjs(item.tanggal_mulai).format("DD-MM-YYYY")
+              : "-",
+            tanggal_selesai: item.tanggal_selesai
+              ? dayjs(item.tanggal_selesai).format("DD-MM-YYYY")
+              : "-",
+            status: mapStatus(item.status),
+          }));
+          
+          setPeserta(fallbackPeserta);
+          setKelasOptions([]);
+          
+        } catch (fallbackErr) {
+          console.error("Fallback fetch juga gagal:", fallbackErr);
+          setPeserta([]);
+          setKelasOptions([]);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -110,31 +236,35 @@ export default function DataPeserta() {
 
   // KOLOM TABEL
   const columns = [
-    { label: "Nama Pengguna", key: "username" },
+    // { label: "Nama Pengguna", key: "username" },
     { label: "Nama", key: "nama" },
     { label: "NISN", key: "nisn" },
-    { label: "Kelas", key: "kelas" },
+    // { label: "Kelas", key: "kelas" }, // Sekarang menampilkan NAMA KELAS
+    { label: "Tanggal Lahir", key: "tanggal_lahir" },
+    { label: "Alamat", key: "alamat" },
+    { label: "No. Telepon", key: "no_telp" },
     { label: "Industri", key: "industri" },
-    // { label: "Tanggal Mulai", key: "tanggal_mulai" },
-    // { label: "Tanggal Selesai", key: "tanggal_selesai" },
-    { label: "Status", key: "status" },
+    // { label: "Status", key: "status" },
   ];
 
   const filters = [
     {
       label: "Kelas",
       value: kelas,
-      options: kelasOptions,
+      options: kelasOptions, // Opsi filter berupa NAMA KELAS
       onChange: setKelas,
     },
   ];
 
   const exportData = filteredPeserta.map((item, i) => ({
     No: i + 1,
-    Username: item.username,
+    // Username: item.username,
     Nama: item.nama,
     NISN: item.nisn,
-    Kelas: item.kelas,
+    // Kelas: item.kelas, // NAMA KELAS
+    "Tanggal Lahir": item.tanggal_lahir,
+    Alamat: item.alamat,
+    "No. Telepon": item.no_telp,
     Industri: item.industri,
     Tanggal_Mulai: item.tanggal_mulai,
     Tanggal_Selesai: item.tanggal_selesai,
@@ -151,15 +281,21 @@ export default function DataPeserta() {
 
   const handleExportPDF = () => {
     if (!exportData.length) return;
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+      orientation: 'landscape'
+    });
     doc.text("Data Peserta PKL", 14, 15);
 
     autoTable(doc, {
       startY: 20,
       head: [Object.keys(exportData[0])],
       body: exportData.map((d) => Object.values(d)),
-      styles: { fontSize: 10 },
+      styles: { fontSize: 8 },
       headStyles: { fillColor: [100, 30, 33] },
+      columnStyles: {
+        5: { cellWidth: 60 }, // Kolom Alamat
+        6: { cellWidth: 30 }, // Kolom No. Telepon
+      }
     });
 
     doc.save("data_peserta_pkl.pdf");
@@ -214,26 +350,37 @@ export default function DataPeserta() {
             </div>
           </div>
 
-          <SearchBar
-            query={query}
-            setQuery={setQuery}
-            filters={filters}
-            placeholder="Cari siswa..."
-          />
-
-          <Table columns={columns} data={paginatedData} />
-
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4 text-white">
-              <span>
-                Halaman {currentPage} dari {totalPages}
-              </span>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
+          {loading ? (
+            <div className="bg-white rounded-lg p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#641E21] border-t-transparent"></div>
+              <p className="mt-2 text-gray-600">Memuat data siswa...</p>
             </div>
+          ) : (
+            <>
+              <SearchBar
+                query={query}
+                setQuery={setQuery}
+                // filters={filters}
+                placeholder="Cari siswa..."
+              />
+
+              <div className="overflow-x-auto rounded-lg shadow">
+                <Table columns={columns} data={paginatedData} />
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-4 text-white">
+                  <span>
+                    Halaman {currentPage} dari {totalPages}
+                  </span>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>

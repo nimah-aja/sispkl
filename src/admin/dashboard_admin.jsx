@@ -628,7 +628,7 @@ export default function PKLDashboard() {
               {/* PIE CHART PERBANDINGAN PENGAJUAN SISWA */}
               <div className="mt-10 bg-white rounded-2xl p-6 shadow-lg max-w-6xl mx-auto">
                 <h2 className="font-semibold text-gray-800 mb-4">
-                  Perbandingan Siswa yang Sudah vs Belum Mengajukan PKL
+                  Perbandingan Siswa yang Sudah & Belum Mengajukan PKL
                 </h2>
                 <p className="text-sm text-gray-600 mb-4">
                   Total Siswa: {dataDisplay.find(d => d.title === "Jumlah Siswa")?.value || 0} | 
@@ -755,7 +755,7 @@ export default function PKLDashboard() {
               {/* STACKED BAR CHART - SISWA PER KELAS */}
               <div className="mt-10 bg-white rounded-2xl p-6 shadow-lg max-w-6xl mx-auto">
                 <h2 className="font-semibold text-gray-800 mb-4">
-                  Perbandingan Siswa Sudah vs Belum Mengajukan PKL per Kelas
+                  Perbandingan Siswa Sudah & Belum Mengajukan PKL per Kelas
                 </h2>
                 <div className="h-106 overflow-x-auto">
                   <ResponsiveContainer width="100%" height="100%">

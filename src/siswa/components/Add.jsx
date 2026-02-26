@@ -772,7 +772,7 @@ export default function Add({
                   ) : field.type === "file" ? (
                     <div className="mt-5 file-upload-wrapper">
                       <label className={`file-label w-20 h-10 !bg-[#EC933A] pl-2 pr-2 pt-2 pb-2 rounded-md !text-white mr-3 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        Pilih File
+                        Pilih Berkas
                         <input
                           type="file"
                           name={field.name}
@@ -789,7 +789,7 @@ export default function Add({
                       </label>
 
                       <span className="file-name">
-                        {fileName || "Belum ada file dipilih"}
+                        {fileName || "Belum ada berkas dipilih"}
                         {optionalFields.includes(field.name) && " (Opsional)"}
                       </span>
                     </div>

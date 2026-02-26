@@ -121,7 +121,7 @@ export default function GuruPage() {
     { label: "Nama Guru", name: "nama", width: "half", minLength: 2 },
     { label: "NIP", name: "nip", width: "half", minLength: 18, placeholder : "Harus 18 digit" },
     { label: "No. Telp", name: "no_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
-    { label: "Password", name: "password", type: "password", width: "full", minLength: 6, placeholder : "Min 6 digit" },
+    { label: "Kata Sandi", name: "password", type: "password", width: "full", minLength: 6, placeholder : "Min 6 digit" },
     {
       label: "Peran",
       name: "roles",

@@ -424,23 +424,7 @@ const DataPengajuanPKL = () => {
     };
   }, [openExport]);
 
-  const baseFields = [
-    { name: "nama_industri", label: "Industri", full: true },
-    { name: "nama_siswa", label: "Nama Siswa" },
-    { name: "nisn", label: "NISN" },
-    { name: "kelas", label: "Kelas" },
-    { name: "jurusan", label: "Kompetensi Keahlian" },
-    { name: "status", label: "Status" },
-  ];
-
-  const viewFields = [
-    ...baseFields,
-    { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
-    { name: "namaPembimbing", label: "Nama Pembimbing" },
-    { name: "kaprog", label: "Diproses Oleh" },
-     { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
-  ];
-
+  // Fields untuk approve mode
   const approveFields = [
     { name: "tanggal_mulai", label: "Tanggal Mulai", type: "date", required: true },
     { name: "tanggal_selesai", label: "Tanggal Selesai", type: "date", required: true },
@@ -458,9 +442,9 @@ const DataPengajuanPKL = () => {
       type: "textarea",
       full: true,
     },
-    { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
   ];
 
+  // Fields untuk reject mode
   const rejectFields = [
     {
       name: "catatan",
@@ -470,17 +454,47 @@ const DataPengajuanPKL = () => {
     },
   ];
 
-  const StatusPKL =
-  {
-    Approved : "Disetujui",
-    Rejected : "Ditolak",
-    Pending : "Diproses"
-  }
+  // Status mapping
+  const StatusPKL = {
+    Approved: "Disetujui",
+    Rejected: "Ditolak",
+    Pending: "Diproses"
+  };
 
+  // Function to get fields based on mode and status
   const getFieldsByMode = () => {
+    // Base fields without dokumen untuk semua mode view
+    const baseViewFields = [
+      { name: "nama_industri", label: "Industri", full: true },
+      { name: "nama_siswa", label: "Nama Siswa" },
+      { name: "nisn", label: "NISN" },
+      { name: "kelas", label: "Kelas" },
+      { name: "jurusan", label: "Kompetensi Keahlian" },
+      { name: "status", label: "Status" },
+    ];
+
     if (detailMode === "approve") return approveFields;
     if (detailMode === "reject") return rejectFields;
-    return viewFields;
+    
+    // Untuk mode view, cek status
+    const currentStatus = detailData?.application?.status;
+    
+    if (currentStatus === "Pending") {
+      // Untuk status Pending, tampilkan tanpa dokumen
+      return [
+        ...baseViewFields,
+        { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
+      ];
+    } else {
+      // Untuk status Approved/Rejected, tampilkan dengan dokumen
+      return [
+        ...baseViewFields,
+        { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
+        { name: "namaPembimbing", label: "Nama Pembimbing" },
+        { name: "kaprog", label: "Diproses Oleh" },
+        { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
+      ];
+    }
   };
 
   return (
@@ -596,7 +610,7 @@ const DataPengajuanPKL = () => {
               namaPembimbing: detailData.namaPembimbing || "-",
               kaprog: detailData.namaKaprog || "-",
               catatan: "",
-              dokumen_urls : detailData.dokumen_urls || []
+              dokumen_urls: detailData.dokumen_urls || []
             }}
             fields={getFieldsByMode()}
           />,

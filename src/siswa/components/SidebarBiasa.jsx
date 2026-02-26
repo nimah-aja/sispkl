@@ -8,6 +8,7 @@ import envelope from "../../assets/envelopenew.svg";
 import pengajuan_PKL from "../../assets/pengajuan_PKL.svg";
 import logo from "../../assets/logo.png";
 import sidebarCorporate from "../../assets/sidebarCorporate.svg";
+import Kelompok from "../../assets/kelompok.svg"
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
@@ -34,6 +35,9 @@ export default function Sidebar({ active, setActive }) {
     { title: "Riwayat Perizinan", 
           icon: envelope, 
           route: "/siswa/riwayat_perizinan", key: "riwayat_perizinan" },
+      { title: "Kelompok", 
+            icon: Kelompok, 
+            route: "/siswa/kelompok", key: "kelompok" },
         //  { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/siswa/perpindahan", key: "perpindahanPKL" }
   ];
 

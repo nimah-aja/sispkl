@@ -36,7 +36,7 @@ export default function StatusPengajuanPKL() {
 
   // Status label sebagai objek
   const statusLabel = {
-    pending: "Tertunda",
+    Pending: "Tertunda",
     pending_pembimbing: "Tertunda (Pembimbing)",
     pending_kaprog: "Tertunda (Kaprog)",
     pending_koordinator : "Tertunda (Koordinator)",

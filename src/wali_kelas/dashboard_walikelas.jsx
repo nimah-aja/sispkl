@@ -276,7 +276,9 @@ export default function DashboardWaliKelas() {
                             <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">{getInitials(siswa.nama)}</div>
                             <div>
                               <h3 className="font-bold text-base">
-                                {siswa.nama} <span className="text-gray-400 text-sm ml-1">- NISN: {siswa.nisn}</span>
+                                {siswa.nama} <span className="text-gray-400 text-sm ml-1">
+                                  {/* - NISN: {siswa.nisn} */}
+                                  </span>
                               </h3>
                             </div>
                           </div>

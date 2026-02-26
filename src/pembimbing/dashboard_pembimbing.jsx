@@ -20,8 +20,10 @@ import AktivitasTerkini from "./components/AktivitasTerkini";
 import Detail from "./components/Detail";
 import { 
   getGuruTasks, 
-  // getGuruSiswa,
+  getGuruSiswa,
+  getGuruIndustri,  // Tambahkan import ini
 } from "../utils/services/pembimbing/guru"; 
+import { getIndustri } from "../utils/services/admin/get_industri"; // Import dari admin
 import {getMyRealisasiKegiatan} from "../utils/services/pembimbing/realisasi"; 
 import {getActiveKegiatanPKL} from "../utils/services/pembimbing/kegiatan"; 
 import { getIzinPembimbing } from "../utils/services/pembimbing/izin";
@@ -114,6 +116,7 @@ export default function PKLDashboard() {
   ]);
   const [tugasTerbaru, setTugasTerbaru] = useState([]);
   const [siswa, setSiswa] = useState([]);
+  const [industries, setIndustries] = useState([]); // State untuk data industri
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedSiswa, setSelectedSiswa] = useState(null);
   const [selectedIndustri, setSelectedIndustri] = useState(null);
@@ -327,256 +330,226 @@ export default function PKLDashboard() {
     fetchAktivitas();
   }, []);
 
-  // Fetch tugas guru DAN realisasi secara bersamaan untuk filter
-  // useEffect(() => {
-  //   const fetchGuruTasksAndRealisasi = async () => {
-  //     try {
-  //       console.log("Fetching tasks and realisasi...");
-        
-  //       // Jalankan parallel requests
-  //       const [tasksRes, realisasiRes] = await Promise.all([
-  //         getGuruTasks(),
-  //         getMyRealisasiKegiatan()
-  //       ]);
-        
-  //       console.log("Tasks response:", tasksRes.data);
-  //       console.log("Realisasi response:", realisasiRes);
-        
-  //       // Buat Set dari kombinasi kegiatan_id + industri_id yang sudah direalisasi
-  //       const completedTasks = new Set(
-  //         (realisasiRes || []).map(r => `${r.kegiatan_id}-${r.industri_id}`)
-  //       );
-        
-  //       console.log("Tasks yang sudah direalisasi (kegiatan_id-industri_id):", Array.from(completedTasks));
-        
-  //       // Filter dan map tasks - HANYA YANG BELUM DIREALISASI UNTUK INDUSTRI TERSEBUT
-  //       const filteredTasks = tasksRes.data.flatMap((industriGroup) =>
-  //         industriGroup.tasks
-  //           .filter(task => {
-  //             const kegiatanId = task.kegiatan?.id;
-  //             const industriId = industriGroup.industri?.id;
-  //             const taskKey = `${kegiatanId}-${industriId}`;
-  //             const isCompleted = completedTasks.has(taskKey);
-              
-  //             return !isCompleted;
-  //           })
-  //           .map((task) => ({
-  //             // Data kegiatan
-  //             id: task.kegiatan?.id,
-  //             nama: task.kegiatan?.jenis || "Tidak ada nama",
-  //             jenis: task.kegiatan?.jenis,
-  //             deskripsi: task.kegiatan?.deskripsi || "Tidak ada deskripsi",
-  //             tanggal_mulai: task.kegiatan?.tanggal_mulai,
-  //             tanggal_selesai: task.kegiatan?.tanggal_selesai,
-  //             is_active: task.kegiatan?.is_active,
-  //             can_submit: task.kegiatan?.can_submit,
-              
-  //             // Data industri
-  //             industri: industriGroup.industri,
-  //             industri_id: industriGroup.industri?.id,
-  //             industri_nama: industriGroup.industri?.nama || "Tidak diketahui",
-  //             jenis_industri: industriGroup.industri?.jenis_industri || "-",
-  //             alamat: industriGroup.industri?.alamat || "-",
-              
-  //             // Data siswa
-  //             siswa: industriGroup.siswa || [],
-  //             siswa_count: industriGroup.siswa_count || 0,
-  //             siswa_list: industriGroup.siswa?.map(s => ({
-  //               id: s.id,
-  //               nama: s.nama,
-  //               username: s.username,
-  //               nisn: s.nisn,
-  //               kelas: s.kelas
-  //             })) || [],
-              
-  //             // Metadata
-  //             sudah_direalisasi: false,
-  //             deadline_passed: task.kegiatan?.tanggal_selesai 
-  //               ? new Date(task.kegiatan.tanggal_selesai) < new Date()
-  //               : false,
-              
-  //             // Key untuk identifikasi unik
-  //             task_key: `${task.kegiatan?.id}-${industriGroup.industri?.id}`
-  //           }))
-  //       );
-        
-  //       console.log(`Total tasks awal: ${tasksRes.data.flatMap(g => g.tasks).length}`);
-  //       console.log(`Filtered tasks (belum direalisasi): ${filteredTasks.length}`);
-        
-  //       setTugasTerbaru(filteredTasks);
-        
-  //     } catch (error) {
-  //       console.error("Error fetching tasks and realisasi:", error);
-  //     }
-  //   };
-    
-  //   fetchGuruTasksAndRealisasi();
-  // }, []);
-
-  // Fetch tugas guru DAN realisasi secara bersamaan untuk filter
-useEffect(() => {
-  const fetchGuruTasksAndRealisasi = async () => {
-    try {
-      console.log("Fetching tasks and realisasi...");
-      
-      // Jalankan parallel requests
-      const [tasksRes, realisasiRes] = await Promise.all([
-        getGuruTasks(),
-        getMyRealisasiKegiatan()
-      ]);
-      
-      console.log("Tasks response:", tasksRes.data);
-      console.log("Realisasi response:", realisasiRes);
-      
-      // Buat Set dari kombinasi kegiatan_id + industri_id yang sudah direalisasi
-      const completedTasks = new Set(
-        (realisasiRes || []).map(r => `${r.kegiatan_id}-${r.industri_id}`)
-      );
-      
-      console.log("Tasks yang sudah direalisasi (kegiatan_id-industri_id):", Array.from(completedTasks));
-      
-      // Filter dan map tasks - HANYA YANG BELUM DIREALISASI UNTUK INDUSTRI TERSEBUT
-      // DAN BUKAN KEGIATAN PEMBEKALAN
-      const filteredTasks = tasksRes.data.flatMap((industriGroup) =>
-        industriGroup.tasks
-          .filter(task => {
-            const kegiatanId = task.kegiatan?.id;
-            const industriId = industriGroup.industri?.id;
-            const taskKey = `${kegiatanId}-${industriId}`;
-            const isCompleted = completedTasks.has(taskKey);
-            
-            // Cek apakah ini kegiatan pembekalan (case insensitive)
-            const isPembekalan = task.kegiatan?.jenis?.toLowerCase().includes("pembekalan") || 
-                                task.kegiatan?.deskripsi?.toLowerCase().includes("pembekalan") ||
-                                task.kegiatan?.jenis_kegiatan?.toLowerCase().includes("pembekalan");
-            
-            // Tampilkan hanya jika:
-            // 1. Belum direalisasi (isCompleted = false)
-            // 2. Bukan kegiatan pembekalan
-            return !isCompleted && !isPembekalan;
-          })
-          .map((task) => ({
-            // Data kegiatan
-            id: task.kegiatan?.id,
-            nama: task.kegiatan?.jenis || "Tidak ada nama",
-            jenis: task.kegiatan?.jenis,
-            deskripsi: task.kegiatan?.deskripsi || "Tidak ada deskripsi",
-            tanggal_mulai: task.kegiatan?.tanggal_mulai,
-            tanggal_selesai: task.kegiatan?.tanggal_selesai,
-            is_active: task.kegiatan?.is_active,
-            can_submit: task.kegiatan?.can_submit,
-            
-            // Data industri
-            industri: industriGroup.industri,
-            industri_id: industriGroup.industri?.id,
-            industri_nama: industriGroup.industri?.nama || "Tidak diketahui",
-            jenis_industri: industriGroup.industri?.jenis_industri || "-",
-            alamat: industriGroup.industri?.alamat || "-",
-            
-            // Data siswa
-            siswa: industriGroup.siswa || [],
-            siswa_count: industriGroup.siswa_count || 0,
-            siswa_list: industriGroup.siswa?.map(s => ({
-              id: s.id,
-              nama: s.nama,
-              username: s.username,
-              nisn: s.nisn,
-              kelas: s.kelas
-            })) || [],
-            
-            // Metadata
-            sudah_direalisasi: false,
-            deadline_passed: task.kegiatan?.tanggal_selesai 
-              ? new Date(task.kegiatan.tanggal_selesai) < new Date()
-              : false,
-            
-            // Key untuk identifikasi unik
-            task_key: `${task.kegiatan?.id}-${industriGroup.industri?.id}`
-          }))
-      );
-      
-      console.log(`Total tasks awal: ${tasksRes.data.flatMap(g => g.tasks).length}`);
-      console.log(`Tasks setelah filter (non-pembekalan & belum direalisasi): ${filteredTasks.length}`);
-      
-      // Log kegiatan yang difilter (pembekalan) untuk debugging
-      const pembekalanTasks = tasksRes.data.flatMap((industriGroup) =>
-        industriGroup.tasks.filter(task => 
-          task.kegiatan?.jenis?.toLowerCase().includes("pembekalan") ||
-          task.kegiatan?.deskripsi?.toLowerCase().includes("pembekalan") ||
-          task.kegiatan?.jenis_kegiatan?.toLowerCase().includes("pembekalan")
-        )
-      );
-      console.log(`Kegiatan pembekalan yang di-filter: ${pembekalanTasks.length}`, pembekalanTasks);
-      
-      setTugasTerbaru(filteredTasks);
-      
-    } catch (error) {
-      console.error("Error fetching tasks and realisasi:", error);
-    }
-  };
-  
-  fetchGuruTasksAndRealisasi();
-}, []);
-
-  // Data industri dari tugas guru
-  const industriesData = React.useMemo(() => {
-    return tugasTerbaru.reduce((acc, taskItem) => {
-      const id = taskItem.industri_id;
-      if (!id) return acc;
-      
-      // Cek apakah industri sudah ada di acc
-      const existing = acc.find((i) => i.industri_id === id);
-      if (existing) {
-        // Update jumlah siswa jika sudah ada
-        existing.jumlahSiswa = Math.max(existing.jumlahSiswa, taskItem.siswa_count || 0);
-      } else {
-        // Tambah industri baru
-        acc.push({
-          industri_id: id,
-          nama: taskItem.industri_nama || "Tidak Diketahui",
-          bidang: taskItem.jenis_industri || "-",
-          alamat: taskItem.alamat || "-",
-          jumlahSiswa: taskItem.siswa_count || 0,
-        });
-      }
-      return acc;
-    }, []);
-  }, [tugasTerbaru]);
-
-  // Fetch data siswa
+  // Fetch data siswa menggunakan getGuruSiswa
   useEffect(() => {
-    const fetchSiswaFromTasks = async () => {
+    const fetchSiswa = async () => {
       try {
-        const res = await getGuruTasks();
+        console.log("Fetching siswa data...");
+        const response = await getGuruSiswa();
+        console.log("Siswa response:", response);
+        
+        // Response API memiliki struktur { data: [...], total: number }
+        const siswaData = response.data || [];
+        
+        const siswaList = siswaData.map((s) => ({
+          siswa_id: s.siswa_id,
+          nama_ssw: s.siswa_nama,
+          username_ssw: s.siswa_username,
+          nisn: s.nisn,
+          kelas: s.kelas,
+          industri_ssw: s.industri_nama || "-",
+          status: s.status || "Approved",
+          tanggal_mulai: s.tanggal_mulai,
+          tanggal_selesai: s.tanggal_selesai,
+          inisial: s.siswa_nama
+            ?.split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .substring(0, 2) || "??",
+        }));
 
-        const siswaList = res.data.flatMap((group) =>
-          (group.siswa || []).map((s) => ({
-            siswa_id: s.id,
-            nama_ssw: s.nama,
-            username_ssw: s.username,
-            nisn: s.nisn,
-            kelas: s.kelas,
-            industri_ssw: group.industri?.nama || "-",
-            status: "Approved", // default, karena dari tasks
-            tanggal_mulai: null,
-            tanggal_selesai: null,
-            inisial: s.nama
-              ?.split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase(),
-          }))
-        );
-
+        console.log("Mapped siswa list:", siswaList);
         setSiswa(siswaList);
+        
       } catch (err) {
-        console.error("Gagal fetch siswa dari tasks:", err);
+        console.error("Gagal fetch siswa:", err);
+        // Fallback ke data kosong jika error
+        setSiswa([]);
       }
     };
 
-    fetchSiswaFromTasks();
+    fetchSiswa();
   }, []);
 
+  // Fetch data industri menggunakan getGuruIndustri dan getIndustri dari admin
+  useEffect(() => {
+    const fetchIndustri = async () => {
+      try {
+        console.log("Fetching industri data...");
+        
+        // Ambil data industri bimbingan guru
+        const guruIndustriResponse = await getGuruIndustri();
+        console.log("Guru Industri response:", guruIndustriResponse);
+        
+        // Ambil data detail industri dari admin
+        const allIndustriResponse = await getIndustri();
+        console.log("All Industri response:", allIndustriResponse);
+        
+        // GuruIndustriResponse memiliki struktur { data: [{ industri_id, industri_nama, jumlah_siswa }], total }
+        const guruIndustriData = guruIndustriResponse.data || [];
+        
+        // Gabungkan data dari kedua sumber
+        const mergedIndustriData = guruIndustriData.map((guruIndustri) => {
+          // Cari detail industri dari allIndustriResponse berdasarkan ID
+          const detailIndustri = allIndustriResponse.find(
+            (ind) => ind.id === guruIndustri.industri_id
+          );
+          
+          return {
+            industri_id: guruIndustri.industri_id,
+            nama: guruIndustri.industri_nama,
+            jumlahSiswa: guruIndustri.jumlah_siswa || 0,
+            // Tambahkan field dari detail industri jika ada
+            bidang: detailIndustri?.bidang || "-",
+            alamat: detailIndustri?.alamat || "-",
+            no_telp: detailIndustri?.no_telp || "-",
+            email: detailIndustri?.email || "-",
+            pic: detailIndustri?.pic || "-",
+            pic_telp: detailIndustri?.pic_telp || "-",
+            is_active: detailIndustri?.is_active || false,
+          };
+        });
+        
+        console.log("Merged industri data:", mergedIndustriData);
+        setIndustries(mergedIndustriData);
+        
+      } catch (err) {
+        console.error("Gagal fetch industri:", err);
+        
+        // Fallback: coba ambil dari getGuruIndustri saja
+        try {
+          const guruIndustriResponse = await getGuruIndustri();
+          const guruIndustriData = guruIndustriResponse.data || [];
+          
+          const fallbackIndustriData = guruIndustriData.map((guruIndustri) => ({
+            industri_id: guruIndustri.industri_id,
+            nama: guruIndustri.industri_nama,
+            jumlahSiswa: guruIndustri.jumlah_siswa || 0,
+            bidang: "-",
+            alamat: "-",
+            no_telp: "-",
+            email: "-",
+            pic: "-",
+            pic_telp: "-",
+            is_active: true,
+          }));
+          
+          setIndustries(fallbackIndustriData);
+        } catch (fallbackErr) {
+          console.error("Fallback fetch industri juga gagal:", fallbackErr);
+          setIndustries([]);
+        }
+      }
+    };
+
+    fetchIndustri();
+  }, []);
+
+  // Fetch tugas guru DAN realisasi secara bersamaan untuk filter
+  useEffect(() => {
+    const fetchGuruTasksAndRealisasi = async () => {
+      try {
+        console.log("Fetching tasks and realisasi...");
+        
+        // Jalankan parallel requests
+        const [tasksRes, realisasiRes] = await Promise.all([
+          getGuruTasks(),
+          getMyRealisasiKegiatan()
+        ]);
+        
+        console.log("Tasks response:", tasksRes.data);
+        console.log("Realisasi response:", realisasiRes);
+        
+        // Buat Set dari kombinasi kegiatan_id + industri_id yang sudah direalisasi
+        const completedTasks = new Set(
+          (realisasiRes || []).map(r => `${r.kegiatan_id}-${r.industri_id}`)
+        );
+        
+        console.log("Tasks yang sudah direalisasi (kegiatan_id-industri_id):", Array.from(completedTasks));
+        
+        // Filter dan map tasks - HANYA YANG BELUM DIREALISASI UNTUK INDUSTRI TERSEBUT
+        // DAN BUKAN KEGIATAN PEMBEKALAN
+        const filteredTasks = tasksRes.data.flatMap((industriGroup) =>
+          industriGroup.tasks
+            .filter(task => {
+              const kegiatanId = task.kegiatan?.id;
+              const industriId = industriGroup.industri?.id;
+              const taskKey = `${kegiatanId}-${industriId}`;
+              const isCompleted = completedTasks.has(taskKey);
+              
+              // Cek apakah ini kegiatan pembekalan (case insensitive)
+              const isPembekalan = task.kegiatan?.jenis?.toLowerCase().includes("pembekalan") || 
+                                  task.kegiatan?.deskripsi?.toLowerCase().includes("pembekalan") ||
+                                  task.kegiatan?.jenis_kegiatan?.toLowerCase().includes("pembekalan");
+              
+              // Tampilkan hanya jika:
+              // 1. Belum direalisasi (isCompleted = false)
+              // 2. Bukan kegiatan pembekalan
+              return !isCompleted && !isPembekalan;
+            })
+            .map((task) => ({
+              // Data kegiatan
+              id: task.kegiatan?.id,
+              nama: task.kegiatan?.jenis || "Tidak ada nama",
+              jenis: task.kegiatan?.jenis,
+              deskripsi: task.kegiatan?.deskripsi || "Tidak ada deskripsi",
+              tanggal_mulai: task.kegiatan?.tanggal_mulai,
+              tanggal_selesai: task.kegiatan?.tanggal_selesai,
+              is_active: task.kegiatan?.is_active,
+              can_submit: task.kegiatan?.can_submit,
+              
+              // Data industri
+              industri: industriGroup.industri,
+              industri_id: industriGroup.industri?.id,
+              industri_nama: industriGroup.industri?.nama || "Tidak diketahui",
+              jenis_industri: industriGroup.industri?.jenis_industri || "-",
+              alamat: industriGroup.industri?.alamat || "-",
+              
+              // Data siswa
+              siswa: industriGroup.siswa || [],
+              siswa_count: industriGroup.siswa_count || 0,
+              siswa_list: industriGroup.siswa?.map(s => ({
+                id: s.id,
+                nama: s.nama,
+                username: s.username,
+                nisn: s.nisn,
+                kelas: s.kelas
+              })) || [],
+              
+              // Metadata
+              sudah_direalisasi: false,
+              deadline_passed: task.kegiatan?.tanggal_selesai 
+                ? new Date(task.kegiatan.tanggal_selesai) < new Date()
+                : false,
+              
+              // Key untuk identifikasi unik
+              task_key: `${task.kegiatan?.id}-${industriGroup.industri?.id}`
+            }))
+        );
+        
+        console.log(`Total tasks awal: ${tasksRes.data.flatMap(g => g.tasks).length}`);
+        console.log(`Tasks setelah filter (non-pembekalan & belum direalisasi): ${filteredTasks.length}`);
+        
+        // Log kegiatan yang difilter (pembekalan) untuk debugging
+        const pembekalanTasks = tasksRes.data.flatMap((industriGroup) =>
+          industriGroup.tasks.filter(task => 
+            task.kegiatan?.jenis?.toLowerCase().includes("pembekalan") ||
+            task.kegiatan?.deskripsi?.toLowerCase().includes("pembekalan") ||
+            task.kegiatan?.jenis_kegiatan?.toLowerCase().includes("pembekalan")
+          )
+        );
+        console.log(`Kegiatan pembekalan yang di-filter: ${pembekalanTasks.length}`, pembekalanTasks);
+        
+        setTugasTerbaru(filteredTasks);
+        
+      } catch (error) {
+        console.error("Error fetching tasks and realisasi:", error);
+      }
+    };
+    
+    fetchGuruTasksAndRealisasi();
+  }, []);
 
   // Update dashboard cards dengan data yang sudah ada
   useEffect(() => {
@@ -584,7 +557,7 @@ useEffect(() => {
     
     // Data dari state yang sudah ada
     const totalSiswa = siswa.length;
-    const totalIndustri = industriesData.length;
+    const totalIndustri = industries.length; // Gunakan industries state
     const totalKegiatan = tugasTerbaru.length;
     const totalRealisasi = aktivitasItems.filter(item => item.type === "approved").length;
     
@@ -630,7 +603,7 @@ useEffect(() => {
     console.log("Dashboard cards updated:", results);
     setDataDisplay(results);
     
-  }, [siswa, industriesData, tugasTerbaru, aktivitasItems, totalPerizinan,]);
+  }, [siswa, industries, tugasTerbaru, aktivitasItems, totalPerizinan]);
 
   // Get industri name for realisasi (saat detail realisasi dibuka)
   useEffect(() => {
@@ -638,10 +611,10 @@ useEffect(() => {
       console.log("Fetching industri name for realisasi:", selectedAktivitas.data);
       
       const getIndustriName = () => {
-        // Cari dari industriesData
-        const industriInfo = industriesData.find(i => i.industri_id === selectedAktivitas.data.industri_id);
+        // Cari dari industries state
+        const industriInfo = industries.find(i => i.industri_id === selectedAktivitas.data.industri_id);
         if (industriInfo) {
-          console.log("Found industri in industriesData:", industriInfo);
+          console.log("Found industri in industries:", industriInfo);
           setSelectedAktivitas(prev => ({
             ...prev,
             data: {
@@ -679,7 +652,7 @@ useEffect(() => {
       
       getIndustriName();
     }
-  }, [detailOpen, detailType, selectedAktivitas, industriesData, tugasTerbaru]);
+  }, [detailOpen, detailType, selectedAktivitas, industries, tugasTerbaru]);
 
   return (
     <div className="flex h-screen w-full bg-white">
@@ -748,7 +721,7 @@ useEffect(() => {
             />
 
             <DaftarIndustri
-              data={industriesData}
+              data={industries} // Gunakan industries state yang sudah lengkap
               onViewAll={() => navigate("/guru/industri")}
               onItemClick={(item) => handleDetailClick(item, 'industri')}
             />
@@ -777,7 +750,11 @@ useEffect(() => {
                 nama: selectedIndustri?.nama,
                 jumlahSiswa: selectedIndustri?.jumlahSiswa,
                 bidang: selectedIndustri?.bidang,
-                alamat: selectedIndustri?.alamat
+                alamat: selectedIndustri?.alamat,
+                no_telp: selectedIndustri?.no_telp,
+                email: selectedIndustri?.email,
+                pic: selectedIndustri?.pic,
+                pic_telp: selectedIndustri?.pic_telp,
               } :
               detailType === 'kegiatan' ? {
                 jenis_kegiatan: selectedAktivitas?.data?.jenis_kegiatan,
@@ -814,6 +791,10 @@ useEffect(() => {
                 { name: "jumlahSiswa", label: "Jumlah Siswa", type: "number" },
                 { name: "bidang", label: "Bidang", type: "text" },
                 { name: "alamat", label: "Alamat", type: "text" },
+                { name: "no_telp", label: "No. Telepon", type: "text" },
+                { name: "email", label: "Email", type: "text" },
+                { name: "pic", label: "PIC", type: "text" },
+                { name: "pic_telp", label: "No. Telepon PIC", type: "text" },
               ] :
               detailType === 'kegiatan' ? [
                 { name: "jenis_kegiatan", label: "Jenis Kegiatan", type: "text" },
