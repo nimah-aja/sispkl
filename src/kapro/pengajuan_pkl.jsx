@@ -546,6 +546,7 @@ const DataPengajuanPKL = () => {
               )}
             </div>
           </div>
+          
 
           <SearchBar
             query={query}

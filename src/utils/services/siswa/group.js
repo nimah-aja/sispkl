@@ -111,3 +111,13 @@ export const submitGroupPKL = async (groupId, payload) => {
     throw error;
   }
 };
+
+export const withdrawGroupPKL = async (groupId) => {
+  try {
+    const res = await axios.post(`/api/pkl/group/${groupId}/withdraw`);
+    return res.data;
+  } catch (error) {
+    console.error("Error withdrawing group PKL:", error);
+    throw error;
+  }
+};
