@@ -2,6 +2,10 @@
 
 Proyek ini dibuat menggunakan **React** dengan struktur modular agar mudah dikembangkan beberapa orang secara bersamaan.  
 
+Install dulu ❗:
+1. Node js
+2. Git
+   
 ---
 
 ### 1️⃣ Clone Repository
@@ -11,14 +15,14 @@ Proyek ini dibuat menggunakan **React** dengan struktur modular agar mudah dikem
 git --version
 
 2. Clone repository (menggandakan repository dari GitHub ke komputer sendiri): 
-git clone https://github.com/jbrnAsKoiFishNowChange/sispkl
+git clone https://github.com/nimah-aja/sispkl/
 cd sispkl 
 
 3. Install semua dependencies (library atau package yang dibutuhkan agar project bisa jalan):
 npm install
 
 4. Jalankan proyek (harus punya node js, kalo belum install):
-npm start
+npm run dev
 
 ## 2️⃣ Panduan Berkolaborasi
 
