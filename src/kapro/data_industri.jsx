@@ -49,7 +49,7 @@ export default function DataIndustriKaprog() {
  const columns = [
   { label: "Nama Industri", key: "nama" },
   { label: "Kuota Siswa", key: "kuota_siswa" },
-  { label: "Pengajuan Pending", key: "pending_applications" },
+  { label: "Pengajuan Tertunda", key: "pending_applications" },
   { label: "Pengajuan Disetujui", key: "approved_applications" },
   { label: "Siswa Aktif", key: "active_students" },
   { label: "Sisa Kuota", key: "remaining_slots" },

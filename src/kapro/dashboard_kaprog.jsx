@@ -648,7 +648,7 @@ export default function KaprodiDashboard() {
                             <ul className="divide-y">
                               {jurusanList.length === 0 && (
                                 <li className="px-6 py-4 text-sm text-gray-500">
-                                  Tidak ada kompetensi keahlian yang di-assign ke kaprodi
+                                  Tidak ada kompetensi keahlian yang ditugaskan ke kepala konsentrasi keahlian
                                 </li>
                               )}
 
