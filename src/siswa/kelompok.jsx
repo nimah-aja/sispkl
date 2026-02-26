@@ -1,7 +1,7 @@
 // src/pages/siswa/KelolaKelompok.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Mail, Plus, Clock, CheckCircle, XCircle, UserPlus, Calendar, Trash2, Send, X, Edit2, Building, UploadCloud } from "lucide-react";
+import { Users, Mail, Plus, Clock, CheckCircle, XCircle, UserPlus, Calendar, Trash2, Send, X,Ban, Edit2, Building, UploadCloud } from "lucide-react";
 import orang from "../assets/orangUtan.svg"
 import undanganIcon from "../assets/undangan.svg"
 import hapusIcon from "../assets/deleteGrafik.svg" // Anda perlu menambahkan icon ini
@@ -19,7 +19,8 @@ import {
   getMyPklGroups, 
   getMyGroupInvitations, 
   acceptGroupInvitation,
-  removeGroupMember 
+  removeGroupMember,
+  withdrawGroupPKL 
 } from "../utils/services/siswa/group";
 
 export default function KelolaKelompok() {
@@ -225,6 +226,32 @@ export default function KelolaKelompok() {
       alert("Gagal mengirim kelompok");
     }
   };
+
+  // Handler untuk membatalkan pengajuan kelompok
+    const handleBatalkanPengajuan = async (groupId) => {
+    try {
+        // Tampilkan konfirmasi sebelum membatalkan
+        if (window.confirm("Apakah Anda yakin ingin membatalkan pengajuan kelompok ini?")) {
+        console.log("Membatalkan pengajuan kelompok:", groupId);
+        
+        // Panggil API untuk membatalkan pengajuan
+        const response = await withdrawGroupPKL(groupId);
+        console.log("Response withdraw:", response);
+        
+        // Refresh data setelah pembatalan
+        await fetchMyGroups();
+        
+        // Tampilkan notifikasi sukses
+        alert("Pengajuan kelompok berhasil dibatalkan!");
+        }
+    } catch (error) {
+        console.error("Gagal membatalkan pengajuan:", error);
+        
+        // Tampilkan pesan error yang lebih informatif
+        const errorMessage = error.response?.data?.message || error.message || "Gagal membatalkan pengajuan";
+        alert(errorMessage);
+    }
+    };
 
   // Handler untuk terima undangan
   const handleTerimaUndangan = async (id) => {
@@ -587,17 +614,30 @@ export default function KelolaKelompok() {
                                       </table>
                                     </div>
                                     
-                                    {/* Tombol Kirim ditempatkan di bawah tabel - hanya untuk leader dan semua anggota sudah accepted */}
-                                    {isLeader && allAccepted && group.status === "pending" && (
-                                      <div className="mt-6 flex justify-end">
+                                    
+                                    {/* Tombol Kirim/Batal ditempatkan di bawah tabel - hanya untuk leader */}
+                                    {isLeader && group.status === "pending" && allAccepted && (
+                                    <div className="mt-6 flex justify-end">
                                         <button
-                                          onClick={() => handleKirimKelompok(group.id)}
-                                          className="flex items-center gap-2 !bg-[#EC933A] hover:bg-[#d67d2a] text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                                        onClick={() => handleKirimKelompok(group.id)}
+                                        className="flex items-center gap-2 !bg-[#EC933A] hover:bg-[#d67d2a] text-white px-6 py-3 rounded-lg transition-colors font-medium"
                                         >
-                                          <UploadCloud size={20} />
-                                          <span>Kirim Kelompok</span>
+                                        <UploadCloud size={20} />
+                                        <span>Kirim Kelompok</span>
                                         </button>
-                                      </div>
+                                    </div>
+                                    )}
+
+                                    {isLeader && group.status === "submitted" && (
+                                    <div className="mt-6 flex justify-end">
+                                        <button
+                                        onClick={() => handleBatalkanPengajuan(group.id)}
+                                        className="flex items-center gap-2 !bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                                        >
+                                        <Ban size={20} />
+                                        <span>Batalkan Pengajuan</span>
+                                        </button>
+                                    </div>
                                     )}
                                   </div>
                                 )}
