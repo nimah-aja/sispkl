@@ -184,8 +184,13 @@ export default function IndustriPage() {
     ...new Set(industri.map((b) => b.bidang).filter(Boolean)),
   ];
 
-  // Filter data berdasarkan jurusan 
-  const filteredData = mergedIndustri.filter((b) => {
+  // ========== TAMBAHKAN SORTING BERDASARKAN NAMA INDUSTRI ==========
+  const sortedIndustri = [...mergedIndustri].sort((a, b) => {
+    return a.nama.localeCompare(b.nama);
+  });
+
+  // Filter data berdasarkan jurusan (gunakan sortedIndustri, bukan mergedIndustri)
+  const filteredData = sortedIndustri.filter((b) => {
     const s = search.toLowerCase();
 
     const jurusan = jurusanList.find((j) => j.id === b.jurusan_id);
@@ -258,7 +263,6 @@ export default function IndustriPage() {
     },
     { label: "Nama Industri", key: "nama" },
     { label: "Alamat", key: "alamat" },
-    { label: "Bidang", key: "bidang" },
     { label: "Email", key: "email" },
     { label: "No. Telp", key: "no_telp", sortable: false },
     { label: "Pembimbing", key: "pic" },
@@ -635,7 +639,7 @@ const handleExportExcel = () => {
                   }}
                   expandedRowId={expandedRowId}
                   renderExpandedRow={(row) => (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
                       <div className="flex flex-col items-center text-center">
                         <div className="flex items-center gap-1 font-semibold">
                           <Users size={16} />
@@ -655,7 +659,7 @@ const handleExportExcel = () => {
                       <div className="flex flex-col items-center text-center">
                         <div className="flex items-center gap-1 font-semibold">
                           <Clock size={16} />
-                          <span>Pending</span>
+                          <span>Tertunda</span>
                         </div>
                         <p className="mt-1 font-semibold">{row.pending_applications || "-"}</p>
                       </div>
@@ -674,6 +678,14 @@ const handleExportExcel = () => {
                           <span>Sisa</span>
                         </div>
                         <p className="mt-1 font-semibold">{row.remaining_slots || "-"}</p>
+                      </div>
+
+                      {/* ===== TAMBAHKAN BIDANG DI SAMPING SISA ===== */}
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <span>Bidang</span>
+                        </div>
+                        <p className="mt-1 font-semibold">{row.bidang || "-"}</p>
                       </div>
                     </div>
 

@@ -30,7 +30,6 @@ const fields = [
 // URL LOGO DEFAULT
 const DEFAULT_LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_SMKN_2_Singosari.png";
 
-
 function ProfileField({ label, name, type, value, isEdit, onChange }) {
   return (
     <div className="mb-4">
@@ -94,7 +93,16 @@ export default function Setting() {
   const [maskotFile, setMaskotFile] = useState(null);
   const [originalLogoFromAPI, setOriginalLogoFromAPI] = useState(""); 
 
-// fetch sekolah
+  // Load maskot dari localStorage saat komponen dimuat
+  useEffect(() => {
+    const savedMaskot = localStorage.getItem('schoolMaskot');
+    if (savedMaskot) {
+      setMaskot(savedMaskot);
+      setInitialMaskot(savedMaskot);
+    }
+  }, []);
+
+  // fetch sekolah
   useEffect(() => {
     fetchSekolahData();
   }, []);
@@ -162,6 +170,14 @@ export default function Setting() {
         
         setLogoSekolah(logoToDisplay);
         setInitialLogoSekolah(logoToDisplay);
+        
+        // Set maskot jika ada dari API (override dari localStorage)
+        if (sekolah.maskot && sekolah.maskot !== "") {
+          setMaskot(sekolah.maskot);
+          setInitialMaskot(sekolah.maskot);
+          // Simpan ke localStorage
+          localStorage.setItem('schoolMaskot', sekolah.maskot);
+        }
         
         console.log("Fetch data berhasil");
       } else {
@@ -310,9 +326,30 @@ export default function Setting() {
         }
       }
 
+      // Handle maskot
+      if (maskotFile) {
+        try {
+          const base64Maskot = await convertImageToBase64(maskotFile);
+          payload.maskot = base64Maskot;
+          console.log("Maskot akan diupdate dengan file baru");
+        } catch (maskotError) {
+          console.error("Error converting maskot to base64:", maskotError);
+        }
+      } else if (maskot === null || maskot === "") {
+        // Jika user menghapus maskot
+        payload.maskot = "";
+        console.log("User menghapus maskot");
+      } else if (maskot !== initialMaskot) {
+        // Jika maskot berubah (misalnya dari URL ke base64 baru)
+        payload.maskot = maskot;
+        console.log("Maskot berubah, mengirim data maskot baru");
+      }
+      // Jika maskot tidak berubah, jangan kirim field maskot
+
       console.log("Payload yang akan dikirim ke updateSekolah:", {
         ...payload,
-        logo: payload.logo ? `[logo data: ${payload.logo.length} chars]` : 'undefined'
+        logo: payload.logo ? `[logo data: ${payload.logo.length} chars]` : 'undefined',
+        maskot: payload.maskot ? `[maskot data: ${payload.maskot.length} chars]` : 'undefined'
       });
 
       // Panggil API update
@@ -322,6 +359,15 @@ export default function Setting() {
       
       if (response.success) {
         console.log("Data berhasil diupdate:", response);
+        
+        // Simpan maskot ke localStorage
+        if (maskot) {
+          localStorage.setItem('schoolMaskot', maskot);
+          console.log("Maskot disimpan ke localStorage");
+        } else {
+          localStorage.removeItem('schoolMaskot');
+          console.log("Maskot dihapus dari localStorage");
+        }
         
         // Update data awal dengan data baru
         setInitialFormData({ ...formData });
@@ -336,6 +382,7 @@ export default function Setting() {
           setInitialLogoSekolah(logoSekolah);
         }
         
+        // Update initial maskot
         setInitialMaskot(maskot);
         
         // Reset file setelah upload berhasil
@@ -346,6 +393,8 @@ export default function Setting() {
         
         // Refresh data dari server
         await fetchSekolahData();
+        
+        alert("Data sekolah berhasil diperbarui!");
       } else {
         throw new Error(response.message || "Gagal memperbarui data");
       }
@@ -425,6 +474,7 @@ export default function Setting() {
     
     setMaskot(null);
     setMaskotFile(null);
+    console.log("Maskot dihapus");
   };
 
   if (isLoading && !isEdit) {
@@ -526,14 +576,14 @@ export default function Setting() {
                     </div>
 
                     {/* Maskot */}
-                    {/* <div>
+                    <div>
                       <div className="flex justify-between items-center mb-3">
                         <p className="text-sm font-medium">Maskot</p>
                         {maskot && (
                           <button
                             type="button"
                             onClick={handleRemoveMaskot}
-                            className="text-xs text-red-600 hover:text-red-800"
+                            className="!bg-transparent !text-xs text-red-600 hover:text-red-800"
                           >
                             Hapus Maskot
                           </button>
@@ -576,7 +626,7 @@ export default function Setting() {
                           </p>
                         )}
                       </div>
-                    </div> */}
+                    </div>
                   </div>
 
                   {/* right section */}
@@ -664,7 +714,7 @@ export default function Setting() {
                     </div>
 
                     {/* Maskot */}
-                    {/* <div>
+                    <div>
                       <p className="text-sm font-medium mb-3">Maskot</p>
                       <div className="border-2 border-dashed rounded-lg p-6 md:p-8 bg-gray-50 text-center">
                         {maskot ? (
@@ -682,7 +732,7 @@ export default function Setting() {
                           </div>
                         )}
                       </div>
-                    </div> */}
+                    </div>
                   </div>
 
                   {/* right section */}

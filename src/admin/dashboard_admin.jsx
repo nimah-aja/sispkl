@@ -114,10 +114,10 @@ export default function PKLDashboard() {
   };
 
   // Warna khusus untuk perbandingan pengajuan
-  const COLORS_PERBANDINGAN = ["#800000", "#D9CFC1"]; // Maroon untuk yang sudah, Warm gray untuk yang belum
+  const COLORS_PERBANDINGAN = ["#800000", "#e1a148"]; // Maroon untuk yang sudah, Warm gray untuk yang belum
   const COLORS_STACKED = {
     sudah: "#800000", // Maroon
-    belum: "#D9CFC1"  // Warm gray
+    belum: "#e1a148"  // Warm gray
   };
 
   // fungsi untuk mendapatkan warna berdasarkan jurusan
@@ -168,7 +168,14 @@ export default function PKLDashboard() {
 
   // buat versi warna berbeda untuk tiap chart
   const COLORS_JURUSAN = shuffleColors(COLORS, 2);
-  const COLORS_ROLE = shuffleColors(COLORS, 5);
+  // const COLORS_ROLE = shuffleColors(COLORS, 5);
+  // Ganti dengan warna-warna solid yang konsisten untuk setiap peran
+  const COLORS_ROLE = [
+    "#800000", // Maroon untuk Koordinator
+    "#C04C36", // Terracotta untuk Pembimbing
+    "#E07A5F", // Dusty orange untuk Wali Kelas
+    "#F4A261"  // Sunset orange untuk Kepala Konsentrasi Keahlian
+  ];
 
   // FetchData dengan caching 
   const fetchData = useCallback(async () => {
@@ -487,13 +494,31 @@ export default function PKLDashboard() {
       }));
 
       // GURU PER ROLE 
-      const roleGrouped = { Koordinator: 0, Pembimbing: 0, Wali_Kelas: 0, Kaprog: 0 };
-      guruData.forEach((g) => {
-        if (g.is_koordinator) roleGrouped.Koordinator++;
-        if (g.is_pembimbing) roleGrouped.Pembimbing++;
-        if (g.is_wali_kelas) roleGrouped.Wali_Kelas++;
-        if (g.is_kaprog) roleGrouped.Kaprog++;
-      });
+      // const roleGrouped = { Koordinator: 0, Pembimbing: 0, Wali_Kelas: 0, Kaprog: 0 };
+      // guruData.forEach((g) => {
+      //   if (g.is_koordinator) roleGrouped.Koordinator++;
+      //   if (g.is_pembimbing) roleGrouped.Pembimbing++;
+      //   if (g.is_wali_kelas) roleGrouped.Wali_Kelas++;
+      //   if (g.is_kaprog) roleGrouped.Kaprog++;
+      // });
+
+        const roleGrouped = { 
+          Koordinator: 0, 
+          Pembimbing: 0, 
+          Wali_Kelas: 0, 
+          "Kepala Konsentrasi Keahlian": 0 
+        };
+        guruData.forEach((g) => {
+          if (g.is_koordinator) roleGrouped.Koordinator++;
+          if (g.is_pembimbing) roleGrouped.Pembimbing++;
+          if (g.is_wali_kelas) roleGrouped.Wali_Kelas++;
+          if (g.is_kaprog) roleGrouped["Kepala Konsentrasi Keahlian"]++;
+        });
+
+      // const guruPerRoleTemp = Object.keys(roleGrouped).map((r) => ({
+      //   name: r.replace("_", " "),
+      //   value: roleGrouped[r],
+      // }));
 
       const guruPerRoleTemp = Object.keys(roleGrouped).map((r) => ({
         name: r.replace("_", " "),
@@ -549,9 +574,9 @@ export default function PKLDashboard() {
       return (
         <div className="bg-white p-3 border rounded shadow-lg">
           <p className="font-semibold">{label}</p>
-          <p className="text-sm text-gray-600">
-            Jurusan: {data.jurusanNama} {data.jurusanKode && `(${data.jurusanKode})`}
-          </p>
+          {/* <p className="text-sm text-gray-600">
+            Konsentrasi Keahlian: {data.jurusanNama} {data.jurusanKode && `(${data.jurusanKode})`}
+          </p> */}
           <p className="text-[#800000] mt-1">Sudah Mengajukan: {sudah} ({persenSudah}%)</p>
           <p className="text-[#D9CFC1]">Belum Mengajukan: {belum} ({persenBelum}%)</p>
           <p className="font-medium mt-1">Total: {total} siswa</p>
@@ -574,7 +599,7 @@ export default function PKLDashboard() {
       
       return (
         <div className="bg-white p-3 border rounded shadow-lg">
-          <p className="font-semibold">Jurusan {label}</p>
+          <p className="font-semibold">Konsentrasi Keahlian {label}</p>
           <div className="mt-2">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: warna, opacity: 0.9 }}></div>
@@ -671,7 +696,7 @@ export default function PKLDashboard() {
                 {/* STACKED BAR CHART - SISWA PER JURUSAN */}
                 <div className="bg-white rounded-2xl p-5 shadow-lg">
                   <h2 className="font-semibold text-gray-800 mb-4">
-                    Perbandingan Siswa per Jurusan
+                    Perbandingan Siswa per Konsentrasi Keahlian
                   </h2>
                   <div className="h-110 overflow-x-auto">
                     <ResponsiveContainer width="100%" height="100%">

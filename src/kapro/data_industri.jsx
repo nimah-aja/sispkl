@@ -21,6 +21,7 @@ import Header from "./components/HeaderBiasa";
 import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import { getIndustriPreview, updateIndustriQuota, } from "../utils/services/kapro/industri";
+import { getJurusanKaprodi } from "../utils/services/kapro/jurusan";
 
 export default function DataIndustriKaprog() {
   const exportRef = useRef(null);
@@ -35,15 +36,27 @@ export default function DataIndustriKaprog() {
   const [pendingData, setPendingData] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [jurusanList, setJurusanList] = useState([]);
 
+  // Ambil jurusan pertama dari jurusanList untuk role
+  const userJurusan = jurusanList.length > 0 ? jurusanList[0].nama : "";
 
-
-
+  useEffect(() => {
+    const fetchJurusan = async () => {
+      try {
+        const res = await getJurusanKaprodi();
+        setJurusanList(res?.data?.data || []);
+      } catch (error) {
+        console.error("Gagal ambil jurusan:", error);
+      }
+    };
+    fetchJurusan();
+  }, []);
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "KAPROG",
-  };
+    role: jurusanList.length > 0 ? `KAKONLI ${jurusanList[0].kode}` : "KAKONLI",
+  }; 
 
 
  const columns = [

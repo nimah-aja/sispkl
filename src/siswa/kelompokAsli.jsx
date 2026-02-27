@@ -1,7 +1,7 @@
 // src/pages/siswa/KelolaKelompok.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Mail, Plus, Clock, CheckCircle, XCircle, UserPlus, Calendar, Trash2, Send, X, Ban, Edit2, Building, UploadCloud } from "lucide-react";
+import { Users, Mail, Plus, Clock, CheckCircle, XCircle, UserPlus, Calendar, Trash2, Send, X,Ban, Edit2, Building, UploadCloud } from "lucide-react";
 import orang from "../assets/orangUtan.svg"
 import undanganIcon from "../assets/undangan.svg"
 import hapusIcon from "../assets/deleteGrafik.svg" // Anda perlu menambahkan icon ini
@@ -12,8 +12,7 @@ import Header from "./components/HeaderBiasa";
 import BuatKelompokModal from "./components/addKelompok";
 import UbahKelompokModal from "./components/editKelompok";
 import HapusKelompokModal from "./components/hapusKelompok";
-import HapusAnggotaModal from "./components/hapusAnggota";
-import BatalkanPengajuanModal from "./components/batalkanPengajuan"; // Import modal batalkan pengajuan
+import HapusAnggotaModal from "./components/hapusAnggota"; // Import modal hapus anggota
 
 // Services
 import { 
@@ -31,11 +30,9 @@ export default function KelolaKelompok() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUbahModalOpen, setIsUbahModalOpen] = useState(false);
   const [isHapusModalOpen, setIsHapusModalOpen] = useState(false);
-  const [isHapusAnggotaModalOpen, setIsHapusAnggotaModalOpen] = useState(false);
-  const [isBatalkanModalOpen, setIsBatalkanModalOpen] = useState(false); // State untuk modal batalkan pengajuan
+  const [isHapusAnggotaModalOpen, setIsHapusAnggotaModalOpen] = useState(false); // State untuk modal hapus anggota
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [selectedGroupForCancellation, setSelectedGroupForCancellation] = useState(null); // State untuk kelompok yang akan dibatalkan
+  const [selectedMember, setSelectedMember] = useState(null); // State untuk anggota yang akan dihapus
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUndangan, setIsLoadingUndangan] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -230,42 +227,31 @@ export default function KelolaKelompok() {
     }
   };
 
-  // Handler untuk membuka modal batalkan pengajuan
-  const handleOpenBatalkanModal = (group) => {
-    setSelectedGroupForCancellation(group);
-    setIsBatalkanModalOpen(true);
-  };
-
-  // Handler untuk konfirmasi batalkan pengajuan
-  const handleConfirmBatalkan = async () => {
-    if (!selectedGroupForCancellation) return;
-    
+  // Handler untuk membatalkan pengajuan kelompok
+    const handleBatalkanPengajuan = async (groupId) => {
     try {
-      console.log("Membatalkan pengajuan kelompok:", selectedGroupForCancellation.id);
-      
-      // Panggil API untuk membatalkan pengajuan
-      const response = await withdrawGroupPKL(selectedGroupForCancellation.id);
-      console.log("Response withdraw:", response);
-      
-      // Tutup modal
-      setIsBatalkanModalOpen(false);
-      
-      // Refresh data setelah pembatalan
-      await fetchMyGroups();
-      
-      // Reset state
-      setSelectedGroupForCancellation(null);
-      
-      // Tampilkan notifikasi sukses
-      alert("Pengajuan kelompok berhasil dibatalkan!");
+        // Tampilkan konfirmasi sebelum membatalkan
+        if (window.confirm("Apakah Anda yakin ingin membatalkan pengajuan kelompok ini?")) {
+        console.log("Membatalkan pengajuan kelompok:", groupId);
+        
+        // Panggil API untuk membatalkan pengajuan
+        const response = await withdrawGroupPKL(groupId);
+        console.log("Response withdraw:", response);
+        
+        // Refresh data setelah pembatalan
+        await fetchMyGroups();
+        
+        // Tampilkan notifikasi sukses
+        alert("Pengajuan kelompok berhasil dibatalkan!");
+        }
     } catch (error) {
-      console.error("Gagal membatalkan pengajuan:", error);
-      
-      // Tampilkan pesan error yang lebih informatif
-      const errorMessage = error.response?.data?.message || error.message || "Gagal membatalkan pengajuan";
-      alert(errorMessage);
+        console.error("Gagal membatalkan pengajuan:", error);
+        
+        // Tampilkan pesan error yang lebih informatif
+        const errorMessage = error.response?.data?.message || error.message || "Gagal membatalkan pengajuan";
+        alert(errorMessage);
     }
-  };
+    };
 
   // Handler untuk terima undangan
   const handleTerimaUndangan = async (id) => {
@@ -628,30 +614,30 @@ export default function KelolaKelompok() {
                                       </table>
                                     </div>
                                     
-                                    {/* Tombol Kirim ditempatkan di bawah tabel - hanya untuk leader */}
+                                    
+                                    {/* Tombol Kirim/Batal ditempatkan di bawah tabel - hanya untuk leader */}
                                     {isLeader && group.status === "pending" && allAccepted && (
-                                      <div className="mt-6 flex justify-end">
+                                    <div className="mt-6 flex justify-end">
                                         <button
-                                          onClick={() => handleKirimKelompok(group.id)}
-                                          className="flex items-center gap-2 !bg-[#EC933A] hover:bg-[#d67d2a] text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                                        onClick={() => handleKirimKelompok(group.id)}
+                                        className="flex items-center gap-2 !bg-[#EC933A] hover:bg-[#d67d2a] text-white px-6 py-3 rounded-lg transition-colors font-medium"
                                         >
-                                          <UploadCloud size={20} />
-                                          <span>Kirim Kelompok</span>
+                                        <UploadCloud size={20} />
+                                        <span>Kirim Kelompok</span>
                                         </button>
-                                      </div>
+                                    </div>
                                     )}
 
-                                    {/* Tombol Batalkan Pengajuan - hanya untuk leader dengan status submitted */}
                                     {isLeader && group.status === "submitted" && (
-                                      <div className="mt-6 flex justify-end">
+                                    <div className="mt-6 flex justify-end">
                                         <button
-                                          onClick={() => handleOpenBatalkanModal(group)}
-                                          className="flex items-center gap-2 !bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                                        onClick={() => handleBatalkanPengajuan(group.id)}
+                                        className="flex items-center gap-2 !bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
                                         >
-                                          <Ban size={20} />
-                                          <span>Batalkan Pengajuan</span>
+                                        <Ban size={20} />
+                                        <span>Batalkan Pengajuan</span>
                                         </button>
-                                      </div>
+                                    </div>
                                     )}
                                   </div>
                                 )}
@@ -816,19 +802,6 @@ export default function KelolaKelompok() {
           anggotaNama={selectedMember.siswa.nama}
         />
       )}
-
-      {/* Modal Batalkan Pengajuan */}
-      {selectedGroupForCancellation && (
-        <BatalkanPengajuanModal
-          isOpen={isBatalkanModalOpen}
-          onClose={() => {
-            setIsBatalkanModalOpen(false);
-            setSelectedGroupForCancellation(null);
-          }}
-          onConfirm={handleConfirmBatalkan}
-          groupName={`${selectedGroupForCancellation.members?.find(m => m.is_leader)?.siswa?.nama || "Kelompok"} | ${selectedGroupForCancellation.members?.find(m => m.is_leader)?.siswa?.kelas || "-"}`}
-        />
-      )}
     </div>
   );
-}
+}   
