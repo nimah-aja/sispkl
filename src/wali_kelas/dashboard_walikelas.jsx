@@ -123,7 +123,7 @@ export default function DashboardWaliKelas() {
         // SET DATA DISPLAY
         setDataDisplay([
           {
-            title: "Jumlah Siswa PKL",
+            title: "Jumlah Siswa",
             icon: userIcon,
             value: res.kelas_info?.total_siswa || 0,
           },

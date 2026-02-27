@@ -674,11 +674,11 @@ export default function PKLDashboard() {
                   if (item.title.includes("Data Siswa"))
                     navigate("/guru/pembimbing/siswa");
                   else if (item.title.includes("Data Industri"))
-                    navigate("/guru/industri");
+                    navigate("/guru/pembimbing/industri");
                   else if (item.title.includes("Kegiatan"))
-                    navigate("/guru/tugas");
+                    navigate("/guru/pembimbing/kegiatan");
                   else if (item.title.includes("Realisasi"))
-                    navigate("/guru/realisasi");
+                    navigate("/guru/pembimbing/bukti_kegiatan");
                   else if (item.title.includes("Perizinan"))
                     navigate("/guru/pembimbing/perizinan");
                   // else if (item.title.includes("Permasalahan"))

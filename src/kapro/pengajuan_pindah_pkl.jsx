@@ -23,6 +23,7 @@ import {
   getPindahPklKapro,
   decidePindahPklKapro,
 } from "../utils/services/kapro/perpindahan";
+import { getJurusanKaprodi } from "../utils/services/kapro/jurusan";
 
 const KaproPindahPKL = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -35,10 +36,27 @@ const KaproPindahPKL = () => {
   const exportRef = useRef(null);
   const [active, setActive] = useState("pindah_pkl");
 
-  const user = {
-    name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "KAPROG",
-  };
+  const [jurusanList, setJurusanList] = useState([]);
+  
+    useEffect(() => {
+      const fetchJurusan = async () => {
+        try {
+          const res = await getJurusanKaprodi();
+          // Sesuaikan dengan struktur response API Anda
+          setJurusanList(res?.data?.data || []);
+        } catch (error) {
+          console.error("Gagal ambil jurusan:", error);
+        }
+      };
+      fetchJurusan();
+    }, []);
+  
+    const user = React.useMemo(() => ({
+      name: localStorage.getItem("nama_guru") || "Guru SMK",
+      role: jurusanList.length > 0 
+        ? `KAKONLI ${jurusanList[0].kode}` 
+        : "Memuat jurusan...",
+    }), [jurusanList]);
 
   // =============================
   // FETCH DATA

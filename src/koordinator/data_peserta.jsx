@@ -165,7 +165,7 @@ export default function DataPeserta() {
     { label: "Nama", key: "nama" },
     { label: "Industri", key: "industri" },
     { label: "Kelas", key: "kelas" },
-    { label: "Jurusan", key: "jurusan" }, // Ganti Guru dengan Jurusan
+    { label: "Konsentrasi Keahlian", key: "jurusan" }, // Ganti Guru dengan Jurusan
     // { label: "Status", key: "status" },
   ];
 

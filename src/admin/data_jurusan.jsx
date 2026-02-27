@@ -123,7 +123,7 @@ export default function JurusanPage() {
     { label: "Kode Konsentrasi Keahlian", name: "kode", width: "full", minLength: 2, unique: true },
     { label: "Nama Konsentrasi Keahlian", name: "nama", width: "full", minLength: 10 },
     {
-      label: "Kepala Program (Kaprog)",
+      label: "Kepala Konsentrasi Keahlian",
       name: "kaprog_guru_id",
       width: "full",
       type: "select",

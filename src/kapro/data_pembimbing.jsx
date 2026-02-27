@@ -11,6 +11,7 @@ import SearchBar from "./components/Search";
 import Pagination from "./components/Pagination";
 
 import { getPembimbingList } from "../utils/services/kapro/pembimbing";
+import { getJurusanKaprodi } from "../utils/services/kapro/jurusan";
 
 export default function DataPembimbingKaprog() {
   const exportRef = useRef(null);
@@ -24,10 +25,26 @@ export default function DataPembimbingKaprog() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [jurusanList, setJurusanList] = useState([]);
+
+  // Ambil jurusan pertama dari jurusanList untuk role
+  const userJurusan = jurusanList.length > 0 ? jurusanList[0].nama : "";
+
+  useEffect(() => {
+      const fetchJurusan = async () => {
+        try {
+          const res = await getJurusanKaprodi();
+          setJurusanList(res?.data?.data || []);
+        } catch (error) {
+          console.error("Gagal ambil jurusan:", error);
+        }
+      };
+      fetchJurusan();
+    }, []);
 
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "KAPROG",
+    role: jurusanList.length > 0 ? `KAKONLI ${jurusanList[0].kode}` : "KAKONLI",
   };
 
   const columns = [

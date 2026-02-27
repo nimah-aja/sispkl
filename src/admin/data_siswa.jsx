@@ -131,9 +131,23 @@ export default function SiswaPage() {
 
     return matchSearch && matchFilter;
   });
+
+  // ========== TAMBAHKAN SORTING BERDASARKAN KELAS ==========
+  const sortedData = [...filteredData].sort((a, b) => {
+    // Cari nama kelas berdasarkan kelas_id
+    const kelasA = kelasList.find((k) => k.id === a.kelas_id);
+    const kelasB = kelasList.find((k) => k.id === b.kelas_id);
     
-  // Nomor urut 
-  const dataWithNo = filteredData.map((item, i) => {
+    const namaKelasA = kelasA ? kelasA.nama : "";
+    const namaKelasB = kelasB ? kelasB.nama : "";
+    
+    // Urutkan berdasarkan nama kelas secara ascending (A-Z)
+    // Ini akan mengurutkan: XII RPL 1, XII RPL 2, XI RPL 1, XI RPL 2, X RPL 1, X RPL 2, dll
+    return namaKelasA.localeCompare(namaKelasB);
+  });
+  
+  // Nomor urut (gunakan sortedData, bukan filteredData)
+  const dataWithNo = sortedData.map((item, i) => {
     // cari nama kelas berdasarkan kelas_id
     const kelas = kelasList.find((k) => k.id === item.kelas_id);
 
@@ -505,7 +519,7 @@ export default function SiswaPage() {
 
               // validasi nisn
               if (rawMessage.toLowerCase().includes("nisn must be exactly 10 digits")) {
-                fieldErrors.nisn = validateNISN(newSiswa.nisn);
+                fieldErrors.nisn = validateNISN(updatedSiswa.nisn);
               }
 
               // error khusus

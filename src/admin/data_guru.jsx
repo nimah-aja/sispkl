@@ -69,7 +69,7 @@ export default function GuruPage() {
   // mapping roles ke array string untuk display
   const mappedData = guru.map((item) => {
     const roles = [];
-    if (item.is_kaprog) roles.push("Kapro");
+    if (item.is_kaprog) roles.push("Kepala Konsentrasi Keahlian");
     if (item.is_koordinator) roles.push("Koordinator");
     if (item.is_pembimbing) roles.push("Pembimbing");
     if (item.is_wali_kelas) roles.push("Wali Kelas");
@@ -83,7 +83,7 @@ export default function GuruPage() {
 
   // filter
   const roleOptions = [
-    "Kapro",
+    "Kepala Konsentrasi Keahlian",
     "Koordinator",
     "Pembimbing",
     "Wali Kelas",
@@ -136,7 +136,7 @@ export default function GuruPage() {
       type: "multiselect",
       width: "full",
       options: [
-        { value: "kaprog", label: "Kapro" },
+        { value: "kaprog", label: "Kepala Konsentrasi Keahlian" },
         { value: "koordinator", label: "Koordinator" },
         { value: "pembimbing", label: "Pembimbing" },
         { value: "wali kelas", label: "Wali Kelas" },
@@ -155,7 +155,7 @@ export default function GuruPage() {
       type: "multiselect",
       width: "full",
       options: [
-        { value: "kaprog", label: "Kapro" },
+        { value: "kaprog", label: "Kepala Konsentrasi Keahlian" },
         { value: "koordinator", label: "Koordinator" },
         { value: "pembimbing", label: "Pembimbing" },
         { value: "wali kelas", label: "Wali Kelas" },

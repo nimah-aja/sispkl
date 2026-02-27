@@ -70,7 +70,12 @@ export default function KaprodiDashboard() {
   const [openJurusanPopup, setOpenJurusanPopup] = useState(null);
   const [jurusanPopupPos, setJurusanPopupPos] = useState({ top: 0, left: 0 });
 
-
+  // Ambil jurusan pertama dari jurusanList untuk role
+  const userJurusan = jurusanList.length > 0 ? jurusanList[0].nama : "";
+  const user = {
+    name: localStorage.getItem("nama_guru") || "Guru SMK",
+    role: jurusanList.length > 0 ? `KAKONLI ${jurusanList[0].kode}` : "KAKONLI",
+  }; 
 
 
   const [summary, setSummary] = useState({
@@ -158,10 +163,7 @@ export default function KaprodiDashboard() {
   }
 };
 
-  const user = {
-    name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: "KAPROG",
-  };
+  
 
   // Format waktu untuk display notifikasi
   const formatWaktu = (time) => {
@@ -445,6 +447,8 @@ export default function KaprodiDashboard() {
     })
   );
 
+  
+
 
   const cards = [
     {
@@ -599,9 +603,6 @@ export default function KaprodiDashboard() {
     students,
   });
 };
-
-
-
 
 
   return (

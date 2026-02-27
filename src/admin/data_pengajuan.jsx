@@ -440,6 +440,12 @@ const DataPengajuanPKL = () => {
     return viewFields;
   };
 
+  const statusMap = {
+    Approved : "Disetujui",
+    Rejected : "Ditolak",
+    Pending : "Tertunda"
+  }
+
   return (
     <div className="bg-white min-h-screen w-full">
       <Header user={user} />
@@ -545,7 +551,7 @@ const DataPengajuanPKL = () => {
               nisn: detailData.siswa_nisn || "",
               kelas: detailData.kelas_nama || "",
               jurusan: detailData.jurusan_nama || "",
-              status: detailData.application?.status || "",
+              status: statusMap[detailData.application?.status || ""],
               tanggal_permohonan: dayjs(
                 detailData.application?.tanggal_permohonan
               ).format("DD MMM YYYY HH:mm"),

@@ -38,8 +38,7 @@ export default function PKLManagementSystem() {
   const isSiswa = activeRole === "Siswa";
   const [sekolah, setSekolah] = useState(null);
   const [loadingSekolah, setLoadingSekolah] = useState(true);
-
-
+  const [maskot, setMaskot] = useState(null); // State untuk maskot
 
   // Auto cek access token / refresh
   useEffect(() => {
@@ -70,7 +69,7 @@ export default function PKLManagementSystem() {
     checkToken();
   }, []);
 
-  // logo dan nama sekolah
+  // Ambil data sekolah dan maskot dari localStorage
   useEffect(() => {
     const fetchSekolah = async () => {
       try {
@@ -85,8 +84,14 @@ export default function PKLManagementSystem() {
     };
 
     fetchSekolah();
+    
+    // Ambil maskot dari localStorage
+    const savedMaskot = localStorage.getItem('schoolMaskot');
+    if (savedMaskot) {
+      setMaskot(savedMaskot);
+      console.log("Maskot dimuat dari localStorage:", savedMaskot.substring(0, 50) + "...");
+    }
   }, []);
-
 
   // notifikasi toast saat timeout
   const showToast = (msg, type = "success", dur = 4000) => {
@@ -257,15 +262,26 @@ useEffect(() => {
             style={{ backgroundColor: "#CBC1AF" }}
           />
 
-          {/* Logo Inorasi */}
-          <img
-            src={inorasiellipse9}
-            alt="Inorasi"
-            className="absolute w-[420px] 
-                      top-1/2 left-1/2 
-                      -translate-x-1/2 -translate-y-1/2 
-                      z-20"
-          />
+          {/* Tampilkan Maskot jika ada, jika tidak tampilkan Inorasi */}
+          {maskot ? (
+            <img
+              src={maskot}
+              alt="Maskot Sekolah"
+              className="absolute w-[420px] h-[320px] object-contain
+                        top-1/2 left-1/2 
+                        -translate-x-1/2 -translate-y-1/2 
+                        z-20"
+            />
+          ) : (
+            <img
+              src={inorasiellipse9}
+              alt="Inorasi"
+              className="absolute w-[420px] 
+                        top-1/2 left-1/2 
+                        -translate-x-1/2 -translate-y-1/2 
+                        z-20"
+            />
+          )}
 
           {/* Teks */}
           <img
