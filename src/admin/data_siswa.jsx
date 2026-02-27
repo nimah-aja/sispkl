@@ -5,7 +5,6 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
-
 // import components
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
@@ -26,8 +25,6 @@ import {
   previewSiswaBulk,
   importSiswaBulk,
 } from "../utils/services/admin/import_siswa";
-
-
 
 // import assets
 import guruImg from "../assets/addSidebar.svg";
@@ -56,7 +53,6 @@ export default function SiswaPage() {
   const [bulkSessionId, setBulkSessionId] = useState(null);
   const [previewResult, setPreviewResult] = useState(null);
 
-
   useEffect(() => {
     const fetchKelas = async () => {
       try {
@@ -68,7 +64,6 @@ export default function SiswaPage() {
     };
     fetchKelas();
   }, []);
-
 
   // ambil data awal
   const fetchData = async () => {
@@ -129,7 +124,6 @@ export default function SiswaPage() {
       String(k.no_telp || "").includes(s) ||
       String(k.tanggal_lahir || "").includes(s) ||
       kelasNama.includes(s);
-
 
     const matchFilter = filterSiswa
       ? kelasNama === filterSiswa.toLowerCase()
@@ -196,101 +190,171 @@ export default function SiswaPage() {
     }
   };
 
+  // FUNGSI DOWNLOAD TEMPLATE EXCEL SISWA
+  const handleDownloadTemplate = () => {
+    // Template data dengan contoh dari user
+    const templateData = [
+      {
+        "nama_lengkap": "Firli Zulfa",
+        "NISN": "1987656765",
+        "Kelas": "XII RPL 1",
+        "Alamat": "Jl. Puskopat",
+        "No. Telp": "82091291021",
+        "Tanggal Lahir": "2008-05-15"
+      },
+    ];
+
+    // Buat worksheet
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+
+    // Set column widths agar lebih rapi
+    const colWidths = [
+      { wch: 30 }, // nama_lengkap
+      { wch: 15 }, // NISN
+      { wch: 15 }, // Kelas
+      { wch: 40 }, // Alamat
+      { wch: 15 }, // No. Telp
+      { wch: 15 }, // Tanggal Lahir
+    ];
+    worksheet["!cols"] = colWidths;
+
+    // Buat workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template Siswa");
+
+    // Tambahkan sheet kedua untuk petunjuk
+    const petunjukData = [
+      { "Petunjuk": "===== PETUNJUK PENGISIAN TEMPLATE SISWA =====" },
+      { "Petunjuk": "" },
+      { "Petunjuk": "1. Isi data sesuai format kolom berikut:" },
+      { "Petunjuk": "   - nama_lengkap  : Nama lengkap siswa (min 2 karakter)" },
+      { "Petunjuk": "   - NISN          : NISN harus 10 digit angka" },
+      { "Petunjuk": "   - Kelas         : Nama kelas harus sesuai dengan data kelas di sistem" },
+      { "Petunjuk": "   - Alamat        : Alamat lengkap siswa" },
+      { "Petunjuk": "   - No. Telp      : Nomor telepon (min 10 digit)" },
+      { "Petunjuk": "   - Tanggal Lahir : Format YYYY-MM-DD (contoh: 2008-05-15)" },
+      { "Petunjuk": "" },
+      { "Petunjuk": "2. Data kelas yang tersedia di sistem:" },
+      ...kelasList.map((kelas) => ({ "Petunjuk": `   - ${kelas.nama}` })),
+      { "Petunjuk": "" },
+      { "Petunjuk": "3. Contoh pengisian:" },
+      { "Petunjuk": "   nama_lengkap : Niswatul Khoiriyah" },
+      { "Petunjuk": "   NISN         : 0987656765" },
+      { "Petunjuk": "   Kelas        : XII RPL 2" },
+      { "Petunjuk": "   Alamat       : Jl. Puskopat" },
+      { "Petunjuk": "   No. Telp     : 82091291021" },
+      { "Petunjuk": "   Tanggal Lahir: 2008-05-15" },
+      { "Petunjuk": "" },
+      { "Petunjuk": "4. Jangan mengubah struktur header kolom" },
+      { "Petunjuk": "5. Simpan file dalam format .xlsx atau .xls" },
+    ];
+    
+    const petunjukSheet = XLSX.utils.json_to_sheet(petunjukData);
+    
+    // Set lebar kolom untuk sheet petunjuk
+    const petunjukColWidths = [{ wch: 80 }];
+    petunjukSheet["!cols"] = petunjukColWidths;
+    
+    XLSX.utils.book_append_sheet(workbook, petunjukSheet, "Petunjuk");
+
+    // Download file
+    XLSX.writeFile(workbook, "template_import_siswa.xlsx");
+    
+    toast.success("Template berhasil didownload");
+  };
+
   // export
-const exportData = dataWithNo.map((item) => ({
-  Kelas: item.kelas_id,
-  "Nama Lengkap": item.nama_lengkap,
-  NISN: item.nisn,
-  Alamat: item.alamat,
-  "No. Telepon": item.no_telp,
-  "Tanggal Lahir": item.tanggal_lahir,
-}));
+  const exportData = dataWithNo.map((item) => ({
+    Kelas: item.kelas_id,
+    "Nama Lengkap": item.nama_lengkap,
+    NISN: item.nisn,
+    Alamat: item.alamat,
+    "No. Telepon": item.no_telp,
+    "Tanggal Lahir": item.tanggal_lahir,
+  }));
 
-// PDF
-const handleExportPdf = () => {
-  const doc = new jsPDF();
+  // PDF
+  const handleExportPdf = () => {
+    const doc = new jsPDF();
 
-  doc.setFontSize(14);
-  doc.text("Data Siswa", 14, 15);
+    doc.setFontSize(14);
+    doc.text("Data Siswa", 14, 15);
 
-  autoTable(doc, {
-    startY: 20,
-    head: [[
-      "Kelas",
-      "Nama Lengkap",
-      "NISN",
-      "Alamat",
-      "No. Telepon",
-      "Tanggal Lahir",
-    ]],
-    body: exportData.map((item) => [
-      item.Kelas,
-      item["Nama Lengkap"],
-      item.NISN,
-      item.Alamat,
-      item["No. Telepon"],
-      item["Tanggal Lahir"],
-    ]),
-    styles: { fontSize: 10 },
-    headStyles: { fillColor: [100, 30, 33] },
-  });
+    autoTable(doc, {
+      startY: 20,
+      head: [[
+        "Kelas",
+        "Nama Lengkap",
+        "NISN",
+        "Alamat",
+        "No. Telepon",
+        "Tanggal Lahir",
+      ]],
+      body: exportData.map((item) => [
+        item.Kelas,
+        item["Nama Lengkap"],
+        item.NISN,
+        item.Alamat,
+        item["No. Telepon"],
+        item["Tanggal Lahir"],
+      ]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [100, 30, 33] },
+    });
 
-  doc.save("data-siswa.pdf");
-};
+    doc.save("data-siswa.pdf");
+  };
 
-// Excel
-const handleExportExcel = () => {
-  const worksheet = XLSX.utils.json_to_sheet(exportData);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Data Siswa");
-  XLSX.writeFile(workbook, "data-siswa.xlsx");
-};
+  // Excel
+  const handleExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Siswa");
+    XLSX.writeFile(workbook, "data-siswa.xlsx");
+  };
 
-// import excel
-const handleImportExcel = async (file) => {
-  try {
-    const res = await previewSiswaBulk(file);
+  // import excel
+  const handleImportExcel = async (file) => {
+    try {
+      const res = await previewSiswaBulk(file);
 
-    setPreviewResult(res);
-    setBulkSessionId(res.session_id);
+      setPreviewResult(res);
+      setBulkSessionId(res.session_id);
 
-    const { valid_count, error_count } = res.summary;
+      const { valid_count, error_count } = res.summary;
 
-    // kalau SEMUA invalid
-    if (valid_count === 0 && error_count > 0) {
-      res.error_rows.forEach((row) => {
-        toast.error(
-          `Baris ${row.row_number}: ${row.errors.join(", ")}`
-        );
-      });
+      // kalau SEMUA invalid
+      if (valid_count === 0 && error_count > 0) {
+        res.error_rows.forEach((row) => {
+          toast.error(
+            `Baris ${row.row_number}: ${row.errors.join(", ")}`
+          );
+        });
+        return; 
+      }
 
-      return; 
+      // kalau ada sebagian invalid
+      if (error_count > 0) {
+        res.error_rows.forEach((row) => {
+          toast.error(
+            `Baris ${row.row_number}: ${row.errors.join(", ")}`
+          );
+        });
+      }
+
+      toast.success(
+        `Preview selesai. Benar: ${valid_count}, Tidak benar: ${error_count}`
+      );
+
+      // hanya buka modal kalau ada data valid
+      if (valid_count > 0) {
+        setIsConfirmSaveOpen(true);
+      }
+
+    } catch (err) {
+      toast.error("Gagal preview file Excel");
     }
-
-    // kalau ada sebagian invalid
-    if (error_count > 0) {
-      res.error_rows.forEach((row) => {
-        toast.error(
-          `Baris ${row.row_number}: ${row.errors.join(", ")}`
-        );
-      });
-    }
-
-    toast.success(
-      `Preview selesai. Benar: ${valid_count}, Tidak benar: ${error_count}`
-    );
-
-    // hanya buka modal kalau ada data valid
-    if (valid_count > 0) {
-      setIsConfirmSaveOpen(true);
-    }
-
-  } catch (err) {
-    toast.error("Gagal preview file Excel");
-  }
-};
-
-
+  };
 
   // form add
   if (mode === "add") {
@@ -505,121 +569,128 @@ const handleImportExcel = async (file) => {
     );
   }
 
-  
-
-
   // main
   return (
     <div className="bg-white min-h-screen w-full">
-      <Header  user={user}/>
+      <Header user={user}/>
       <div className="flex flex-col md:flex-row">
         <div className="md:block hidden">
           <Sidebar active={active} setActive={setActive} />
         </div>
 
         <main className="flex-1 p-4 sm:p-6 md:p-10 rounded-none md:rounded-l-3xl bg-[#641E21] shadow-inner">
-        <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
-                    <h2 className="text-white font-bold text-base sm:text-lg">
-                      Data Siswa
-                    </h2>
-        
-                    <div className="relative" ref={exportRef}>
-                      <button
-                        onClick={() => setOpenExport(!openExport)}
-                        className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
-                      >
-                        <Download size={18} />
-                      </button>
-        
-                      {openExport && (
-                        <div className="absolute  left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md w-max p-2 z-50">
-                          <button
-                            onClick={() => {
-                              handleExportExcel();
-                              setOpenExport(false);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                          >
-                            <FileSpreadsheet size={16} className="text-green-600" />
-                            Export Excel
-                          </button>
-        
-                          <button
-                            onClick={() => {
-                              handleExportPdf();
-                              setOpenExport(false);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                          >
-                            <FileText size={16} className="text-red-600" />
-                            Export PDF
-                          </button>
+          <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+            <h2 className="text-white font-bold text-base sm:text-lg">
+              Data Siswa
+            </h2>
 
-                          <button
-                            onClick={() => {
-                              fileInputRef.current.click();
-                              setOpenExport(false);
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
-                          >
-                            <FileSpreadsheet size={16} className="text-blue-600" />
-                            Import Excel
-                          </button>
+            <div className="relative" ref={exportRef}>
+              <button
+                onClick={() => setOpenExport(!openExport)}
+                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+              >
+                <Download size={18} />
+              </button>
 
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              {openExport && (
+                <div className="absolute left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md w-max p-2 z-50">
+                  <button
+                    onClick={() => {
+                      handleExportExcel();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Ekspor Excel
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleExportPdf();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileText size={16} className="text-red-600" />
+                    Ekspor PDF
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleDownloadTemplate();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileSpreadsheet size={16} className="text-yellow-600" />
+                    Unduh Contoh Excel
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      fileInputRef.current.click();
+                      setOpenExport(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
+                  >
+                    <FileSpreadsheet size={16} className="text-blue-600" />
+                    Impor Excel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
           <SearchBar
             query={search}
             setQuery={setSearch}
             placeholder="Pencarian"
             filters={[
-            {
-              label: "Kelas",
-              value: filterSiswa,
-              options: kelasOptions,
-              onChange: setFilterSiswa,
-            },
-          ]}
+              {
+                label: "Kelas",
+                value: filterSiswa,
+                options: kelasOptions,
+                onChange: setFilterSiswa,
+              },
+            ]}
             onAddClick={() => setMode("add")}
             className="mb-4 w-[100%]"
           />
 
           <div className="mt-4">
             {loading ? (
-             <p className="text-center text-white font-semibold">Memuat data...</p>
+              <p className="text-center text-white font-semibold">Memuat data...</p>
             ) : (
-                <>
-                  <Table
-                    columns={columns}
-                    data={paginatedData}
-                    showEdit
-                    showDelete
-                    onEdit={(row) => {
-                      const original = siswa.find((s) => s.id === row.id); 
-                      setSelectedRow(original);
-                      setMode("edit");
-                    }}
-                    onDelete={(row) => {
-                      setSelectedRow(row);
-                      setIsDeleteOpen(true);
-                    }}
-                  />
+              <>
+                <Table
+                  columns={columns}
+                  data={paginatedData}
+                  showEdit
+                  showDelete
+                  onEdit={(row) => {
+                    const original = siswa.find((s) => s.id === row.id); 
+                    setSelectedRow(original);
+                    setMode("edit");
+                  }}
+                  onDelete={(row) => {
+                    setSelectedRow(row);
+                    setIsDeleteOpen(true);
+                  }}
+                />
 
-                  {totalPages > 1 && (
-                    <div className="flex justify-between items-center mt-0 text-white">
-                      <p className="text-sm sm:text-base">
-                        Halaman {currentPage} dari {totalPages} halaman
-                      </p>
-                      <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                      />
-                    </div>
-                  )}
+                {totalPages > 1 && (
+                  <div className="flex justify-between items-center mt-0 text-white">
+                    <p className="text-sm sm:text-base">
+                      Halaman {currentPage} dari {totalPages} halaman
+                    </p>
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -656,7 +727,6 @@ const handleImportExcel = async (file) => {
             try {
               await importSiswaBulk(bulkSessionId);
               await fetchData();
-
               toast.success("Import data siswa berhasil");
               setIsConfirmSaveOpen(false);
               setBulkSessionId(null);
@@ -668,8 +738,7 @@ const handleImportExcel = async (file) => {
           imageSrc={saveImg}
         />
 
-
-        {/* import */}
+        {/* input file untuk import */}
         <input
           type="file"
           ref={fileInputRef}

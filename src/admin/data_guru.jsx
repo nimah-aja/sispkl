@@ -194,26 +194,13 @@ export default function GuruPage() {
     // Template data dengan contoh dari user
     const templateData = [
       {
-        "kode_guru": "9922",
+        "kode_guru": "3312",
         "password": "Pass123",
-        "nip": "123456789012345678",
-        "nama": "Imam Syafi'i, S.Pd",
-        "no_telp": "8126389303"
+        "nip": "102930382920292029",
+        "nama": "Mira Ayu S.Pd",
+        "no_telp": "01802912120"
       },
-      {
-        "kode_guru": "9923",
-        "password": "Guru456",
-        "nip": "876543210987654321",
-        "nama": "Siti Aminah, S.Pd",
-        "no_telp": "81234567890"
-      },
-      {
-        "kode_guru": "9924",
-        "password": "Admin789",
-        "nip": "112233445566778899",
-        "nama": "Ahmad Fauzi, M.Pd",
-        "no_telp": "81345678901"
-      }
+      
     ];
 
     // Buat worksheet
@@ -340,7 +327,7 @@ export default function GuruPage() {
       }
 
       toast.success(
-        `Preview selesai. Valid: ${valid_count}, Tidak valid: ${error_count}`
+        `Preview selesai. Benar: ${valid_count}, Tidak benar: ${error_count}`
       );
 
       // hanya buka modal kalau ada data valid
@@ -564,7 +551,7 @@ export default function GuruPage() {
                     className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                   >
                     <FileSpreadsheet size={16} className="text-green-600" />
-                    Export Excel
+                    Ekspor Excel
                   </button>
 
                   <button
@@ -575,7 +562,7 @@ export default function GuruPage() {
                     className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                   >
                     <FileText size={16} className="text-red-600" />
-                    Export PDF
+                    Ekspor PDF
                   </button>
 
                   <button
@@ -586,7 +573,7 @@ export default function GuruPage() {
                     className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                   >
                     <FileSpreadsheet size={16} className="text-yellow-600" />
-                    Download Template
+                    Unduh Contoh Excel
                   </button>
 
                   <button
@@ -597,7 +584,7 @@ export default function GuruPage() {
                     className="flex items-center gap-2 px-3 py-2 !bg-transparent hover:!bg-gray-100 text-sm w-full"
                   >
                     <FileSpreadsheet size={16} className="text-blue-600" />
-                    Import Excel
+                    Impor Excel
                   </button>
                 </div>
               )}
