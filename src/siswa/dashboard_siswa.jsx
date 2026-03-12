@@ -16,14 +16,12 @@ import { getPengajuanMe } from "../utils/services/siswa/pengajuan_pkl";
 import {getIndustri} from "../utils/services/admin/get_industri";
 import {getGuru} from "../utils/services/admin/get_guru";
 import { getActiveKegiatanPKL } from "../utils/services/siswa/kegiatan";
-import { getActivePKL } from "../utils/services/siswa/active"; // Import the new utility
+import { getActivePKL } from "../utils/services/siswa/active";
 import { createPortal } from "react-dom";
 import Detail from "./components/Detail";
 import IzinCard from "./components/DetailIzin";
 
-
 import { connectWS, disconnectWS } from "../utils/webSocket";
-
 
 // ICONS
 import userIcon from "../assets/sidebarUsers.svg";
@@ -38,7 +36,6 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-
 export default function DashboardSiswa() {
   const [kegiatanKalender, setKegiatanKalender] = useState([]);
   const navigate = useNavigate();
@@ -49,7 +46,7 @@ export default function DashboardSiswa() {
   const [guruMap, setGuruMap] = useState({});
   const [aktivitas, setAktivitas] = useState([]);
   const [activePKLData, setActivePKLData] = useState(null);
-  const [activePKLDetails, setActivePKLDetails] = useState(null); // New state for JadwalPKLCard
+  const [activePKLDetails, setActivePKLDetails] = useState(null);
   const [user] = useState(
     JSON.parse(localStorage.getItem("user")) || { name: "Guest", role: "Siswa" }
   );
@@ -62,210 +59,206 @@ export default function DashboardSiswa() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
+  // Fetch industri
   useEffect(() => {
-  const fetchIndustri = async () => {
-    try {
-      const res = await getIndustri();
-      const map = {};
-      res.forEach((i) => {
-        map[i.id] = i.nama;
-      });
-      setIndustriMap(map);
-    } catch (err) {
-      console.error("Gagal ambil industri", err);
-    }
-  };
-
-  fetchIndustri();
-}, []);
-
-useEffect(() => {
-  const fetchGuru = async () => {
-    try {
-      const res = await getGuru();
-      const map = {};
-      res.forEach((g) => {
-        map[g.id] = g.nama;
-      });
-      setGuruMap(map);
-    } catch (err) {
-      console.error("Gagal ambil guru", err);
-    }
-  };
-
-  fetchGuru();
-}, []);
-
-// Fetch active PKL details for JadwalPKLCard
-useEffect(() => {
-  const fetchActivePKLDetails = async () => {
-    try {
-      const response = await axios.get("/api/pkl/active/me");
-      setActivePKLDetails(response.data);
-    } catch (err) {
-      console.error("Gagal mengambil detail PKL aktif", err);
-      setActivePKLDetails(null);
-    }
-  };
-
-  fetchActivePKLDetails();
-}, []);
-
-useEffect(() => {
-  if (
-    Object.keys(industriMap).length === 0 ||
-    Object.keys(guruMap).length === 0
-  )
-    return;
-
-  const formatWaktu = (time) => {
-    const now = dayjs();
-    const t = dayjs(time);
-  
-    if (!t.isValid()) return "-";
-  
-    if (t.isSame(now, "day")) {
-      return `Hari ini • ${t.format("HH:mm")}`;
-    }
-  
-    if (t.isSame(now.subtract(1, "day"), "day")) {
-      return `Kemarin • ${t.format("HH:mm")}`;
-    }
-  
-    return t.format("DD MMMM YYYY • HH:mm");
-  };
-
-
-
-  const fetchPKL = async () => {
-    try {
-      const res = await getPengajuanMe();
-      const list = res.data || [];
-
-      const aktivitasList = [];
-
-      list.forEach((item) => {
-        const namaIndustri =
-          industriMap[item.industri_id] || "Industri tidak diketahui";
-
-        if (item.tanggal_permohonan) {
-          aktivitasList.push({
-            type: "submit",
-            title: "Anda Mengajukan PKL",
-            description: `Pengajuan PKL di ${namaIndustri}`,
-            time: dayjs(item.tanggal_permohonan),
-
-            onClick: () => {
-              setDetailData({
-                ...item,
-                namaIndustri,
-                namaGuru: guruMap[item.processed_by] || "-",
-              });
-              setOpenDetail(true);
-            },
+    const fetchIndustri = async () => {
+      try {
+        const res = await getIndustri();
+        const map = {};
+        if (Array.isArray(res)) {
+          res.forEach((i) => {
+            if (i && i.id) {
+              map[i.id] = i.nama || "Industri tidak diketahui";
+            }
           });
-
         }
-
-        if (item.decided_at) {
-          const namaGuru =
-            guruMap[item.processed_by] || "Kaprog";
-
-          aktivitasList.push({
-            type: item.status === "Approved" ? "approved" : "rejected",
-            title:
-              item.status === "Approved"
-                ? `${namaGuru} Menyetujui Pengajuan Anda`
-                : `${namaGuru} Menolak Pengajuan Anda`,
-            description: `Pengajuan PKL di ${namaIndustri}`,
-            time: dayjs(item.decided_at),
-
-            onClick: () => {
-              setDetailData({
-                ...item,
-                namaIndustri,
-                namaGuru,
-              });
-              setOpenDetail(true);
-            },
-          });
-
-        }
-      });
-
-      const sevenDaysAgo = dayjs().subtract(7, "day");
-
-      aktivitasList.sort((a, b) => b.time.valueOf() - a.time.valueOf());
-
-      const aktivitasTerbaru = aktivitasList.map((a) => ({
-        ...a,
-        time: formatWaktu(a.time),
-      }));
-
-
-      setAktivitas(aktivitasTerbaru);
-
-
-    } catch (err) {
-      console.error("Gagal mengambil aktivitas PKL", err);
-    }
-  };
-
-  fetchPKL();
-}, [industriMap, guruMap]);
-
-// kegiatan
-useEffect(() => {
-  const fetchKegiatan = async () => {
-    try {
-      const res = await getActiveKegiatanPKL();
-      // asumsi backend return array
-      setKegiatanKalender(res.data || res);
-    } catch (err) {
-      console.error("Gagal ambil kegiatan PKL", err);
-    }
-  };
-
-  fetchKegiatan();
-}, []);
-
-
-// WS
-useEffect(() => {
-  connectWS((data) => {
-    /**
-     * Contoh data dari backend:
-     * {
-     *   type: "approved",
-     *   title: "Kaprog menyetujui pengajuan",
-     *   message: "PKL di PT ABC",
-     *   time: "2026-01-06T14:22:00"
-     * }
-     */
-
-    const notifBaru = {
-      type: data.type || "info",
-      title: data.title,
-      description: data.message,
-      time: dayjs(data.time || new Date()).fromNow(),
-      onClick: () => {
-        if (data.pengajuan_id) {
-          // optional: buka detail
-          navigate(`/siswa/pengajuan/${data.pengajuan_id}`);
-        }
-      },
+        setIndustriMap(map);
+      } catch (err) {
+        console.error("Gagal ambil industri", err);
+      }
     };
 
-    //  MASUKKAN KE AKTIVITAS PALING ATAS
-    setAktivitas((prev) => [notifBaru, ...prev]);
-  });
+    fetchIndustri();
+  }, []);
 
-  return () => {
-    disconnectWS();
-  };
-}, [navigate]);
+  // Fetch guru
+  useEffect(() => {
+    const fetchGuru = async () => {
+      try {
+        const res = await getGuru();
+        const map = {};
+        if (Array.isArray(res)) {
+          res.forEach((g) => {
+            if (g && g.id) {
+              map[g.id] = g.nama || "Guru tidak diketahui";
+            }
+          });
+        }
+        setGuruMap(map);
+      } catch (err) {
+        console.error("Gagal ambil guru", err);
+      }
+    };
 
+    fetchGuru();
+  }, []);
+
+  // Fetch active PKL details
+  useEffect(() => {
+    const fetchActivePKLDetails = async () => {
+      try {
+        const response = await axios.get("/api/pkl/active/me");
+        if (response && response.data) {
+          setActivePKLDetails(response.data);
+        }
+      } catch (err) {
+        console.error("Gagal mengambil detail PKL aktif", err);
+        setActivePKLDetails(null);
+      }
+    };
+
+    fetchActivePKLDetails();
+  }, []);
+
+  // Fetch PKL applications and aktivitas
+  useEffect(() => {
+    if (Object.keys(industriMap).length === 0 || Object.keys(guruMap).length === 0) {
+      return;
+    }
+
+    const formatWaktu = (time) => {
+      if (!time) return "-";
+      
+      const now = dayjs();
+      const t = dayjs(time);
+    
+      if (!t.isValid()) return "-";
+    
+      if (t.isSame(now, "day")) {
+        return `Hari ini • ${t.format("HH:mm")}`;
+      }
+    
+      if (t.isSame(now.subtract(1, "day"), "day")) {
+        return `Kemarin • ${t.format("HH:mm")}`;
+      }
+    
+      return t.format("DD MMMM YYYY • HH:mm");
+    };
+
+    const fetchPKL = async () => {
+      try {
+        const res = await getPengajuanMe();
+        const list = (res && res.data) || [];
+
+        const aktivitasList = [];
+
+        list.forEach((item) => {
+          if (!item) return;
+          
+          const namaIndustri = (item.industri_id && industriMap[item.industri_id]) || "Industri tidak diketahui";
+
+          if (item.tanggal_permohonan) {
+            aktivitasList.push({
+              type: "submit",
+              title: "Anda Mengajukan PKL",
+              description: `Pengajuan PKL di ${namaIndustri}`,
+              time: dayjs(item.tanggal_permohonan),
+              onClick: () => {
+                setDetailData({
+                  ...item,
+                  namaIndustri,
+                  namaGuru: (item.processed_by && guruMap[item.processed_by]) || "-",
+                });
+                setOpenDetail(true);
+              },
+            });
+          }
+
+          if (item.decided_at) {
+            const namaGuru = (item.processed_by && guruMap[item.processed_by]) || "Kaprog";
+
+            aktivitasList.push({
+              type: item.status === "Approved" ? "approved" : "rejected",
+              title: item.status === "Approved"
+                ? `${namaGuru} Menyetujui Pengajuan Anda`
+                : `${namaGuru} Menolak Pengajuan Anda`,
+              description: `Pengajuan PKL di ${namaIndustri}`,
+              time: dayjs(item.decided_at),
+              onClick: () => {
+                setDetailData({
+                  ...item,
+                  namaIndustri,
+                  namaGuru,
+                });
+                setOpenDetail(true);
+              },
+            });
+          }
+        });
+
+        aktivitasList.sort((a, b) => b.time.valueOf() - a.time.valueOf());
+
+        const aktivitasTerbaru = aktivitasList.map((a) => ({
+          ...a,
+          time: formatWaktu(a.time),
+        }));
+
+        setAktivitas(aktivitasTerbaru);
+        setInitialDataLoaded(true);
+      } catch (err) {
+        console.error("Gagal mengambil aktivitas PKL", err);
+        setInitialDataLoaded(true);
+      }
+    };
+
+    fetchPKL();
+  }, [industriMap, guruMap]);
+
+  // Fetch kegiatan
+  useEffect(() => {
+    const fetchKegiatan = async () => {
+      try {
+        const res = await getActiveKegiatanPKL();
+        if (res && res.data) {
+          setKegiatanKalender(Array.isArray(res.data) ? res.data : []);
+        }
+      } catch (err) {
+        console.error("Gagal ambil kegiatan PKL", err);
+        setKegiatanKalender([]);
+      }
+    };
+
+    fetchKegiatan();
+  }, []);
+
+  // WebSocket connection
+  useEffect(() => {
+    connectWS((data) => {
+      if (!data) return;
+      
+      const notifBaru = {
+        type: data.type || "info",
+        title: data.title || "Notifikasi Baru",
+        description: data.message || "",
+        time: dayjs(data.time || new Date()).fromNow(),
+        onClick: () => {
+          if (data.pengajuan_id) {
+            navigate(`/siswa/pengajuan/${data.pengajuan_id}`);
+          }
+        },
+      };
+
+      setAktivitas((prev) => [notifBaru, ...(prev || [])]);
+    });
+
+    return () => {
+      disconnectWS();
+    };
+  }, [navigate]);
+
+  // Fetch main PKL data
   useEffect(() => {
     const fetchPKL = async () => {
       setLoading(true);
@@ -273,37 +266,44 @@ useEffect(() => {
 
       try {
         const res = await axios.get("/api/pkl/applications/me");
-        const data = res.data.data[0];
+        const data = (res.data && res.data.data && res.data.data[0]) || null;
         setActivePKLData(data);
 
         if (data) {
-          setIzinData({
-            nama_pembimbing: guruMap[data.processed_by] || "Nikama S.Pd",
-            tanggal: dayjs(data.tanggal_permohonan).format("DD/MM/YYYY"),
-            jenis: data.jenis || "SAKIT",
-            bukti: data.bukti_foto?.[0]?.url || "",
-          });
-        }
+          // Only set izinData if we have guruMap data
+          if (Object.keys(guruMap).length > 0) {
+            setIzinData({
+              nama_pembimbing: (data.processed_by && guruMap[data.processed_by]) || "Nikama S.Pd",
+              tanggal: data.tanggal_permohonan ? dayjs(data.tanggal_permohonan).format("DD/MM/YYYY") : "-",
+              jenis: data.jenis || "SAKIT",
+              bukti: (data.bukti_foto && data.bukti_foto[0] && data.bukti_foto[0].url) || "",
+            });
+          }
 
+          if (data.tanggal_selesai) {
+            const today = dayjs().startOf("day");
+            const endDate = dayjs(data.tanggal_selesai).startOf("day");
 
-        if (data) {
-          const today = dayjs().startOf("day");
-          const endDate = dayjs(data.tanggal_selesai).startOf("day");
+            const diffDays = endDate.diff(today, "day");
 
-          const diffDays = endDate.diff(today, "day");
-
-          setDashboardData([
-            {
-              title: "Status PKL",
-              value: data.status === "Approved" ? "Aktif" : "Tidak Aktif",
-              icon: userIcon,
-            },
-            {
-              title: "Sisa Hari PKL",
-              value: diffDays > 0 ? diffDays : 0,
-              icon: timeIcon,
-            },
-          ]);
+            setDashboardData([
+              {
+                title: "Status PKL",
+                value: data.status === "Approved" ? "Aktif" : "Tidak Aktif",
+                icon: userIcon,
+              },
+              {
+                title: "Sisa Hari PKL",
+                value: diffDays > 0 ? diffDays : 0,
+                icon: timeIcon,
+              },
+            ]);
+          } else {
+            setDashboardData([
+              { title: "Status PKL", value: "Tidak Aktif", icon: userIcon },
+              { title: "Sisa Hari PKL", value: 0, icon: timeIcon },
+            ]);
+          }
         } else {
           setDashboardData([
             { title: "Status PKL", value: "Tidak Aktif", icon: userIcon },
@@ -322,20 +322,18 @@ useEffect(() => {
       }
     };
 
-    fetchPKL();
-  }, []);
+    // Only fetch if we have initial data loaded
+    if (initialDataLoaded || Object.keys(guruMap).length > 0) {
+      fetchPKL();
+    }
+  }, [initialDataLoaded, guruMap]);
 
   const today = dayjs().startOf("day");
 
-  const isPKLActive =
-    activePKLData &&
+  const isPKLActive = activePKLData &&
     activePKLData.status === "Approved" &&
-    today.isBefore(
-      dayjs(activePKLData.tanggal_selesai).startOf("day")
-    );
-
-
-  
+    activePKLData.tanggal_selesai &&
+    today.isBefore(dayjs(activePKLData.tanggal_selesai).startOf("day"));
 
   const safeValue = (value) => {
     if (value === null || value === undefined || value === "" || value === "Invalid Date") {
@@ -345,10 +343,10 @@ useEffect(() => {
   };
 
   const StatusMap = {
-    Approved : "Disetuju",
-    Rejected : "Ditolak",
-    Pending : "Diproses"
-  }
+    Approved: "Disetujui",
+    Rejected: "Ditolak",
+    Pending: "Diproses"
+  };
 
   return (
     <div className="flex h-screen bg-white">
@@ -364,22 +362,18 @@ useEffect(() => {
         <main className="p-6 overflow-auto">
           {/* Grid Status & Jadwal */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* KIRI */}
+            <div className="space-y-6">
+              <StatusPengajuanPKL dataPKL={activePKLData} />
+            </div>
 
-          {/* KIRI */}
-          <div className="space-y-6">
-
-            <StatusPengajuanPKL dataPKL={activePKLData} />
+            {/* KANAN */}
+            <div>
+              <JadwalPKLCard dataPKL={activePKLDetails} />
+            </div>
           </div>
 
-          {/* KANAN - Now using activePKLDetails */}
-          <div>
-            <JadwalPKLCard dataPKL={activePKLDetails} />
-          </div>
-
-        </div>
-
-
-          {/* IZIN PKL - FULL WIDTH PALING ATAS */}
+          {/* IZIN PKL */}
           {izinData && (
             <div className="mb-6 mt-7">
               <IzinCard
@@ -392,19 +386,21 @@ useEffect(() => {
           {/* Quick Actions */}
           <div className="mt-6">
             <QuickActions
-  isPKLActive={isPKLActive}
-  onAction={(key) => {
-    if (key === "pengajuan_pkl") {
-      navigate("/siswa/pengajuan_pkl");
-    }
-  }}
-/>
-
+              isPKLActive={isPKLActive}
+              onAction={(key) => {
+                if (key === "pengajuan_pkl") {
+                  navigate("/siswa/pengajuan_pkl");
+                }
+              }}
+            />
           </div>
 
           {/* Kalender */}
           <div className="mt-6">
-            <KalenderPKL pklData={activePKLData}  kegiatan={kegiatanKalender}/>
+            <KalenderPKL 
+              pklData={activePKLData}  
+              kegiatan={kegiatanKalender}
+            />
           </div>
 
           {/* Aktivitas + Progress */}
@@ -428,51 +424,45 @@ useEffect(() => {
             )}
           </div>
         </main>
-        {openDetail && detailData &&
-          createPortal(
-            <Detail
-              mode="view"
-              title="Rincian PKL"
-              size="half"
-              onClose={() => {
-                setOpenDetail(false);
-                setDetailData(null);
-              }}
-              initialData={{
-                nama_industri: safeValue(detailData.namaIndustri),
-                status: safeValue(StatusMap[detailData.status]),
-                tanggal_permohonan: safeValue(dayjs(
-                  detailData.tanggal_permohonan
-                ).format("DD MMMM YYYY HH:mm")),
-                tanggal_mulai: safeValue(dayjs(
-                  detailData.tanggal_mulai
-                ).format("DD MMMM YYYY HH:mm")),
-                tanggal_selesai: safeValue(dayjs(
-                  detailData.tanggal_selesai
-                ).format("DD MMMM YYYY HH:mm")),
-                pembimbing: safeValue(detailData.namaGuru),
-                diproses_oleh: safeValue(detailData.processed_by ? (detailData.namaGuru) : "-"),
-                tanggal_diproses: safeValue(dayjs(
-                  detailData.decided_at
-                ).format("DD MMMM YYYY HH:mm")),
-                dokumen_urls : safeValue(detailData.dokumen_urls || [])
-              }}
-              fields={[
-                { name: "nama_industri", label: "Industri", full: true },
-                { name: "status", label: "Status" },
-                { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
-                {name : "tanggal_diproses", label: "Tanggal Diproses" },
-                { name: "tanggal_mulai", label: "Tanggal Mulai PKL" },
-                { name: "tanggal_selesai", label: "Tanggal Selesai PKL" },
-                { name: "pembimbing", label: "Pembimbing" },
-                { name: "diproses_oleh", label: "Diproses Oleh" },
-                { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
-              ]}
-            />,
-            document.body
-          )
-        }
-
+        
+        {openDetail && detailData && createPortal(
+          <Detail
+            mode="view"
+            title="Rincian PKL"
+            size="half"
+            onClose={() => {
+              setOpenDetail(false);
+              setDetailData(null);
+            }}
+            initialData={{
+              nama_industri: safeValue(detailData.namaIndustri),
+              status: safeValue(StatusMap[detailData.status]),
+              tanggal_permohonan: safeValue(detailData.tanggal_permohonan ? 
+                dayjs(detailData.tanggal_permohonan).format("DD MMMM YYYY HH:mm") : "-"),
+              tanggal_mulai: safeValue(detailData.tanggal_mulai ? 
+                dayjs(detailData.tanggal_mulai).format("DD MMMM YYYY HH:mm") : "-"),
+              tanggal_selesai: safeValue(detailData.tanggal_selesai ? 
+                dayjs(detailData.tanggal_selesai).format("DD MMMM YYYY HH:mm") : "-"),
+              pembimbing: safeValue(detailData.namaGuru || "-"),
+              diproses_oleh: safeValue(detailData.processed_by ? (detailData.namaGuru || "-") : "-"),
+              tanggal_diproses: safeValue(detailData.decided_at ? 
+                dayjs(detailData.decided_at).format("DD MMMM YYYY HH:mm") : "-"),
+              dokumen_urls: safeValue(detailData.dokumen_urls || [])
+            }}
+            fields={[
+              { name: "nama_industri", label: "Industri", full: true },
+              { name: "status", label: "Status" },
+              { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
+              { name: "tanggal_diproses", label: "Tanggal Diproses" },
+              { name: "tanggal_mulai", label: "Tanggal Mulai PKL" },
+              { name: "tanggal_selesai", label: "Tanggal Selesai PKL" },
+              { name: "pembimbing", label: "Pembimbing" },
+              { name: "diproses_oleh", label: "Diproses Oleh" },
+              { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
+            ]}
+          />,
+          document.body
+        )}
       </div>
     </div>
   );
