@@ -21,9 +21,9 @@ import Detail from "./components/Detail";
 import { 
   getGuruTasks, 
   getGuruSiswa,
-  getGuruIndustri,  // Tambahkan import ini
+  getGuruIndustri,
 } from "../utils/services/pembimbing/guru"; 
-import { getIndustri } from "../utils/services/admin/get_industri"; // Import dari admin
+import { getIndustri } from "../utils/services/admin/get_industri";
 import {getMyRealisasiKegiatan} from "../utils/services/pembimbing/realisasi"; 
 import {getActiveKegiatanPKL} from "../utils/services/pembimbing/kegiatan"; 
 import { getIzinPembimbing } from "../utils/services/pembimbing/izin";
@@ -116,7 +116,7 @@ export default function PKLDashboard() {
   ]);
   const [tugasTerbaru, setTugasTerbaru] = useState([]);
   const [siswa, setSiswa] = useState([]);
-  const [industries, setIndustries] = useState([]); // State untuk data industri
+  const [industries, setIndustries] = useState([]);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedSiswa, setSelectedSiswa] = useState(null);
   const [selectedIndustri, setSelectedIndustri] = useState(null);
@@ -330,7 +330,7 @@ export default function PKLDashboard() {
     fetchAktivitas();
   }, []);
 
-  // Fetch data siswa menggunakan getGuruSiswa
+  // Fetch data siswa menggunakan getGuruSiswa - PERBAIKAN: Hanya tampilkan data unik
   useEffect(() => {
     const fetchSiswa = async () => {
       try {
@@ -341,30 +341,46 @@ export default function PKLDashboard() {
         // Response API memiliki struktur { data: [...], total: number }
         const siswaData = response.data || [];
         
-        const siswaList = siswaData.map((s) => ({
-          siswa_id: s.siswa_id,
-          nama_ssw: s.siswa_nama,
-          username_ssw: s.siswa_username,
-          nisn: s.nisn,
-          kelas: s.kelas,
-          industri_ssw: s.industri_nama || "-",
-          status: s.status || "Approved",
-          tanggal_mulai: s.tanggal_mulai,
-          tanggal_selesai: s.tanggal_selesai,
-          inisial: s.siswa_nama
-            ?.split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .substring(0, 2) || "??",
-        }));
+        // PERBAIKAN: Filter data unik berdasarkan siswa_id
+        const uniqueSiswaMap = new Map();
+        
+        siswaData.forEach((s) => {
+          const siswaId = s.siswa_id;
+          
+          // Jika siswa_id belum ada di Map, tambahkan
+          if (!uniqueSiswaMap.has(siswaId)) {
+            uniqueSiswaMap.set(siswaId, {
+              siswa_id: s.siswa_id,
+              nama_ssw: s.siswa_nama,
+              username_ssw: s.siswa_username,
+              nisn: s.nisn,
+              kelas: s.kelas,
+              industri_ssw: s.industri_nama || "-",
+              status: s.status || "Approved",
+              tanggal_mulai: s.tanggal_mulai,
+              tanggal_selesai: s.tanggal_selesai,
+              inisial: s.siswa_nama
+                ?.split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .substring(0, 2) || "??",
+            });
+          } else {
+            console.log(`Siswa ID ${siswaId} (${s.siswa_nama}) duplikat, diabaikan`);
+          }
+        });
 
-        console.log("Mapped siswa list:", siswaList);
-        setSiswa(siswaList);
+        // Konversi Map ke array
+        const uniqueSiswaList = Array.from(uniqueSiswaMap.values());
+        
+        console.log(`Total data asli: ${siswaData.length}, Setelah filter unik: ${uniqueSiswaList.length}`);
+        console.log("Unique siswa list:", uniqueSiswaList);
+        
+        setSiswa(uniqueSiswaList);
         
       } catch (err) {
         console.error("Gagal fetch siswa:", err);
-        // Fallback ke data kosong jika error
         setSiswa([]);
       }
     };
@@ -557,7 +573,7 @@ export default function PKLDashboard() {
     
     // Data dari state yang sudah ada
     const totalSiswa = siswa.length;
-    const totalIndustri = industries.length; // Gunakan industries state
+    const totalIndustri = industries.length;
     const totalKegiatan = tugasTerbaru.length;
     const totalRealisasi = aktivitasItems.filter(item => item.type === "approved").length;
     
@@ -715,13 +731,13 @@ export default function PKLDashboard() {
           {/* DAFTAR SISWA + INDUSTRI */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <DaftarSiswaPKL
-              data={siswa}
+              data={siswa} // Sekarang berisi data unik
               onViewAll={() => navigate("/guru/pembimbing/siswa")}
               onItemClick={(item) => handleDetailClick(item, 'siswa')}
             />
 
             <DaftarIndustri
-              data={industries} // Gunakan industries state yang sudah lengkap
+              data={industries}
               onViewAll={() => navigate("/guru/industri")}
               onItemClick={(item) => handleDetailClick(item, 'industri')}
             />
@@ -793,8 +809,8 @@ export default function PKLDashboard() {
                 { name: "alamat", label: "Alamat", type: "text" },
                 { name: "no_telp", label: "No. Telepon", type: "text" },
                 { name: "email", label: "Email", type: "text" },
-                { name: "pic", label: "PIC", type: "text" },
-                { name: "pic_telp", label: "No. Telepon PIC", type: "text" },
+                { name: "pic", label: "Pembimbing Industri", type: "text" },
+                { name: "pic_telp", label: "No. Telepon Pembimbing Industri", type: "text" },
               ] :
               detailType === 'kegiatan' ? [
                 { name: "jenis_kegiatan", label: "Jenis Kegiatan", type: "text" },

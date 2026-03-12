@@ -20,6 +20,8 @@ import profile from "../../assets/profile.svg";
 import logoutIcon from "../../assets/logout.svg";
 import logoutImage from "../../assets/keluar.svg";
 import addImage from "../../assets/add_image.svg";
+import { exportPenilaianWali } from "../../utils/services/wakel/export";
+
 
 export default function HeaderKoordinator({ user: propUser, notifications = [], }) {
   const navigate = useNavigate();
@@ -27,6 +29,14 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      await exportPenilaianWali();
+    } catch (error) {
+      console.error("Gagal export:", error);
+    }
+  };
 
   const allRoles = [
     { key: "is_wali_kelas", name: "Wali Kelas", path: "/guru/wali_kelas/" },
@@ -130,33 +140,40 @@ export default function HeaderKoordinator({ user: propUser, notifications = [], 
       {/* RIGHT SIDE */}
       <div className="flex items-center gap-4">
 
-        {/* Icons */}
-        {/* <img src={addImage} alt="Addimg" className="w-9"/> */}
-        <button
-          onClick={() => {
-            setIsNotificationOpen((v) => !v);
-            setHasUnread(false);
-          }}
-          className="!bg-transparent relative p-2 rounded-full hover:bg-gray-100 transition"
-        >
-          <Bell className="w-7 h-7 text-[#641E21]" />
+  {/* EXPORT EXCEL */}
+  {/* <button
+    onClick={handleExport}
+    className="flex items-center gap-2 !bg-[#641E21] text-white px-4 py-2 rounded-full hover:bg-[#4e1718] transition"
+  >
+    <span className="font-semibold text-sm">Ekspor Nilai Excel</span>
+  </button> */}
 
-          {hasUnread && (
-            <span
-              className="
-                absolute
-                top-1
-                right-1
-                w-3
-                h-3
-                bg-orange-500
-                rounded-full
-                ring-2
-                ring-white
-              "
-            />
-          )}
-        </button>
+  {/* NOTIFICATION */}
+  <button
+    onClick={() => {
+      setIsNotificationOpen((v) => !v);
+      setHasUnread(false);
+    }}
+    className="!bg-transparent relative p-2 rounded-full hover:bg-gray-100 transition"
+  >
+    <Bell className="w-7 h-7 text-[#641E21]" />
+
+    {hasUnread && (
+      <span
+        className="
+          absolute
+          top-1
+          right-1
+          w-3
+          h-3
+          bg-orange-500
+          rounded-full
+          ring-2
+          ring-white
+        "
+      />
+    )}
+  </button>
 
 
         {/* Profile */}

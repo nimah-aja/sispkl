@@ -574,9 +574,9 @@ export default function PKLDashboard() {
       return (
         <div className="bg-white p-3 border rounded shadow-lg">
           <p className="font-semibold">{label}</p>
-          {/* <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600">
             Konsentrasi Keahlian: {data.jurusanNama} {data.jurusanKode && `(${data.jurusanKode})`}
-          </p> */}
+          </p> 
           <p className="text-[#800000] mt-1">Sudah Mengajukan: {sudah} ({persenSudah}%)</p>
           <p className="text-[#D9CFC1]">Belum Mengajukan: {belum} ({persenBelum}%)</p>
           <p className="font-medium mt-1">Total: {total} siswa</p>

@@ -24,15 +24,15 @@ export default function BuktiDiterima() {
   const fields = [
     {
       name: "bukti_diterima",
-      label: "Foto Bukti Diterima",
+      label: "Bukti Diterima (Maksimal 1MB)",
       type: "file",
-      accept: "image/jpeg,image/png,image/webp",
+      accept: "image/jpeg,image/png,image/webp,application/pdf",
       multiple: true,
       maxFiles: 3,
-      maxSize: 5 * 1024 * 1024, // 5MB
+      maxSize: 1 * 1024 * 1024, // 1MB
       width: "full",
       required: true,
-      helperText: "Upload 1-3 file (JPEG/PNG/WebP, max 5MB per file)",
+      helperText: "Upload 1-3 file (JPEG/PNG/WebP/PDF, maks 1MB per file)",
     },
   ];
 
@@ -54,16 +54,16 @@ export default function BuktiDiterima() {
     }
 
     // Validasi tipe file
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
     for (let file of files) {
       if (!allowedTypes.includes(file.type)) {
-        toast.error(`File ${file.name} harus berformat JPEG/PNG/WebP`);
+        toast.error(`File ${file.name} harus berformat JPEG/PNG/WebP/PDF`);
         return;
       }
       
-      // Validasi ukuran file (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`File ${file.name} melebihi batas 5MB`);
+      // Validasi ukuran file (1MB)
+      if (file.size > 1 * 1024 * 1024) {
+        toast.error(`File ${file.name} melebihi batas 1MB`);
         return;
       }
     }
@@ -119,4 +119,4 @@ export default function BuktiDiterima() {
       disableSubmit={loading}
     />
   );
-}
+} 

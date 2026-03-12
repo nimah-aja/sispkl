@@ -139,18 +139,18 @@ export default function ProfilePage({ user, onClose, roles = [] }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             {/* LEFT */}
             <div>
-              <h1 className="text-xl font-bold text-gray-800 w-200" >
-                {isEditing ? (
-                  <input
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className={`${inputStyle} h-20`}
-                  />
-                ) : (
-                  formData.name
-                )}
-              </h1>
+              <h2 className="text-4xl font-bold text-gray-800 w-200" >
+                  {isEditing ? (
+                    <input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className={`${inputStyle} h-20`}
+                    />
+                  ) : (
+                    formData.name
+                  )}
+                </h2>
 
               <p className="text-gray-500 mt-1">{formData.role}</p>
 

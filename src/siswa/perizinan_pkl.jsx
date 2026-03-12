@@ -6,7 +6,6 @@ import dayjs from "dayjs";
 
 import { createIzin } from "../utils/services/siswa/izin";
 
-
 export default function PengajuanPKL() {
   const [showDetail, setShowDetail] = useState(false);
   const navigate = useNavigate();
@@ -34,14 +33,14 @@ export default function PengajuanPKL() {
     },
     {
       name: "files",
-      label: "Unggah Bukti (JPG/PNG maksimal 5MB)",
+      label: "Unggah Bukti (JPG/PNG maksimal 1MB)",
       type: "file",
       width: "full",
       required: true,
       accept: "image/jpeg,image/png",
       multiple: true,
 
-      // 🔥 VALIDASI LANGSUNG SAAT PILIH FILE
+      // VALIDASI LANGSUNG SAAT PILIH FILE
       onChange: (e) => {
         const selectedFiles = Array.from(e.target.files);
         const allowedTypes = ["image/jpeg", "image/png"];
@@ -53,8 +52,8 @@ export default function PengajuanPKL() {
             return;
           }
 
-          if (file.size > 5 * 1024 * 1024) {
-            toast.error("Ukuran file maksimal 5MB.");
+          if (file.size > 1 * 1024 * 1024) {
+            toast.error("Ukuran file maksimal 1MB.");
             e.target.value = null;
             return;
           }
@@ -81,8 +80,8 @@ export default function PengajuanPKL() {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Ukuran file maksimal 5MB.");
+      if (file.size > 1 * 1024 * 1024) {
+        toast.error("Ukuran file maksimal 1MB."); 
         return;
       }
     }

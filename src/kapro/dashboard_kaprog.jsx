@@ -74,7 +74,7 @@ export default function KaprodiDashboard() {
   const userJurusan = jurusanList.length > 0 ? jurusanList[0].nama : "";
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: jurusanList.length > 0 ? `KAKONLI ${jurusanList[0].kode}` : "KAKONLI",
+    role: jurusanList.length > 0 ? `KA KONLI ${jurusanList[0].kode}` : "KA KONLI",
   }; 
 
 

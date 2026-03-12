@@ -642,36 +642,40 @@ const CalendarPKL = ({ pklData }) => {
             );
             const firstThree = dayEvents.slice(0, 2);
             const extraCount = dayEvents.length - 2;
+            
+            // CEK APAKAH TANGGAL DARI BULAN YANG BERBEDA
+            const isDiffMonth = !day.isSame(currentMonth, "month");
 
             return (
               <div
                 key={idx}
-                className="p-2 border h-24 relative hover:bg-purple-50 transition rounded-xl cursor-pointer"
+                className={`p-2 border h-24 relative hover:bg-purple-50 transition rounded-xl cursor-pointer ${
+                  isDiffMonth ? "bg-gray-100 opacity-60" : "bg-white"
+                }`}
                 onClick={() => openEventsModal(day)}
               >
                 <div
                   className={
                     day.isSame(dayjs(), "day")
-                      ? "text-left font-extrabold text-2xl text-purple-700" // +4 SIZE
-                      : "text-left font-bold text-xl"
+                      ? "text-left font-extrabold text-2xl text-purple-700"
+                      : `text-left font-bold text-xl ${isDiffMonth ? "text-gray-400" : "text-gray-800"}`
                   }
                 >
                   {day.date()}
                 </div>
 
-
                 {firstThree.map((ev) => (
                   <div
                     key={ev.id}
                     className="mt-1 text-xs text-white rounded px-1 truncate"
-                    style={{ backgroundColor: ev.color }}
+                    style={{ backgroundColor: ev.color, opacity: isDiffMonth ? 0.6 : 1 }}
                   >
                     {ev.title}
                   </div>
                 ))}
 
                 {extraCount > 0 && (
-                  <div className="absolute top-1 right-1 text-purple-700 font-bold text-lg">
+                  <div className={`absolute top-1 right-1 font-bold text-lg ${isDiffMonth ? "text-purple-300" : "text-purple-700"}`}>
                     +{extraCount}
                   </div>
                 )}

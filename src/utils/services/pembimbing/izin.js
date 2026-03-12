@@ -40,3 +40,13 @@ export const decideIzin = async (id, status, rejection_reason = "") => {
     throw err.response?.data || err;
   }
 };
+
+export const getSummaryIzinSiswa = async (siswa_id) => {
+  try {
+    const response = await axiosInstance.get(`/api/izin/students/${siswa_id}/summary`);
+    return response.data;
+  } catch (error) {
+    console.error("Error getSummaryIzinSiswa:", error);
+    throw error;
+  }
+};

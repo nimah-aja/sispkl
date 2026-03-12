@@ -13,6 +13,7 @@ export default function Table({
   showMore = false,
   showEdit = false,
   showDelete = false,
+  renderActions, // TAMBAHKAN PROP INI
   onEdit = () => {},
   onDelete = () => {},
   className = "",
@@ -91,6 +92,16 @@ export default function Table({
 
   const isNumericColumn = (key, data) => typeof data?.[0]?.[key] === "number";
 
+  // Hitung jumlah kolom untuk colSpan
+  const getColumnCount = () => {
+    let count = columns.length;
+    if (showMore) count += 1;
+    if (showEdit) count += 1;
+    if (showDelete) count += 1;
+    if (renderActions) count += 1; // TAMBAHKAN UNTUK KOLOM AKSI KUSTOM
+    return count;
+  };
+
   // main
   return (
     <div
@@ -112,12 +123,12 @@ export default function Table({
                   key={idx}
                   onClick={() =>
                     col.sortable !== false && !numeric && handleSort(col.key, numeric)
-                  } // hanya bisa sort kalau sortable !== false
+                  }
                   className={`py-3 px-4 text-center bg-white ${
                     col.sortable === false ? "cursor-default" : "cursor-pointer select-none"
                   }`}
+                  style={col.width ? { width: col.width } : {}}
                 >
-
                   <div className="flex items-center justify-center gap-1">
                     <span>{col.label}</span>
                     {!numeric && (
@@ -137,6 +148,10 @@ export default function Table({
             {showEdit && <th className="py-3 px-4 text-center bg-white">Ubah</th>}
             {showDelete && (
               <th className="py-3 px-4 text-center bg-white">Hapus</th>
+            )}
+            {/* TAMBAHKAN HEADER UNTUK AKSI KUSTOM */}
+            {renderActions && (
+              <th className="py-3 px-4 text-center bg-white">Aksi</th>
             )}
           </tr>
         </thead>
@@ -173,7 +188,6 @@ export default function Table({
                         : "text-center"
                     }`}
                   >
-
                     {Array.isArray(row[col.key]) ? (
                       <div
                         onClick={(e) => handleMultiClick(e, i, idx)}
@@ -201,16 +215,22 @@ export default function Table({
 
                 {showEdit && (
                   <td className="py-3 px-4 text-center">
-                    <div onClick={() => onEdit(row)} className="hover:opacity-70">
+                    <div onClick={() => onEdit(row)} className="hover:opacity-70 cursor-pointer">
                       <img src={edit} alt="Edit" className="w-6 h-6 mx-auto" />
                     </div>
                   </td>
                 )}
                 {showDelete && (
                   <td className="py-3 px-4 text-center">
-                    <div onClick={() => onDelete(row)} className="hover:opacity-70">
+                    <div onClick={() => onDelete(row)} className="hover:opacity-70 cursor-pointer">
                       <img src={trash} alt="Hapus" className="w-6 h-6 mx-auto" />
                     </div>
+                  </td>
+                )}
+                {/* TAMBAHKAN RENDER UNTUK AKSI KUSTOM */}
+                {renderActions && (
+                  <td className="py-3 px-4 text-center">
+                    {renderActions(row)}
                   </td>
                 )}
               </tr>
@@ -218,12 +238,7 @@ export default function Table({
           ) : (
             <tr>
               <td
-                colSpan={
-                  columns.length +
-                  (showMore ? 1 : 0) +
-                  (showEdit ? 1 : 0) +
-                  (showDelete ? 1 : 0)
-                }
+                colSpan={getColumnCount()} // GUNAKAN FUNGSI INI
                 className="text-center py-4 text-gray-500"
               >
                 {emptyText}

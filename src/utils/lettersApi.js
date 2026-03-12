@@ -106,3 +106,89 @@ export const generateAndDownloadLembarPersetujuan = async (payload) => {
     throw error;
   }
 };
+
+/**
+ * Generate Sertifikat PKL
+ * POST /api/v1/letters/sertifikat/{jurusan}
+ */
+export const generateSertifikat = async (jurusan, payload) => {
+  const response = await lettersApi.post(
+    `/api/v1/letters/sertifikat/${jurusan}`,
+    payload
+  );
+  return response.data;
+};
+
+/**
+ * Generate dan langsung download Sertifikat PKL
+ */
+export const generateAndDownloadSertifikat = async (jurusan, payload) => {
+  try {
+    // 1. Generate PDF
+    const generateRes = await generateSertifikat(jurusan, payload);
+    const { filename } = generateRes;
+
+    if (!filename) throw new Error("Filename tidak ditemukan di response");
+
+    // 2. Download PDF
+    const blob = await downloadGeneratedPDF(filename);
+
+    // 3. Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return filename;
+  } catch (error) {
+    console.error("Error generating/downloading Sertifikat:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate Form Penilaian PKL
+ * POST /api/v1/letters/penilaian
+ */
+export const generateFormPenilaian = async (payload) => {
+  const response = await lettersApi.post(
+    "/api/v1/letters/penilaian",
+    payload
+  );
+  return response.data;
+};
+
+/**
+ * Generate dan langsung download Form Penilaian PKL
+ */
+export const generateAndDownloadFormPenilaian = async (payload) => {
+  try {
+    // 1. Generate PDF
+    const generateRes = await generateFormPenilaian(payload);
+    const { filename } = generateRes;
+
+    if (!filename) throw new Error("Filename tidak ditemukan di response");
+
+    // 2. Download PDF
+    const blob = await downloadGeneratedPDF(filename);
+
+    // 3. Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return filename;
+  } catch (error) {
+    console.error("Error generating/downloading Form Penilaian:", error);
+    throw error;
+  }
+};

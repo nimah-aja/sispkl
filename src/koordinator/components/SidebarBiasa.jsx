@@ -13,6 +13,7 @@ import perpindahanPKL from "../../assets/perpindahan_pkl.svg";
 import pembekalan from "../../assets/pembekalan.svg";
 import logo from "../../assets/logo.png"
 import sidebarCorporate from "../../assets/sidebarCorporate.svg";
+import Formulir from "../../assets/Form.svg"
 
 export default function Sidebar({ active, setActive }) {
   const navigate = useNavigate();
@@ -27,9 +28,9 @@ export default function Sidebar({ active, setActive }) {
       // surat tugas
       { title: "Surat Tugas", icon: suratPengantaran, route: "/guru/koordinator/suratPengantaran", key: "suratPengantaran" },
       // form input nilai
-      // { title: "Penilaian", icon: monitoring, route: "/guru/koordinator/monitoring", key: "penilaian" },
-      // CRUD kegiatan
-      // { title: "Surat Penjemputan", icon: suratPenjemputan, route: "/guru/koordinator/suratPenjemputan", key: "suratPenjemputan" },
+      { title: "Form Penilaian", icon: Formulir, route: "/guru/koordinator/form", key: "form" },
+      // sertifikat
+      { title: "Sertifikat", icon: suratPenjemputan, route: "/guru/koordinator/penilaian", key: "sertifikat" },
       { title: "Perpindahan PKL", icon: perpindahanPKL, route: "/guru/koordinator/perpindahanPKL", key: "perpindahanPKL" },
       // { title: "Pembekalan", icon: pembekalan, route: "/guru/koordinator/pembekalan", key: "pembekalan" },
     ];

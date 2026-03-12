@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 // import assets
 import kegiatan from "../../assets/kegiatan.svg";
 import sidebarDashboard from "../../assets/sidebarDashboard.svg";
+import monitoring from "../../assets/monitoring.svg";
 import sidebarUsers from "../../assets/sidebarUsers.svg";
 import sidebarChalk from "../../assets/exclamation 2.svg";
 import envelope from "../../assets/envelopenew.svg";
@@ -21,6 +22,7 @@ export default function Sidebar({ active, setActive }) {
     { title: "Industri", icon: sidebarCorporate, route: "/guru/pembimbing/industri", key: "industri" },
     { title: "Kegiatan", icon: kegiatan, route: "/guru/pembimbing/kegiatan", key: "kegiatan" }, 
     { title: "Bukti Kegiatan", icon: bukti, route: "/guru/pembimbing/bukti_kegiatan", key: "bukti_kegiatan" },
+    { title: "Penilaian", icon: monitoring, route: "/guru/pembimbing/penilaian", key: "penilaian" },
     { title: "Permasalahan", icon: sidebarChalk, route: "/guru/pembimbing/permasalahan", key: "permasalahan" },
     { title: "Perizinan", icon: envelope, route: "/guru/pembimbing/perizinan", key: "perizinan" },
     { title: "Perpindahan PKL", icon: pindahPKL_side, route: "/guru/pembimbing/perpindahan", key: "perpindahanPKL" }

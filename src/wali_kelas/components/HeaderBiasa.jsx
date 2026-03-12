@@ -4,11 +4,14 @@ import {
   CheckCircle,
   XCircle,
   FilePlus,
-  Search
+  Search,
+  Download,
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { getSekolah } from "../../utils/services/admin/sekolah";
-
+import toast from "react-hot-toast";
 
 // helper
 import { removeTokens } from "../../utils/authHelper";
@@ -18,6 +21,10 @@ import LogoutModal from "./Logout";
 import PopupNotifikasi from "./PopupNotifikasi";
 import ProfileRolePopup from "./Swicth";
 
+// import utils untuk export
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // import asset
 import logo from "../../assets/logo.png";
@@ -25,13 +32,30 @@ import logoutIcon from "../../assets/logout.svg";
 import logoutImage from "../../assets/keluar.svg";
 import addImage from "../../assets/add_image.svg";
 
-export default function Header({ query, setQuery, user: propUser, notifications = [], }) {
+export default function Header({ 
+  query, 
+  setQuery, 
+  user: propUser, 
+  notifications = [],
+  // Props untuk export
+  onExportExcel,
+  onExportPDF,
+  exportData,
+  showExport = false,
+  exportFilename = "data_export",
+  useWaliExport = false
+}) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [loadingExport, setLoadingExport] = useState(false);
+  const exportDropdownRef = useRef(null);
+  
   const navigate = useNavigate();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [sekolah, setSekolah] = useState(null);
+  const [loadingSekolah, setLoadingSekolah] = useState(true);
 
   const user = propUser || JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
@@ -39,21 +63,21 @@ export default function Header({ query, setQuery, user: propUser, notifications 
   };
 
   // logo dan nama sekolah
-      useEffect(() => {
-        const fetchSekolah = async () => {
-          try {
-            const res = await getSekolah();
-            // asumsi API kamu return { success, data }
-            setSekolah(res.data);
-          } catch (err) {
-            console.error("Gagal ambil data sekolah", err);
-          } finally {
-            setLoadingSekolah(false);
-          }
-        };
-    
-        fetchSekolah();
-      }, []);
+  useEffect(() => {
+    const fetchSekolah = async () => {
+      try {
+        const res = await getSekolah();
+        // asumsi API kamu return { success, data }
+        setSekolah(res.data);
+      } catch (err) {
+        console.error("Gagal ambil data sekolah", err);
+      } finally {
+        setLoadingSekolah(false);
+      }
+    };
+
+    fetchSekolah();
+  }, []);
 
   const handleLogout = () => {
     removeTokens();
@@ -90,7 +114,78 @@ export default function Header({ query, setQuery, user: propUser, notifications 
     setHasUnread(unread);
   }, [notifications]);
 
+  // Fungsi export Excel default
+  const handleExportExcel = () => {
+    if (useWaliExport) {
+      // Untuk wali kelas, tampilkan pesan bahwa export khusus wali belum diimplementasikan
+      toast.info("Fitur export rekap nilai wali akan segera tersedia");
+      setShowExportDropdown(false);
+      return;
+    }
 
+    if (onExportExcel) {
+      onExportExcel();
+    } else if (exportData && exportData.length > 0) {
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Data");
+      XLSX.writeFile(wb, `${exportFilename}.xlsx`);
+      toast.success("Data berhasil diekspor ke Excel");
+    } else {
+      toast.error("Tidak ada data untuk diekspor");
+    }
+    setShowExportDropdown(false);
+  };
+
+  // Fungsi export PDF default
+  const handleExportPDF = () => {
+    if (useWaliExport) {
+      toast.error("Export PDF tidak tersedia untuk rekap nilai wali");
+      setShowExportDropdown(false);
+      return;
+    }
+
+    if (onExportPDF) {
+      onExportPDF();
+    } else if (exportData && exportData.length > 0) {
+      const doc = new jsPDF();
+      doc.text("Data Export", 14, 15);
+      
+      const headers = Object.keys(exportData[0] || {});
+      const body = exportData.map(item => Object.values(item));
+      
+      autoTable(doc, {
+        startY: 20,
+        head: [headers],
+        body: body,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [100, 30, 33] },
+      });
+      
+      doc.save(`${exportFilename}.pdf`);
+      toast.success("Data berhasil diekspor ke PDF");
+    } else {
+      toast.error("Tidak ada data untuk diekspor");
+    }
+    setShowExportDropdown(false);
+  };
+
+  // Click outside untuk menutup dropdown export
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    if (showExportDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   return (
     <header className="bg-white">
@@ -106,26 +201,63 @@ export default function Header({ query, setQuery, user: propUser, notifications 
         </div>
 
         {/* kanan */}
-        {/* seacrh */}
         <div className="flex items-center space-x-6">
           
-          {/* Icons */}
-            {/* <img src={addImage} alt="Addimg" className="w-9"/> */}
-            <button
-              onClick={() => {
-                setIsNotificationOpen((v) => !v);
-                setHasUnread(false);
-              }}
-              className="relative p-2 rounded-full !bg-transparent hover:bg-gray-100"
-            >
-              <Bell className="w-7 h-7 text-[#641E21]" />
+          {/* BUTTON EXPORT NILAI - DITAMBAHKAN DI SINI */}
+          {showExport && (
+            <div className="relative" ref={exportDropdownRef}>
+              <button
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                disabled={loadingExport}
+                className={`flex items-center gap-2 bg-[#EC933A] text-white px-4 py-2 rounded-full hover:bg-[#d47d2c] transition ${
+                  loadingExport ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                title="Export Nilai"
+              >
+                <Download size={18} />
+                <span className="font-semibold">
+                  {loadingExport ? "Memproses..." : "Export"}
+                </span>
+              </button>
 
-              {hasUnread && (
-                <span className="absolute top-1 right-1 w-3 h-3 bg-orange-500 rounded-full ring-2 ring-white" />
+              {showExportDropdown && !loadingExport && (
+                <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-md p-2 z-50 min-w-[180px]">
+                  <button
+                    onClick={handleExportExcel}
+                    className="!bg-transparent flex items-center gap-2 px-3 py-2 hover:!bg-gray-100 text-sm w-full rounded"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    {useWaliExport ? "Export Rekap Nilai" : "Export Excel"}
+                  </button>
+                  
+                  {!useWaliExport && (
+                    <button
+                      onClick={handleExportPDF}
+                      className="!bg-transparent flex items-center gap-2 px-3 py-2 hover:!bg-gray-100 text-sm w-full rounded"
+                    >
+                      <FileText size={16} className="text-red-600" />
+                      Export PDF
+                    </button>
+                  )}
+                </div>
               )}
-            </button>
+            </div>
+          )}
 
-          
+          {/* Icons - Notifikasi */}
+          <button
+            onClick={() => {
+              setIsNotificationOpen((v) => !v);
+              setHasUnread(false);
+            }}
+            className="relative p-2 rounded-full !bg-transparent hover:bg-gray-100"
+          >
+            <Bell className="w-7 h-7 text-[#641E21]" />
+
+            {hasUnread && (
+              <span className="absolute top-1 right-1 w-3 h-3 bg-orange-500 rounded-full ring-2 ring-white" />
+            )}
+          </button>
 
           {/* profile */}
           <div className="flex items-center space-x-2">
@@ -142,7 +274,6 @@ export default function Header({ query, setQuery, user: propUser, notifications 
               >
                 {user.name?.[0]?.toUpperCase() || "U"}
               </div>
-
             </div>
             <div className="text-sm">
               <div className="font-bold font-medium text-[#641E21]">
@@ -152,10 +283,10 @@ export default function Header({ query, setQuery, user: propUser, notifications 
             </div>
           </div>
 
-          {/* button */}
+          {/* logout button */}
           <button
             onClick={() => setIsLogoutOpen(true)} 
-            className="button-radius flex items-center gap-2 bg-[#3C3C3C] text-white px-4 py-2 rounded-full hover:bg-[#2d2d2d] "
+            className="button-radius flex items-center gap-2 bg-[#3C3C3C] text-white px-4 py-2 rounded-full hover:bg-[#2d2d2d]"
             style={{
               "--btn-bg": "#3A3D3D",
               "--btn-active": "#f4d0adff",

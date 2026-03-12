@@ -4,15 +4,18 @@ import { ArrowLeft, Eye, EyeOff, Calendar, X } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 // import assets
 import addSidebar from "../../assets/addSidebar.svg";
 import arrow from "../../assets/arrow.svg"; 
-import cancelImg from "../../assets/cancel.svg"; 
+import cancelImg from "../../assets/cancel.svg";
+import confirmSave from "../../assets/cancel.svg"; 
+import silang from "../../assets/silang.svg"
 
 // import components
 import DeleteConfirmationModal from "../components/Cancel"; 
+import SaveConfirmationModal from "../components/Save";
 
 export default function Add({
   title,
@@ -25,18 +28,19 @@ export default function Add({
   initialData = {},
   containerClassName = "w-full md:w-[1300px] max-h-screen bg-white",
   containerStyle = {},
-  leftContent,
-  submitText = "Simpan",   
-  cancelText = "Batal",    
-  submitButtonProps = {},
-  children, // <-- TAMBAHKAN INI
+  
+  // Props khusus untuk penilaian
+  isPenilaianForm = false,
+  selectedItem = null,
+  nilaiForm = {},
+  onNilaiFormChange = null,
 }) {
-  const navigate = useNavigate();
   const [modalText, setModalText] = useState({
     title: "Apakah Anda yakin untuk kembali?",
     subtitle: "Data yang sudah diisi akan terhapus."
   });
 
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isChanged, setIsChanged] = useState(false); 
   const isEditMode = Object.keys(initialData).length > 0; 
   const [fieldErrors, setFieldErrors] = useState({});
@@ -102,6 +106,60 @@ export default function Add({
       );
     }
   );
+
+  // Fungsi untuk mendapatkan predikat berdasarkan nilai
+  const getPredikat = (nilai) => {
+    if (!nilai && nilai !== 0) return "";
+    const skor = parseInt(nilai);
+    if (skor < 75) return "Kurang";
+    if (skor >= 75 && skor <= 85) return "Baik";
+    if (skor >= 86 && skor <= 100) return "Sangat Baik";
+    return "";
+  };
+
+  // Fungsi untuk mendapatkan status berdasarkan nilai
+  const getStatus = (nilai) => {
+    if (!nilai && nilai !== 0) return "";
+    const skor = parseInt(nilai);
+    if (skor < 75) return "Kurang";
+    if (skor >= 75 && skor <= 85) return "Baik";
+    if (skor >= 86 && skor <= 100) return "Sangat Baik";
+    return "";
+  };
+
+  // Fungsi untuk mendapatkan deskripsi berdasarkan nilai dan aspek
+  const getDeskripsiByNilai = (nilai, aspek) => {
+    if (!nilai && nilai !== 0) return "";
+    const skor = parseInt(nilai);
+    
+    const deskripsiAspek = {
+      1: {
+        kurang: "Peserta didik mampu menerapkan soft skill yang dimiliki dengan menunjukkan integritas (jujur, disiplin, komitmen, dan tanggung jawab), memiliki etos kerja, menunjukkan kemandirian, menunjukkan kerja sama, dan menunjukkan kepedulian sosial dan lingkungan dengan predikat kurang.",
+        baik: "Peserta didik mampu menerapkan soft skill yang dimiliki dengan menunjukkan integritas (jujur, disiplin, komitmen, dan tanggung jawab), memiliki etos kerja, menunjukkan kemandirian, menunjukkan kerja sama, dan menunjukkan kepedulian sosial dan lingkungan dengan predikat baik.",
+        sangatBaik: "Peserta didik mampu menerapkan soft skill yang dimiliki dengan menunjukkan integritas (jujur, disiplin, komitmen, dan tanggung jawab), memiliki etos kerja, menunjukkan kemandirian, menunjukkan kerja sama, dan menunjukkan kepedulian sosial dan lingkungan dengan predikat sangat baik."
+      },
+      2: {
+        kurang: "Peserta didik mampu menerapkan norma, Prosedur Operasional Standar (POS), dan Kesehatan, Keselamatan Kerja, dan Lingkungan Hidup (K3LH) yang ditunjukkan dengan menggunakan APD dengan tertib dan benar, serta melaksanakan pekerjaan sesui POS dengan predikat kurang.",
+        baik: "Peserta didik mampu menerapkan norma, Prosedur Operasional Standar (POS), dan Kesehatan, Keselamatan Kerja, dan Lingkungan Hidup (K3LH) yang ditunjukkan dengan menggunakan APD dengan tertib dan benar, serta melaksanakan pekerjaan sesui POS dengan predikat baik.",
+        sangatBaik: "Peserta didik mampu menerapkan norma, Prosedur Operasional Standar (POS), dan Kesehatan, Keselamatan Kerja, dan Lingkungan Hidup (K3LH) yang ditunjukkan dengan menggunakan APD dengan tertib dan benar, serta melaksanakan pekerjaan sesui POS dengan predikat sangat baik."
+      },
+      3: {
+        kurang: "Peserta didik mampu menerapkan kompetensi teknis yang sudah dipelajari di sekolah dan/atau baru dipelajari di dunia kerja (tempat PKL) dengan predikat kurang.",
+        baik: "Peserta didik mampu menerapkan kompetensi teknis yang sudah dipelajari di sekolah dan/atau baru dipelajari di dunia kerja (tempat PKL) dengan predikat baik.",
+        sangatBaik: "Peserta didik mampu menerapkan kompetensi teknis yang sudah dipelajari di sekolah dan/atau baru dipelajari di dunia kerja (tempat PKL) dengan predikat sangat baik."
+      },
+      4: {
+        kurang: "Peserta didik mampu memahami alur bisnis dunia kerja tempat PKL dan wawasan wirausaha dengan predikat kurang.",
+        baik: "Peserta didik mampu memahami alur bisnis dunia kerja tempat PKL dan wawasan wirausaha dengan predikat baik.",
+        sangatBaik: "Peserta didik mampu memahami alur bisnis dunia kerja tempat PKL dan wawasan wirausaha dengan predikat sangat baik."
+      }
+    };
+    
+    if (skor < 75) return deskripsiAspek[aspek].kurang;
+    if (skor >= 75 && skor <= 85) return deskripsiAspek[aspek].baik;
+    if (skor >= 86 && skor <= 100) return deskripsiAspek[aspek].sangatBaik;
+    return "";
+  };
 
   // switch
   const initialSwitches = useMemo(() => {
@@ -170,6 +228,14 @@ export default function Add({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Untuk penilaian form, kita perlu mengirim formData ke onSubmit
+    if (isPenilaianForm && onSubmit) {
+      const formData = new FormData(e.target);
+      onSubmit(formData);
+      return;
+    }
+    
     const formData = new FormData(e.target);
     const errors = {};
 
@@ -222,7 +288,6 @@ export default function Add({
     setFieldErrors({});
   };
 
-
   const handleKeyDown = (e, idx) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -235,15 +300,15 @@ export default function Add({
     }
   };
 
-   // state untuk date fields
-    const [dateValues, setDateValues] = useState(
-      fields.reduce((acc, f) => {
-        if (f.type === "date") {
-          acc[f.name] = initialData[f.name] ? new Date(initialData[f.name]) : null;
-        }
-        return acc;
-      }, {})
-    );
+  // state untuk date fields
+  const [dateValues, setDateValues] = useState(
+    fields.reduce((acc, f) => {
+      if (f.type === "date") {
+        acc[f.name] = initialData[f.name] ? new Date(initialData[f.name]) : null;
+      }
+      return acc;
+    }, {})
+  );
 
   // simpan label terpilih per field
   const [selectedLabels, setSelectedLabels] = useState(() => {
@@ -289,19 +354,15 @@ export default function Add({
     let subtitle = "Data yang sudah diisi akan terhapus.";
 
     if (!isEditMode && !isChanged) {
-      // Kondisi 1: Add data, belum isi apapun
       title = "Kembali tanpa menambah data?";
       subtitle = "Anda belum mengisi data apapun.";
     } else if (!isEditMode && isChanged) {
-      // Kondisi 2: Add data, sudah isi sebagian
       title = "Apakah Anda yakin ingin membatalkan penambahan data?";
       subtitle = "Data yang telah diisi akan hilang.";
     } else if (isEditMode && !isChanged) {
-      //  Kondisi 3: Edit data, belum mengubah apa-apa
       title = "Kembali tanpa mengubah data?";
       subtitle = "Tidak ada perubahan yang akan disimpan.";
     } else if (isEditMode && isChanged) {
-      //  Kondisi 4: Edit data, sudah ubah isinya
       title = "Apakah Anda yakin ingin membatalkan perubahan?";
       subtitle = "Perubahan yang telah Anda buat tidak akan disimpan.";
     }
@@ -310,7 +371,255 @@ export default function Add({
     setIsModalOpen(true);
   };
 
-  // main
+  const handleResetClick = () => {
+    const form = document.getElementById("addForm");
+    if (form) {
+      form.reset();
+    }
+
+    setFieldErrors({});
+    setSelectedValues(initialData?.roles || []);
+    setSelectedLabels({});
+    setDateValues(
+      fields.reduce((acc, f) => {
+        if (f.type === "date") acc[f.name] = null;
+        return acc;
+      }, {})
+    );
+    setSwitchValues(initialSwitches);
+    setIsChanged(false);
+  };
+
+  // Fungsi untuk merender aspek penilaian secara dinamis
+  const renderAspekPenilaian = () => {
+    if (!selectedItem?.form_items || selectedItem.form_items.length === 0) {
+      return null;
+    }
+
+    return selectedItem.form_items.map((item, index) => {
+      const aspekNumber = index + 1;
+      const fieldName = `skor_${aspekNumber}`;
+      
+      return (
+        <div key={item.id} className="col-span-1 rounded-lg p-4">
+          <h3 className="font-bold mb-3">
+            Aspek Penilaian {aspekNumber}: {item.tujuan_pembelajaran}
+          </h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Nilai (0-100)</label>
+                <input
+                  type="number"
+                  name={fieldName}
+                  min="0"
+                  max="100"
+                  value={nilaiForm[fieldName] || ""}
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    if (inputValue === '' || (Number(inputValue) >= 0 && Number(inputValue) <= 100)) {
+                      onNilaiFormChange(fieldName, inputValue);
+                      setIsChanged(true);
+                    } else {
+                      toast.error('Nilai harus antara 0 - 100');
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const inputValue = e.target.value;
+                    if (inputValue !== '' && (Number(inputValue) < 0 || Number(inputValue) > 100)) {
+                      toast.error('Nilai harus antara 0 - 100');
+                      e.target.value = '';
+                      onNilaiFormChange(fieldName, '');
+                    }
+                  }}
+                  className="w-full p-3 !border !border-gray-300 rounded-lg !focus:ring-2 !focus:ring-[#641E21] focus:border-transparent"
+                  placeholder="Masukkan nilai"
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Predikat</label>
+                <input
+                  type="text"
+                  value={nilaiForm[fieldName] ? getPredikat(nilaiForm[fieldName]) : ""}
+                  disabled
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100"
+                  placeholder="Otomatis"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Deskripsi</label>
+              <textarea
+                rows="3"
+                value={nilaiForm[fieldName] ? getDeskripsiByNilai(nilaiForm[fieldName], aspekNumber) : ""}
+                disabled
+                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100"
+                placeholder="Deskripsi akan terisi otomatis"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    });
+  };
+
+  // Jika ini adalah form penilaian, render tampilan khusus
+  if (isPenilaianForm && selectedItem && onNilaiFormChange) {
+    const formItems = selectedItem.form_items || [];
+    const itemCount = formItems.length;
+
+    return (
+      <div
+        className="flex h-screen w-screen justify-center items-center p-4"
+        style={backgroundStyle}
+      >
+        <div
+          className={`flex flex-col rounded-2xl shadow-lg overflow-hidden ${containerClassName}`}
+          style={containerStyle}
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
+            <div
+              onClick={handleCancelClick}
+              className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
+            >
+              <ArrowLeft size={20} />
+            </div>
+            <h1 className="!text-2xl font-bold">{title}</h1>
+          </div>
+
+          {/* Body */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left Side - Image */}
+            <div className="hidden md:flex w-1/2 items-center justify-center border-r p-4">
+              <img
+                src={image || addSidebar}
+                alt="addSidebar"
+                className="max-w-xs w-full h-auto object-contain"
+              />
+            </div>
+
+            {/* Right Side - Form */}
+            <div className="flex w-full md:w-1/2 p-5 pr-8 overflow-hidden">
+              <form
+                id="addForm"
+                onSubmit={handleSubmit}
+                className="w-full max-w-lg grid grid-cols-1 p-1 gap-4 overflow-y-auto"
+                style={{ maxHeight: "100%" }}
+              >
+                {/* Informasi Form Penilaian */}
+                <div className="col-span-1 p-3 bg-blue-50 rounded-lg mb-2">
+                  <p className="text-sm text-blue-700">
+                    <span className="font-semibold">Form: </span>
+                    {selectedItem?.form_nama || "Form Penilaian"}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Terdapat {itemCount} aspek penilaian yang harus diisi
+                  </p>
+                </div>
+
+                {/* Informasi Siswa (Read-only) */}
+                <div className="col-span-1 p-4 rounded-lg space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block mb-1 text-sm font-bold text-gray-700">Nama Siswa</label>
+                      <input
+                        type="text"
+                        value={selectedItem?.nama || ""}
+                        disabled
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-sm font-bold text-gray-700">NISN</label>
+                      <input
+                        type="text"
+                        value={selectedItem?.nisn || ""}
+                        disabled
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block mb-1 text-sm font-bold text-gray-700">Industri</label>
+                    <input
+                      type="text"
+                      value={selectedItem?.industri || ""}
+                      disabled
+                      className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Render Aspek Penilaian Dinamis */}
+                {renderAspekPenilaian()}
+
+                {/* Catatan Akhir */}
+                <div className="col-span-1 rounded-lg p-4">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Catatan Akhir</label>
+                  <textarea
+                    name="catatan_akhir"
+                    rows="4"
+                    value={nilaiForm.catatan_akhir || ""}
+                    onChange={(e) => {
+                      onNilaiFormChange('catatan_akhir', e.target.value);
+                      setIsChanged(true);
+                    }}
+                    className="w-full p-3 !border !border-gray-300 rounded-lg !focus:ring-2 !focus:ring-[#641E21] focus:border-transparent"
+                    placeholder="Masukkan catatan akhir penilaian..."
+                  />
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
+            <button
+              type="button"
+              onClick={handleCancelClick}
+              className="button-radius"
+              style={{
+                "--btn-bg": "#3A3D3D",
+                "--btn-active": "#5d6464ff",
+                "--btn-text": "white",
+              }}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              form="addForm"
+              className="button-radius"
+              style={{
+                "--btn-bg": "#EC933A",
+                "--btn-active": "#f4d0adff",
+                "--btn-text": "white",
+              }}
+            >
+              {selectedItem?.hasItems ? 'Ubah' : 'Simpan'}
+            </button>
+          </div>
+
+          {/* Modal Konfirmasi Kembali */}
+          <DeleteConfirmationModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onDelete={() => {
+              setIsModalOpen(false);
+              if (onCancel) onCancel();
+            }}
+            imageSrc={cancelImg}
+            title={modalText.title}
+            subtitle={modalText.subtitle}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Render form biasa (existing code)
   return (
     <div
       className="flex h-screen w-screen justify-center items-center p-4"
@@ -323,13 +632,7 @@ export default function Add({
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
-            onClick={() => {
-              if (isChanged) {
-                setIsModalOpen(true); // tampilkan modal kalau ada perubahan
-              } else {
-                navigate(-1); // langsung kembali
-              }
-            }}
+            onClick={handleCancelClick}
             className="p-2 rounded-full bg-[#EC933A] hover:bg-orange-600 text-white cursor-pointer"
           >
             <ArrowLeft size={20} />
@@ -340,39 +643,37 @@ export default function Add({
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
           {/* kiri */}
-          <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-300 overflow-y-auto">
-            {leftContent ? (
-              leftContent
-            ) : (
-              <div className="p-10 flex justify-center items-center">
-                <img src={image} alt="add" className="max-w-xs" />
-              </div>
-            )}
+          <div className="hidden md:flex w-1/2 items-center justify-center border-r p-4">
+            <img
+              src={image || addSidebar}
+              alt="addSidebar"
+              className="max-w-xs w-full h-auto object-contain"
+            />
           </div>
 
           {/* kanan */}
-          <div className="w-full lg:w-1/2 overflow-y-auto p-6">
-            {/* Form fields */}
+          <div className="flex w-full md:w-1/2 p-15 overflow-hidden">
             <form
               id="addForm"
               onSubmit={handleSubmit}
-              className="w-full grid grid-cols-1 md:grid-cols-2 gap-4"
-            > 
+              className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 p-1 gap-4 overflow-y-auto"
+              style={{ maxHeight: "100%" }}
+            >
               {fields.map((field, idx) => (
                 <div
                   key={field.name}
-                  className={field.width === "full" ? "col-span-2" : ""}
+                  className={field.width === "full" ? "col-span-2 relative" : "relative"}
                 >
                   <label className="block mb-1 text-sm font-bold text-gray-700">
                     {field.label}
                   </label>
 
                   {field.type === "select" ? (
-                    <div className="relative w-full">
+                    <div className="relative w-full max-w-[600px]">
                       {/* Trigger */}
                       <div
                         onClick={() => toggleDropdown(field.name)}
-                        className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-3 bg-white text-sm flex justify-between items-center"
+                        className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
                       >
                         {selectedLabels[field.name] || `Pilih ${field.label}`}
                         <img
@@ -456,19 +757,28 @@ export default function Add({
                           selectedValues.map((val, i) => (
                             <div
                               key={i}
-                              className="flex items-center bg-[#E1D6C4] font-bold text-[#641E20] px-1 rounded-full text-sm"
+                              className=" pl-2 pb-1 flex items-center bg-[#651C23] text-white px-1 rounded-full text-sm"
                             >
                               {val}
-                              <button
-                                type="button"
-                                className="circle text-white font-bold hover:text-gray-700"
+                              <div
+                                role="button"
+                                tabIndex={0}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleOption(field.name, val);
                                 }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.stopPropagation();
+                                    toggleOption(field.name, val);
+                                  }
+                                }}
+                                className="h-8 text-white font-bold hover:text-gray-700 flex items-center gap-2 cursor-pointer select-none pl-1 pr-1"
                               >
-                                ×
-                              </button>
+                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]"> 
+                                  <img src={silang} alt="hapus"/>
+                                </span>
+                              </div>
                             </div>
                           ))
                         ) : (
@@ -476,6 +786,14 @@ export default function Add({
                             {field.placeholder || `Pilih ${field.label}`}
                           </span>
                         )}
+                        
+                        <img
+                          src={arrow}
+                          alt="arrow"
+                          className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-transform duration-200 ${
+                            focusedIdx === idx ? "rotate-180" : "rotate-0"
+                          }`}
+                        />
                       </div>
 
                       {selectedValues.map((val, i) => (
@@ -494,7 +812,7 @@ export default function Add({
                                 onClick={() => toggleOption(field.name, val)}
                               >
                                 <input
-                                  className="accent-[#641E20] "
+                                  className="accent-[#641E20]"
                                   type="checkbox"
                                   checked={isChecked}
                                   readOnly
@@ -513,12 +831,11 @@ export default function Add({
                       ref={(el) => (inputRefs.current[idx] = el)}
                       defaultValue={initialData[field.name] || ""}
                       onKeyDown={(e) => handleKeyDown(e, idx)}
-                      disabled={field.disabled}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                         fieldErrors[field.name]
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300 focus:ring-orange-500"
-                      } ${field.disabled ? 'bg-gray-100 text-gray-600' : ''}`}
+                      }`}
                     />
                   ) : field.type === "password" ? (
                     <div className="relative w-full">
@@ -528,12 +845,11 @@ export default function Add({
                         ref={(el) => (inputRefs.current[idx] = el)}
                         defaultValue={initialData[field.name] || ""}
                         onKeyDown={(e) => handleKeyDown(e, idx)}
-                        disabled={field.disabled}
                         className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                           fieldErrors[field.name]
                             ? "border-red-500 focus:ring-red-500"
                             : "border-gray-300 focus:ring-orange-500"
-                        } ${field.disabled ? 'bg-gray-100 text-gray-600' : ''}`}
+                        }`}
                       />
                       <button
                         type="button"
@@ -574,7 +890,6 @@ export default function Add({
                         withPortal
                         locale={id} 
                         placeholderText={field.placeholder || `Pilih ${field.label}`}
-                        disabled={field.disabled}
                         customInput={
                           <DateInput
                             clearValue={() =>
@@ -587,14 +902,14 @@ export default function Add({
                         renderCustomHeader={({ monthDate, decreaseMonth, increaseMonth }) => (
                           <div className="flex justify-between items-center px-4 py-2 bg-transparent border-b">
                             <button onClick={decreaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700">
+                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
                               ◀
                             </button>
                             <span className="font-bold text-black">
                               {format(monthDate, "MMMM yyyy", { locale: id })}
                             </span>
                             <button onClick={increaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700">
+                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
                               ▶
                             </button>
                           </div>
@@ -618,12 +933,11 @@ export default function Add({
                       ref={(el) => (inputRefs.current[idx] = el)}
                       defaultValue={initialData[field.name] || ""}
                       onKeyDown={(e) => handleKeyDown(e, idx)}
-                      disabled={field.disabled}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
                         fieldErrors[field.name]
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-300 focus:ring-orange-500"
-                      } ${field.disabled ? 'bg-gray-100 text-gray-600' : ''}`}
+                      }`}
                     />
                   )}
 
@@ -633,13 +947,6 @@ export default function Add({
                 </div>
               ))}
             </form>
-
-            {/* Render children DI SINI, setelah form tapi masih di area kanan */}
-            {children && (
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                {children}
-              </div>
-            )}
           </div>
         </div>
 
@@ -647,7 +954,7 @@ export default function Add({
         <div className="border-t p-4 flex justify-end gap-4 flex-shrink-0">
           <button
             type="button"
-            onClick={handleCancelClick}
+            onClick={handleResetClick} 
             className="button-radius"
             style={{
               "--btn-bg": "#3A3D3D",
@@ -655,22 +962,23 @@ export default function Add({
               "--btn-text": "white",
             }}
           >
-            {cancelText}
+            Atur Ulang
           </button>
 
           <button
-            type="submit"
-            form="addForm"
+            type="button"
+            onClick={() => {
+              const form = document.getElementById("addForm");
+              if (form) form.requestSubmit(); 
+            }}
             className="button-radius"
             style={{
               "--btn-bg": "#EC933A",
               "--btn-active": "#f4d0adff",
               "--btn-text": "white",
             }}
-            disabled={submitButtonProps.disabled} 
-            {...submitButtonProps} 
           >
-            {submitText}
+            Simpan
           </button>
         </div>
 
@@ -684,6 +992,19 @@ export default function Add({
           imageSrc={cancelImg}
           title={modalText.title}
           subtitle={modalText.subtitle}
+        />
+
+        <SaveConfirmationModal
+          isOpen={isSaveModalOpen}
+          onClose={() => setIsSaveModalOpen(false)}
+          onConfirm={() => {
+            setIsSaveModalOpen(false);
+            const form = document.getElementById("addForm");
+            if (form) form.requestSubmit(); 
+          }}
+          imageSrc={confirmSave}
+          title="Apakah Anda yakin ingin menyimpan data ini?"
+          subtitle="Pastikan semua data sudah benar sebelum disimpan."
         />
       </div>
     </div>

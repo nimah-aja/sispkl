@@ -3,8 +3,10 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import uploadIcon from "../assets/importimage.svg";
 import iconPlus from "../assets/iconplus.svg";
+import inorasiellipse9 from "../assets/inorasiellipse9.png";
 import { Pencil, Save, X } from "lucide-react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 // Import utils
 import { getSekolah, updateSekolah } from "../utils/services/admin/sekolah";
@@ -13,15 +15,15 @@ const fields = [
   { label: "Akreditasi", name: "akreditasi", type: "text" },
   { label: "Email", name: "email", type: "email" },
   { label: "Jalan", name: "jalan", type: "text" },
-  { label: "Jenis Sekolah", name: "jenisSekolah", type: "text" },
-  { label: "Kabupaten/Kota", name: "kabupatenKota", type: "text" },
+  { label: "Jenis Sekolah", name: "jenis_sekolah", type: "text" },
+  { label: "Kabupaten/Kota", name: "kabupaten_kota", type: "text" },
   { label: "Kecamatan", name: "kecamatan", type: "text" },
   { label: "Kelurahan", name: "kelurahan", type: "text" },
-  { label: "Kepala Sekolah", name: "kepalaSekolah", type: "text" },
-  { label: "Kode Pos", name: "kodePos", type: "text" },
-  { label: "Nama Sekolah", name: "namaSekolah", type: "text" },
-  { label: "NIP Kepala Sekolah", name: "nipKepalaSekolah", type: "text" },
-  { label: "Nomor Telepon", name: "nomorTelepon", type: "tel" },
+  { label: "Kepala Sekolah", name: "kepala_sekolah", type: "text" },
+  { label: "Kode Pos", name: "kode_pos", type: "text" },
+  { label: "Nama Sekolah", name: "nama_sekolah", type: "text" },
+  { label: "NIP Kepala Sekolah", name: "nip_kepala_sekolah", type: "text" },
+  { label: "Nomor Telepon", name: "nomor_telepon", type: "tel" },
   { label: "NPSN", name: "npsn", type: "text" },
   { label: "Provinsi", name: "provinsi", type: "text" },
   { label: "Website", name: "website", type: "url" },
@@ -30,7 +32,16 @@ const fields = [
 // URL LOGO DEFAULT
 const DEFAULT_LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_SMKN_2_Singosari.png";
 
-function ProfileField({ label, name, type, value, isEdit, onChange }) {
+// DEFAULT MASKOT (dari file lokal)
+const DEFAULT_MASKOT_URL = inorasiellipse9;
+
+// UKURAN MAKSIMAL GAMBAR (dalam piksel)
+const MAX_LOGO_WIDTH = 300;
+const MAX_LOGO_HEIGHT = 300;
+const MAX_MASKOT_WIDTH = 800;
+const MAX_MASKOT_HEIGHT = 800;
+
+function ProfileField({ label, name, type, value, isEdit, onChange, error }) {
   return (
     <div className="mb-4">
       <p className="text-sm font-semibold text-gray-800 mb-2">
@@ -38,14 +49,19 @@ function ProfileField({ label, name, type, value, isEdit, onChange }) {
       </p>
 
       {isEdit ? (
-        <input
-          type={type}
-          name={name}
-          value={value || ""}
-          onChange={onChange}
-          placeholder={`Masukkan ${label.toLowerCase()}`}
-          className="w-full border-b-2 border-gray-300 py-2 px-1 focus:outline-none focus:border-blue-500 text-gray-700 bg-transparent transition-colors"
-        />
+        <div>
+          <input
+            type={type}
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            placeholder={`Masukkan ${label.toLowerCase()}`}
+            className={`w-full border-b-2 py-2 px-1 focus:outline-none focus:border-blue-500 text-gray-700 bg-transparent transition-colors ${
+              error ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        </div>
       ) : (
         <p className="text-gray-600 py-2 border-b border-transparent min-h-[44px] flex items-center">
           {value || "-"}
@@ -55,6 +71,21 @@ function ProfileField({ label, name, type, value, isEdit, onChange }) {
   );
 }
 
+// Fungsi untuk mendapatkan dimensi gambar
+const getImageDimensions = (file) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        width: img.width,
+        height: img.height
+      });
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 // main
 export default function Setting() {
   const [active, setActive] = useState("");
@@ -63,20 +94,21 @@ export default function Setting() {
   const [isSaving, setIsSaving] = useState(false);
   const [sekolahId, setSekolahId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     akreditasi: "",
     email: "",
     jalan: "",
-    jenisSekolah: "",
-    kabupatenKota: "",
+    jenis_sekolah: "",
+    kabupaten_kota: "",
     kecamatan: "",
     kelurahan: "",
-    kepalaSekolah: "",
-    kodePos: "",
-    namaSekolah: "",
-    nipKepalaSekolah: "",
-    nomorTelepon: "",
+    kepala_sekolah: "",
+    kode_pos: "",
+    nama_sekolah: "",
+    nip_kepala_sekolah: "",
+    nomor_telepon: "",
     npsn: "",
     provinsi: "",
     website: "",
@@ -87,20 +119,16 @@ export default function Setting() {
   const [initialLogoSekolah, setInitialLogoSekolah] = useState(null);
   const [initialMaskot, setInitialMaskot] = useState(null);
 
-  const [logoSekolah, setLogoSekolah] = useState(DEFAULT_LOGO_URL); // Default logo
+  const [logoSekolah, setLogoSekolah] = useState(DEFAULT_LOGO_URL);
   const [logoSekolahFile, setLogoSekolahFile] = useState(null);
-  const [maskot, setMaskot] = useState(null);
+  const [logoDimensions, setLogoDimensions] = useState(null);
+  
+  const [maskot, setMaskot] = useState(DEFAULT_MASKOT_URL);
   const [maskotFile, setMaskotFile] = useState(null);
+  const [maskotDimensions, setMaskotDimensions] = useState(null);
+  
   const [originalLogoFromAPI, setOriginalLogoFromAPI] = useState(""); 
-
-  // Load maskot dari localStorage saat komponen dimuat
-  useEffect(() => {
-    const savedMaskot = localStorage.getItem('schoolMaskot');
-    if (savedMaskot) {
-      setMaskot(savedMaskot);
-      setInitialMaskot(savedMaskot);
-    }
-  }, []);
+  const [originalMaskotFromAPI, setOriginalMaskotFromAPI] = useState("");
 
   // fetch sekolah
   useEffect(() => {
@@ -123,20 +151,20 @@ export default function Setting() {
         
         setSekolahId(sekolah.id || sekolah.ID);
         
-        // Mapping data dari API ke formData
+        // Mapping data dari API ke formData - SESUAI DENGAN STRUKTUR JSON
         const mappedData = {
           akreditasi: sekolah.akreditasi || "",
           email: sekolah.email || "",
           jalan: sekolah.jalan || "",
-          jenisSekolah: sekolah.jenis_sekolah || "",
-          kabupatenKota: sekolah.kabupaten_kota || "",
+          jenis_sekolah: sekolah.jenis_sekolah || "",
+          kabupaten_kota: sekolah.kabupaten_kota || "",
           kecamatan: sekolah.kecamatan || "",
           kelurahan: sekolah.kelurahan || "",
-          kepalaSekolah: sekolah.kepala_sekolah || "",
-          kodePos: sekolah.kode_pos || "",
-          namaSekolah: sekolah.nama_sekolah || "",
-          nipKepalaSekolah: sekolah.nip_kepala_sekolah || "",
-          nomorTelepon: sekolah.nomor_telepon || "",
+          kepala_sekolah: sekolah.kepala_sekolah || "",
+          kode_pos: sekolah.kode_pos || "",
+          nama_sekolah: sekolah.nama_sekolah || "",
+          nip_kepala_sekolah: sekolah.nip_kepala_sekolah || "",
+          nomor_telepon: sekolah.nomor_telepon || "",
           npsn: sekolah.npsn || "",
           provinsi: sekolah.provinsi || "",
           website: sekolah.website || "",
@@ -149,40 +177,42 @@ export default function Setting() {
         // Simpan sebagai data awal
         setInitialFormData(mappedData);
 
-        // Set logo jika ada URL dari API
+        // Set logo jika ada dari API
         let logoToDisplay = DEFAULT_LOGO_URL;
         if (sekolah.logo && sekolah.logo !== "") {
-          // Jika logo dari API ada dan tidak kosong
           if (sekolah.logo.startsWith('http')) {
             logoToDisplay = sekolah.logo;
           } else if (sekolah.logo.startsWith('data:image')) {
-            // Jika logo dalam format base64
             logoToDisplay = sekolah.logo;
           }
           setOriginalLogoFromAPI(sekolah.logo); 
-        } else if (sekolah.logo_url && sekolah.logo_url !== "") {
-          logoToDisplay = sekolah.logo_url;
-          setOriginalLogoFromAPI(sekolah.logo_url);
         }
         
         console.log("Logo yang akan ditampilkan:", logoToDisplay);
-        console.log("Logo asli dari API:", sekolah.logo || sekolah.logo_url);
-        
         setLogoSekolah(logoToDisplay);
         setInitialLogoSekolah(logoToDisplay);
         
-        // Set maskot jika ada dari API (override dari localStorage)
-        if (sekolah.maskot && sekolah.maskot !== "") {
-          setMaskot(sekolah.maskot);
-          setInitialMaskot(sekolah.maskot);
-          // Simpan ke localStorage
-          localStorage.setItem('schoolMaskot', sekolah.maskot);
+        // Set maskot dari API - MENGGUNAKAN url_logo_maskot SESUAI JSON
+        // LANGSUNG MENGGANTIKAN DEFAULT DENGAN DATA DARI API
+        if (sekolah.url_logo_maskot && sekolah.url_logo_maskot !== "") {
+          console.log("Maskot dari API:", sekolah.url_logo_maskot.substring(0, 50) + "...");
+          setMaskot(sekolah.url_logo_maskot);
+          setInitialMaskot(sekolah.url_logo_maskot);
+          setOriginalMaskotFromAPI(sekolah.url_logo_maskot);
+        } else {
+          // Jika tidak ada maskot dari API, gunakan default
+          console.log("Tidak ada maskot dari API, menggunakan default");
+          setMaskot(DEFAULT_MASKOT_URL);
+          setInitialMaskot(DEFAULT_MASKOT_URL);
+          setOriginalMaskotFromAPI("");
         }
         
         console.log("Fetch data berhasil");
+        toast.success("Data sekolah berhasil dimuat");
       } else {
         console.error("Invalid response structure:", response);
         setErrorMessage("Format response tidak valid dari server");
+        toast.error("Format response tidak valid dari server");
       }
     } catch (error) {
       console.error("Error fetching sekolah data:", error);
@@ -197,7 +227,7 @@ export default function Setting() {
       }
       
       setErrorMessage(errorMsg);
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -205,13 +235,51 @@ export default function Setting() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Validasi khusus untuk akreditasi (hanya huruf)
+    if (name === "akreditasi") {
+      const isValid = /^[A-Za-z\s]*$/.test(value);
+      if (!isValid && value !== "") {
+        setFieldErrors(prev => ({
+          ...prev,
+          akreditasi: "Akreditasi hanya boleh berisi huruf"
+        }));
+        toast.error("Akreditasi hanya boleh berisi huruf");
+        return; // Jangan update state jika tidak valid
+      } else {
+        setFieldErrors(prev => ({
+          ...prev,
+          akreditasi: ""
+        }));
+      }
+    }
+    
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleImageUpload = (type) => (e) => {
+  const validateImageDimensions = (type, width, height) => {
+    if (type === "logo") {
+      if (width > MAX_LOGO_WIDTH || height > MAX_LOGO_HEIGHT) {
+        return {
+          valid: false,
+          message: `Ukuran logo terlalu besar. Maksimal ${MAX_LOGO_WIDTH}x${MAX_LOGO_HEIGHT} piksel. Ukuran logo Anda: ${width}x${height} piksel`
+        };
+      }
+    } else if (type === "maskot") {
+      if (width > MAX_MASKOT_WIDTH || height > MAX_MASKOT_HEIGHT) {
+        return {
+          valid: false,
+          message: `Ukuran maskot terlalu besar. Maksimal ${MAX_MASKOT_WIDTH}x${MAX_MASKOT_HEIGHT} piksel. Ukuran maskot Anda: ${width}x${height} piksel`
+        };
+      }
+    }
+    return { valid: true };
+  };
+
+  const handleImageUpload = (type) => async (e) => {
     if (!isEdit) return;
     
     const file = e.target.files[0];
@@ -219,27 +287,46 @@ export default function Setting() {
 
     // Validasi ukuran file (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert("Ukuran file maksimal 2MB");
+      toast.error("Ukuran file maksimal 2MB");
       return;
     }
 
     // Validasi tipe file
     if (!file.type.startsWith("image/")) {
-      alert("File harus berupa gambar");
+      toast.error("File harus berupa gambar");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (type === "logo") {
-        setLogoSekolah(reader.result);
-        setLogoSekolahFile(file);
-      } else {
-        setMaskot(reader.result);
-        setMaskotFile(file);
+    try {
+      // Dapatkan dimensi gambar
+      const dimensions = await getImageDimensions(file);
+      
+      // Validasi dimensi gambar sesuai tipe
+      const dimensionValidation = validateImageDimensions(type, dimensions.width, dimensions.height);
+      if (!dimensionValidation.valid) {
+        toast.error(dimensionValidation.message);
+        return;
       }
-    };
-    reader.readAsDataURL(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === "logo") {
+          setLogoSekolah(reader.result);
+          setLogoSekolahFile(file);
+          setLogoDimensions(dimensions);
+          toast.success("Logo berhasil dipilih");
+        } else {
+          setMaskot(reader.result);
+          setMaskotFile(file);
+          setMaskotDimensions(dimensions);
+          toast.success("Maskot berhasil dipilih");
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error reading image dimensions:", error);
+      toast.error("Gagal membaca dimensi gambar");
+    }
   };
 
   // Fungsi untuk convert File ke base64 (DENGAN PREFIX)
@@ -247,7 +334,6 @@ export default function Setting() {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Kirim SELURUH base64 string dengan prefix
         resolve(reader.result);
       };
       reader.onerror = reject;
@@ -255,146 +341,109 @@ export default function Setting() {
     });
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    // Validasi akreditasi
+    if (formData.akreditasi && !/^[A-Za-z\s]+$/.test(formData.akreditasi)) {
+      errors.akreditasi = "Akreditasi hanya boleh berisi huruf";
+      toast.error("Akreditasi hanya boleh berisi huruf");
+    }
+    
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
     
+    if (!validateForm()) {
+      return;
+    }
+    
     if (!sekolahId) {
-      alert("ID sekolah tidak ditemukan");
+      toast.error("ID sekolah tidak ditemukan");
       return;
     }
 
     try {
       setIsSaving(true);
       console.log("=== MEMULAI UPDATE SEKOLAH ===");
-      console.log("Sekolah ID:", sekolahId);
-      console.log("FormData saat submit:", formData);
       
-      // Prepare payload sesuai dengan API
+      // Prepare payload SESUAI DENGAN STRUKTUR JSON
       const payload = {
         akreditasi: formData.akreditasi,
         email: formData.email,
         jalan: formData.jalan,
-        jenisSekolah: formData.jenisSekolah,
-        kabupatenKota: formData.kabupatenKota,
+        jenis_sekolah: formData.jenis_sekolah,
+        kabupaten_kota: formData.kabupaten_kota,
         kecamatan: formData.kecamatan,
         kelurahan: formData.kelurahan,
-        kepalaSekolah: formData.kepalaSekolah,
-        kodePos: formData.kodePos,
-        namaSekolah: formData.namaSekolah,
-        nipKepalaSekolah: formData.nipKepalaSekolah,
-        nomorTelepon: formData.nomorTelepon,
+        kepala_sekolah: formData.kepala_sekolah,
+        kode_pos: formData.kode_pos,
+        nama_sekolah: formData.nama_sekolah,
+        nip_kepala_sekolah: formData.nip_kepala_sekolah,
+        nomor_telepon: formData.nomor_telepon,
         npsn: formData.npsn,
         provinsi: formData.provinsi,
         website: formData.website,
       };
 
-      // Handle logo HANYA jika ada file baru yang diupload
+      // Handle logo
       if (logoSekolahFile) {
-        try {
-          const base64Logo = await convertImageToBase64(logoSekolahFile);
-          payload.logo = base64Logo;
-          console.log("Logo akan diupdate dengan file baru, panjang base64:", base64Logo.length);
-        } catch (logoError) {
-          console.error("Error converting logo to base64:", logoError);
-          // Jika error konversi, jangan kirim logo (biarkan tetap logo yang ada)
-          delete payload.logo;
-        }
-      } else {
-        // Jika TIDAK ada file baru yang diupload
-        console.log("Tidak ada file logo baru, periksa status logo:");
-        console.log("logoSekolah:", logoSekolah);
-        console.log("originalLogoFromAPI:", originalLogoFromAPI);
-        
-        // Cek apakah user menghapus logo (klik hapus logo)
-        if (logoSekolah === DEFAULT_LOGO_URL) {
-          // Jika user memilih untuk menggunakan logo default
-          console.log("User memilih logo default, kirim string kosong");
-          payload.logo = "";
-        } else if (logoSekolah === originalLogoFromAPI) {
-          // Jika logo masih sama dengan dari API, JANGAN kirim field logo
-          console.log("Logo tidak berubah, tidak akan mengirim field logo");
-          delete payload.logo;
-        } else if (!logoSekolah || logoSekolah === "") {
-          // Jika user menghapus logo
-          console.log("User menghapus logo, kirim string kosong");
-          payload.logo = "";
-        } else {
-          // Untuk keamanan, kirim logo yang ada
-          payload.logo = logoSekolah;
-          console.log("Mengirim logo yang ada di state");
-        }
+        const base64Logo = await convertImageToBase64(logoSekolahFile);
+        payload.logo = base64Logo;
+        console.log("Logo akan diupdate dengan file baru");
+      } else if (logoSekolah === DEFAULT_LOGO_URL) {
+        payload.logo = "";
+      } else if (logoSekolah !== originalLogoFromAPI) {
+        payload.logo = logoSekolah;
       }
 
-      // Handle maskot
+      // Handle maskot - MENGGUNAKAN url_logo_maskot SESUAI JSON
       if (maskotFile) {
-        try {
-          const base64Maskot = await convertImageToBase64(maskotFile);
-          payload.maskot = base64Maskot;
-          console.log("Maskot akan diupdate dengan file baru");
-        } catch (maskotError) {
-          console.error("Error converting maskot to base64:", maskotError);
-        }
-      } else if (maskot === null || maskot === "") {
-        // Jika user menghapus maskot
-        payload.maskot = "";
-        console.log("User menghapus maskot");
-      } else if (maskot !== initialMaskot) {
-        // Jika maskot berubah (misalnya dari URL ke base64 baru)
-        payload.maskot = maskot;
-        console.log("Maskot berubah, mengirim data maskot baru");
+        const base64Maskot = await convertImageToBase64(maskotFile);
+        payload.url_logo_maskot = base64Maskot;
+        console.log("Maskot akan diupdate dengan file baru");
+      } else if (maskot === DEFAULT_MASKOT_URL) {
+        payload.url_logo_maskot = "";
+      } else if (maskot !== originalMaskotFromAPI) {
+        payload.url_logo_maskot = maskot;
       }
-      // Jika maskot tidak berubah, jangan kirim field maskot
 
-      console.log("Payload yang akan dikirim ke updateSekolah:", {
-        ...payload,
-        logo: payload.logo ? `[logo data: ${payload.logo.length} chars]` : 'undefined',
-        maskot: payload.maskot ? `[maskot data: ${payload.maskot.length} chars]` : 'undefined'
-      });
+      console.log("Payload yang akan dikirim:", payload);
 
-      // Panggil API update
       const response = await updateSekolah(sekolahId, payload);
-      
-      console.log("Update response:", response);
       
       if (response.success) {
         console.log("Data berhasil diupdate:", response);
         
-        // Simpan maskot ke localStorage
-        if (maskot) {
-          localStorage.setItem('schoolMaskot', maskot);
-          console.log("Maskot disimpan ke localStorage");
-        } else {
-          localStorage.removeItem('schoolMaskot');
-          console.log("Maskot dihapus dari localStorage");
-        }
-        
-        // Update data awal dengan data baru
         setInitialFormData({ ...formData });
         
-        // Update logo asli dari API
         if (response.data && response.data.logo) {
           setOriginalLogoFromAPI(response.data.logo);
         }
+        if (response.data && response.data.url_logo_maskot) {
+          setOriginalMaskotFromAPI(response.data.url_logo_maskot);
+        }
         
-        // Jika ada file logo baru yang diupload, update state
         if (logoSekolahFile) {
           setInitialLogoSekolah(logoSekolah);
         }
         
-        // Update initial maskot
         setInitialMaskot(maskot);
         
-        // Reset file setelah upload berhasil
         setLogoSekolahFile(null);
         setMaskotFile(null);
+        setLogoDimensions(null);
+        setMaskotDimensions(null);
         
         setIsEdit(false);
         
-        // Refresh data dari server
         await fetchSekolahData();
         
-        alert("Data sekolah berhasil diperbarui!");
+        toast.success("Data sekolah berhasil diperbarui!");
       } else {
         throw new Error(response.message || "Gagal memperbarui data");
       }
@@ -423,58 +472,62 @@ export default function Setting() {
       }
       
       setErrorMessage(errorMsg);
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleEditClick = () => {
-    // Simpan data saat ini sebagai data awal untuk mode edit
     setInitialFormData({ ...formData });
     setInitialLogoSekolah(logoSekolah);
     setInitialMaskot(maskot);
     
-    // Reset file upload saat masuk mode edit
     setLogoSekolahFile(null);
     setMaskotFile(null);
+    setLogoDimensions(null);
+    setMaskotDimensions(null);
+    setFieldErrors({});
     setErrorMessage("");
     
-    // Masuk ke mode edit
     setIsEdit(true);
+    toast.success("Mode edit diaktifkan");
   };
 
   const handleCancel = () => {
-    // Kembalikan ke data sebelum edit
     setFormData({ ...initialFormData });
     setLogoSekolah(initialLogoSekolah || DEFAULT_LOGO_URL);
-    setMaskot(initialMaskot);
+    setMaskot(initialMaskot || DEFAULT_MASKOT_URL);
     
-    // Reset file upload
     setLogoSekolahFile(null);
     setMaskotFile(null);
+    setLogoDimensions(null);
+    setMaskotDimensions(null);
+    setFieldErrors({});
     setErrorMessage("");
     
-    // Keluar dari mode edit
     setIsEdit(false);
+    toast.success("Perubahan dibatalkan");
   };
 
-  // Fungsi untuk menghapus logo (tombol hapus)
   const handleRemoveLogo = () => {
     if (!isEdit) return;
     
     setLogoSekolah(DEFAULT_LOGO_URL);
     setLogoSekolahFile(null);
+    setLogoDimensions(null);
+    toast.success("Logo direset ke default");
     console.log("Logo direset ke default");
   };
 
-  // Fungsi untuk menghapus maskot
   const handleRemoveMaskot = () => {
     if (!isEdit) return;
     
-    setMaskot(null);
+    setMaskot(DEFAULT_MASKOT_URL);
     setMaskotFile(null);
-    console.log("Maskot dihapus");
+    setMaskotDimensions(null);
+    toast.success("Maskot direset ke default");
+    console.log("Maskot direset ke default");
   };
 
   if (isLoading && !isEdit) {
@@ -513,11 +566,9 @@ export default function Setting() {
               </div>
             )}
 
-            {/* FORM hanya untuk mode edit */}
             {isEdit ? (
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-12 gap-6 md:gap-10">
-                  {/* image section */}
                   <div className="col-span-12 md:col-span-4 space-y-6 md:space-y-8">
                     {/* Logo Sekolah */}
                     <div>
@@ -563,11 +614,18 @@ export default function Setting() {
                             </div>
                           )}
                         </label>
-                        <p className="text-xs text-gray-500 mt-2">Format: JPG, PNG, SVG (Max 2MB)</p>
-                        {logoSekolahFile && (
-                          <p className="text-xs text-green-600 mt-1">
-                            File baru dipilih: {logoSekolahFile.name}
-                          </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Format: JPG, PNG, SVG (Max 2MB, {MAX_LOGO_WIDTH}x{MAX_LOGO_HEIGHT} piksel)
+                        </p>
+                        {logoSekolahFile && logoDimensions && (
+                          <div className="text-xs mt-1">
+                            <p className="text-green-600">
+                              File baru: {logoSekolahFile.name}
+                            </p>
+                            <p className="text-blue-600">
+                              Ukuran: {logoDimensions.width} x {logoDimensions.height} piksel
+                            </p>
+                          </div>
                         )}
                         <p className="text-xs text-gray-400 mt-1">
                           Kosongkan untuk menggunakan logo default
@@ -579,7 +637,7 @@ export default function Setting() {
                     <div>
                       <div className="flex justify-between items-center mb-3">
                         <p className="text-sm font-medium">Maskot</p>
-                        {maskot && (
+                        {maskot !== DEFAULT_MASKOT_URL && (
                           <button
                             type="button"
                             onClick={handleRemoveMaskot}
@@ -619,17 +677,23 @@ export default function Setting() {
                             </div>
                           )}
                         </label>
-                        <p className="text-xs text-gray-500 mt-2">Format: JPG, PNG, SVG (Max 2MB)</p>
-                        {maskotFile && (
-                          <p className="text-xs text-green-600 mt-1">
-                            File baru dipilih: {maskotFile.name}
-                          </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Format: JPG, PNG, SVG (Max 2MB, {MAX_MASKOT_WIDTH}x{MAX_MASKOT_HEIGHT} piksel)
+                        </p>
+                        {maskotFile && maskotDimensions && (
+                          <div className="text-xs mt-1">
+                            <p className="text-green-600">
+                              File baru: {maskotFile.name}
+                            </p>
+                            <p className="text-blue-600">
+                              Ukuran: {maskotDimensions.width} x {maskotDimensions.height} piksel
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* right section */}
                   <div className="col-span-12 md:col-span-8">
                     {errorMessage && isEdit && (
                       <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
@@ -647,13 +711,13 @@ export default function Setting() {
                           value={formData[field.name]}
                           isEdit={isEdit}
                           onChange={handleChange}
+                          error={fieldErrors[field.name]}
                         />
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* edit mode */}
                 <div className="mt-8 md:mt-12 flex flex-col sm:flex-row justify-center gap-3 md:gap-4">
                   <button
                     type="submit"
@@ -691,10 +755,8 @@ export default function Setting() {
                 </div>
               </form>
             ) : (
-              // tampilan view
               <div>
                 <div className="grid grid-cols-12 gap-6 md:gap-10">
-                  {/* image section */}
                   <div className="col-span-12 md:col-span-4 space-y-6 md:space-y-8">
                     {/* Logo Sekolah */}
                     <div>
@@ -717,25 +779,20 @@ export default function Setting() {
                     <div>
                       <p className="text-sm font-medium mb-3">Maskot</p>
                       <div className="border-2 border-dashed rounded-lg p-6 md:p-8 bg-gray-50 text-center">
-                        {maskot ? (
-                          <img 
-                            src={maskot} 
-                            alt="Maskot" 
-                            className="w-24 h-24 md:w-28 md:h-28 object-contain mx-auto" 
-                          />
-                        ) : (
-                          <div>
-                            <img src={uploadIcon} alt="Upload" className="w-16 md:w-20 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm text-gray-400">
-                              Belum ada maskot
-                            </p>
-                          </div>
+                        <img 
+                          src={maskot || DEFAULT_MASKOT_URL} 
+                          alt="Maskot" 
+                          className="w-24 h-24 md:w-28 md:h-28 object-contain mx-auto" 
+                        />
+                        {maskot === DEFAULT_MASKOT_URL && (
+                          <p className="text-xs text-gray-400 mt-2">
+                            (Maskot Default)
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* right section */}
                   <div className="col-span-12 md:col-span-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 md:gap-x-8 gap-y-4 md:gap-y-6">
                       {fields.map((field) => (
@@ -753,7 +810,6 @@ export default function Setting() {
                   </div>
                 </div>
 
-                {/* edit button */}
                 <div className="mt-8 md:mt-12 flex justify-center">
                   <button
                     type="button"

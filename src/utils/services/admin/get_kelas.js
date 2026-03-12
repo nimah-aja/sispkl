@@ -19,3 +19,13 @@ export const getKelasById = async (id) => {
     throw err.response?.data || err;
   }
 };
+
+export const getJurusanById = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/api/jurusan/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching jurusan with id ${id}:`, error);
+    throw error.response?.data || error;
+  }
+};

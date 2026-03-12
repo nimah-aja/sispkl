@@ -171,9 +171,9 @@ export default function DataPengajuan() {
   const drawKopSurat = (doc, margin) => {
     if (logoSmk) {
       const imgProps = doc.getImageProperties(logoSmk);
-      const imgWidth = 30; 
+      const imgWidth = 50; 
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-      doc.addImage(logoSmk, "PNG", margin + 12, 11, imgWidth, imgHeight);
+      doc.addImage(logoSmk, "PNG", margin - 5, 10, imgWidth, imgHeight);
     }
 
     doc.setFont("helvetica", "normal");
@@ -187,14 +187,15 @@ export default function DataPengajuan() {
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text("Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang, Jawa Timur, 65153", 105, 31, { align: "center" });
-    doc.text("Telepon (0341) 4345127", 105, 35, { align: "center" });
+    doc.text("Jalan Perusahaan No. 20, Tunjungtirto, Singosari, Kab. Malang,", 105, 31, { align: "center" });
+    doc.text("Jawa Timur, 65153", 105, 35, { align: "center" });
+    doc.text("Telepon (0341) 4345127", 105, 38, { align: "center" });
 
     const pageWidth = doc.internal.pageSize.getWidth();
     doc.setLineWidth(0.8);
-    doc.line(margin, 38, pageWidth - margin, 38);
+    doc.line(margin, 38 + 3, pageWidth - margin, 38 + 3);
     doc.setLineWidth(0.2);
-    doc.line(margin, 39.5, pageWidth - margin, 39.5);
+    doc.line(margin, 39.5 + 3, pageWidth - margin, 39.5 + 3);
   };
 
   const generateSuratPermohonanOnly = (doc, data, margin) => {
@@ -234,7 +235,7 @@ export default function DataPengajuan() {
 
     autoTable(doc, {
       startY: y + textHeight + 5,
-      head: [["NO", "NAMA", "KELAS", "JURUSAN"]],
+      head: [["NO", "NAMA", "KELAS", "Konsentrasi Keahlian"]],
       body: data.students.map((s, i) => [
         i + 1, 
         s.nama, 
@@ -290,10 +291,12 @@ export default function DataPengajuan() {
     });
 
     const finalY = doc.lastAutoTable.finalY + 15;
-    doc.setFontSize(11);
-    doc.text(data.tempat_tanggal || `Singosari, .................... 2025`, pageWidth - margin, finalY, { align: "right" });
-    doc.text("Bapak / Ibu Pimpinan", pageWidth - margin, finalY + 7, { align: "right" });
-    doc.text("( ................................................................ )", pageWidth - margin, finalY + 35, { align: "right" });
+const posX = pageWidth - margin - 30; // geser 30 ke kiri
+
+doc.setFontSize(11);
+doc.text(data.tempat_tanggal || "Singosari, .................... 2025", posX + 3, finalY, { align: "right" });
+doc.text("Bapak / Ibu Pimpinan", posX - 8, finalY + 7, { align: "right" });
+doc.text("( ................................................................ )", posX + 25, finalY + 35, { align: "right" });
   };
 
   const generateDokumenLengkapPDF = (data) => {
@@ -338,7 +341,7 @@ export default function DataPengajuan() {
             <Search 
               query={query} 
               setQuery={setQuery} 
-              placeholder="Cari berdasarkan nama siswa, industri, kelas, jurusan, atau NISN..." 
+              placeholder="Cari berdasarkan nama siswa, industri, kelas, konsentrasi keahlian, atau NISN..." 
             />
           </div>
           
@@ -409,7 +412,7 @@ export default function DataPengajuan() {
                         <th className="text-left py-3 text-base font-semibold text-gray-600 w-[25%]">Nama Siswa</th>
                         <th className="text-center py-3 text-base font-semibold text-gray-600 w-[20%]">NISN</th>
                         <th className="text-center py-3 text-base font-semibold text-gray-600 w-[20%]">Kelas</th>
-                        <th className="text-left py-3 text-base font-semibold text-gray-600 w-[27%]">Jurusan</th>
+                        <th className="text-left py-3 text-base font-semibold text-gray-600 w-[27%]">Konsentrasi Keahlian</th>
                       </tr>
                     </thead>
                     <tbody>

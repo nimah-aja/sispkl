@@ -16,7 +16,7 @@ import Table from "./components/Table";
 // services
 import { getGuruSiswa } from "../utils/services/pembimbing/guru";
 import { getSiswa } from "../utils/services/admin/get_siswa";
-import { getKelasById } from "../utils/services/admin/get_kelas"; // Import getKelasById
+import { getKelasById } from "../utils/services/admin/get_kelas";
 
 export default function DataPeserta() {
   const exportRef = useRef(null);
@@ -80,22 +80,20 @@ export default function DataPeserta() {
       const response = await getKelasById(kelasId);
       console.log(`Response kelas ID ${kelasId}:`, response);
       
-      // Response dari getKelasById - berdasarkan struktur yang Anda berikan
-      // Langsung mengembalikan object kelas, bukan { data: ... }
-      // Format: { id, jurusan_id, nama, created_at, updated_at, wali_kelas_guru_id }
+      // Response dari getKelasById - langsung mengembalikan object kelas
       if (response && response.nama) {
-        return response.nama; // Langsung return nama kelas
+        return response.nama;
       }
       
-      // Fallback jika struktur berbeda
       return `Kelas ${kelasId}`;
     } catch (error) {
       console.error(`Gagal fetch kelas dengan ID ${kelasId}:`, error);
-      return `Kelas ${kelasId}`; // Fallback
+      return `Kelas ${kelasId}`;
     }
   };
 
   // 🔥 AMBIL SISWA DARI getGuruSiswa DAN GABUNGKAN DENGAN DETAIL DARI getSiswa
+  // PERBAIKAN: Filter data unik berdasarkan siswa_id
   useEffect(() => {
     const fetchPeserta = async () => {
       setLoading(true);
@@ -118,9 +116,87 @@ export default function DataPeserta() {
           siswaDetailMap.set(siswa.id, siswa);
         });
         
+        // PERBAIKAN: Gunakan Map untuk menyimpan data unik berdasarkan siswa_id
+        const uniqueSiswaMap = new Map();
+        
+        guruSiswaData.forEach((item) => {
+          const siswaId = item.siswa_id;
+          
+          // Jika siswa_id belum ada di Map, tambahkan
+          if (!uniqueSiswaMap.has(siswaId)) {
+            uniqueSiswaMap.set(siswaId, {
+              ...item,
+              // Simpan semua application_id untuk referensi
+              application_ids: [item.application_id],
+              // Simpan semua industri yang pernah diikuti
+              riwayat_industri: [{
+                application_id: item.application_id,
+                industri_nama: item.industri_nama,
+                industri_id: item.industri_id,
+                tanggal_mulai: item.tanggal_mulai,
+                tanggal_selesai: item.tanggal_selesai,
+                status: item.status
+              }]
+            });
+          } else {
+            // Jika sudah ada, update data yang ada
+            const existingData = uniqueSiswaMap.get(siswaId);
+            
+            // Tambahkan application_id ke array
+            existingData.application_ids.push(item.application_id);
+            
+            // Tambahkan ke riwayat industri
+            existingData.riwayat_industri.push({
+              application_id: item.application_id,
+              industri_nama: item.industri_nama,
+              industri_id: item.industri_id,
+              tanggal_mulai: item.tanggal_mulai,
+              tanggal_selesai: item.tanggal_selesai,
+              status: item.status
+            });
+            
+            // Update dengan data terbaru (berdasarkan application_id atau tanggal)
+            // Di sini kita bisa memilih untuk menampilkan industri yang paling terbaru
+            const currentEndDate = dayjs(existingData.tanggal_selesai || "1970-01-01");
+            const newEndDate = dayjs(item.tanggal_selesai || "1970-01-01");
+            
+            if (newEndDate.isAfter(currentEndDate)) {
+              // Jika ini adalah PKL yang lebih baru, update data utama
+              existingData.industri_nama = item.industri_nama;
+              existingData.industri_id = item.industri_id;
+              existingData.tanggal_mulai = item.tanggal_mulai;
+              existingData.tanggal_selesai = item.tanggal_selesai;
+              existingData.status = item.status;
+            }
+            
+            // Simpan kembali ke Map
+            uniqueSiswaMap.set(siswaId, existingData);
+          }
+        });
+
+        // Konversi Map ke array untuk diproses lebih lanjut
+        const uniqueGuruSiswaData = Array.from(uniqueSiswaMap.values());
+        
+        console.log(`Total data asli dari API: ${guruSiswaData.length}`);
+        console.log(`Jumlah siswa unik: ${uniqueGuruSiswaData.length}`);
+        
+        // Log detail untuk Devin Andika (ID 23) yang punya multiple entries
+        const devinData = uniqueGuruSiswaData.find(item => item.siswa_id === 23);
+        if (devinData) {
+          console.log("Devin Andika data setelah filter:", {
+            siswa_id: devinData.siswa_id,
+            siswa_nama: devinData.siswa_nama,
+            application_ids: devinData.application_ids,
+            riwayat_industri: devinData.riwayat_industri,
+            industri_sekarang: devinData.industri_nama,
+            tanggal_mulai: devinData.tanggal_mulai,
+            tanggal_selesai: devinData.tanggal_selesai
+          });
+        }
+        
         // Kumpulkan semua kelas_id yang unik untuk di-fetch sekaligus
         const uniqueKelasIds = [...new Set(
-          guruSiswaData
+          uniqueGuruSiswaData
             .map(item => {
               const detailSiswa = siswaDetailMap.get(item.siswa_id);
               return detailSiswa?.kelas_id;
@@ -141,8 +217,8 @@ export default function DataPeserta() {
         
         console.log("Kelas map:", Object.fromEntries(kelasMap));
         
-        // Proses mapping dengan nama kelas dari map
-        const mappedPeserta = guruSiswaData.map((item) => {
+        // Proses mapping dengan nama kelas dari map - GUNAKAN DATA UNIK
+        const mappedPeserta = uniqueGuruSiswaData.map((item) => {
           // Cari detail siswa dari map berdasarkan siswa_id
           const detailSiswa = siswaDetailMap.get(item.siswa_id);
           
@@ -153,7 +229,7 @@ export default function DataPeserta() {
           }
           
           return {
-            application_id: item.application_id,
+            application_id: item.application_ids?.join(", ") || item.application_id, // Gabungkan multiple IDs jika perlu
             siswa_id: item.siswa_id,
             username: item.siswa_username,
             nama: item.siswa_nama,
@@ -166,7 +242,7 @@ export default function DataPeserta() {
             tanggal_lahir: detailSiswa?.tanggal_lahir 
               ? dayjs(detailSiswa.tanggal_lahir).format("DD-MM-YYYY") 
               : "-",
-            industri: item.industri_nama || "-",
+            industri: item.industri_nama || "-", // Gunakan industri terbaru
             industri_id: item.industri_id,
             tanggal_mulai: item.tanggal_mulai
               ? dayjs(item.tanggal_mulai).format("DD-MM-YYYY")
@@ -175,10 +251,12 @@ export default function DataPeserta() {
               ? dayjs(item.tanggal_selesai).format("DD-MM-YYYY")
               : "-",
             status: mapStatus(item.status),
+            // Tambahkan informasi jumlah riwayat (opsional)
+            jumlah_pkl: item.riwayat_industri?.length || 1,
           };
         });
 
-        console.log("Mapped peserta with real class names:", mappedPeserta);
+        console.log("Mapped peserta with real class names (unique):", mappedPeserta);
         setPeserta(mappedPeserta);
 
         // Extract unique kelas values untuk filter (sekarang berupa NAMA KELAS)
@@ -196,7 +274,19 @@ export default function DataPeserta() {
           const guruSiswaResponse = await getGuruSiswa();
           const guruSiswaData = guruSiswaResponse.data || [];
           
-          const fallbackPeserta = guruSiswaData.map((item) => ({
+          // PERBAIKAN: Filter unik juga untuk fallback
+          const uniqueSiswaMap = new Map();
+          
+          guruSiswaData.forEach((item) => {
+            const siswaId = item.siswa_id;
+            if (!uniqueSiswaMap.has(siswaId)) {
+              uniqueSiswaMap.set(siswaId, item);
+            }
+          });
+          
+          const uniqueFallbackData = Array.from(uniqueSiswaMap.values());
+          
+          const fallbackPeserta = uniqueFallbackData.map((item) => ({
             application_id: item.application_id,
             siswa_id: item.siswa_id,
             username: item.siswa_username,
@@ -239,11 +329,12 @@ export default function DataPeserta() {
     // { label: "Nama Pengguna", key: "username" },
     { label: "Nama", key: "nama" },
     { label: "NISN", key: "nisn" },
-    // { label: "Kelas", key: "kelas" }, // Sekarang menampilkan NAMA KELAS
+    { label: "Kelas", key: "kelas" },
     { label: "Tanggal Lahir", key: "tanggal_lahir" },
     { label: "Alamat", key: "alamat" },
     { label: "No. Telepon", key: "no_telp" },
     { label: "Industri", key: "industri" },
+    // { label: "Jumlah PKL", key: "jumlah_pkl" }, // Opsional: tampilkan jumlah riwayat
     // { label: "Status", key: "status" },
   ];
 
@@ -251,23 +342,22 @@ export default function DataPeserta() {
     {
       label: "Kelas",
       value: kelas,
-      options: kelasOptions, // Opsi filter berupa NAMA KELAS
+      options: kelasOptions,
       onChange: setKelas,
     },
   ];
 
   const exportData = filteredPeserta.map((item, i) => ({
     No: i + 1,
-    // Username: item.username,
     Nama: item.nama,
     NISN: item.nisn,
-    // Kelas: item.kelas, // NAMA KELAS
+    Kelas: item.kelas,
     "Tanggal Lahir": item.tanggal_lahir,
     Alamat: item.alamat,
     "No. Telepon": item.no_telp,
     Industri: item.industri,
-    Tanggal_Mulai: item.tanggal_mulai,
-    Tanggal_Selesai: item.tanggal_selesai,
+    "Tanggal Mulai": item.tanggal_mulai,
+    "Tanggal Selesai": item.tanggal_selesai,
     Status: item.status,
   }));
 
@@ -360,7 +450,7 @@ export default function DataPeserta() {
               <SearchBar
                 query={query}
                 setQuery={setQuery}
-                // filters={filters}
+                filters={filters}
                 placeholder="Cari siswa..."
               />
 

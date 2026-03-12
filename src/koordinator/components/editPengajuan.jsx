@@ -476,7 +476,7 @@ export default function EditPengajuan({
                       <th className="border border-black px-2 py-1 w-10">NO</th>
                       <th className="border border-black px-2 py-1">NAMA</th>
                       <th className="border border-black px-2 py-1 w-20">KELAS</th>
-                      <th className="border border-black px-2 py-1 w-32">JURUSAN</th>
+                      <th className="border border-black px-2 py-1 w-32">Konsentrasi Keahlian</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -879,7 +879,7 @@ export default function EditPengajuan({
                     <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm">
                       <p><span className="font-medium">NISN:</span> {editableSurat.nisn}</p>
                       <p><span className="font-medium">Kelas:</span> {editableSurat.class}</p>
-                      <p><span className="font-medium">Jurusan:</span> {editableSurat.jurusan}</p>
+                      <p><span className="font-medium">Konsentrasi Keahlian:</span> {editableSurat.jurusan}</p>
                     </div>
                   )}
                 </div>

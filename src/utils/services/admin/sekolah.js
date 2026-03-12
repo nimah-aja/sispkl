@@ -1,7 +1,6 @@
 import axios from "../../axiosInstance";
 
 // GET SEKOLAH AKTIF
-
 export const getSekolah = async () => {
   try {
     const res = await axios.get("/api/sekolah");
@@ -43,6 +42,8 @@ export const createSekolah = async (payload) => {
     npsn: payload.npsn,
     provinsi: payload.provinsi,
     website: payload.website,
+    // TAMBAHKAN INI:
+    url_logo_maskot: payload.url_logo_maskot || "",
   };
 
   console.log("POST /api/sekolah body:", body);
@@ -84,6 +85,8 @@ export const updateSekolah = async (id, payload) => {
     npsn: payload.npsn || "",
     provinsi: payload.provinsi || "",
     website: payload.website || "",
+    // TAMBAHKAN INI:
+    url_logo_maskot: payload.url_logo_maskot || "",
   };
 
   console.log("Body yang dikirim ke API:", body);
