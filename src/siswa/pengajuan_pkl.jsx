@@ -6,11 +6,12 @@ import DatePicker from "react-datepicker";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
 import "react-datepicker/dist/react-datepicker.css";
+import dayjs from "dayjs";
 
 import { getAvailableIndustri } from "../utils/services/siswa/industri";
 import { submitPengajuanPKL } from "../utils/services/siswa/pengajuan_pkl";
-import { submitGroupPKL } from "../utils/services/siswa/group"; // IMPORT BARU
-import { getSiswa } from "../utils/services/admin/get_siswa";
+import { submitGroupPKL } from "../utils/services/siswa/group";
+import { getSiswa, getSiswaById } from "../utils/services/admin/get_siswa";
 import { getKelas } from "../utils/services/admin/get_kelas";
 import { getMyPklGroups } from "../utils/services/siswa/group";
 
@@ -27,8 +28,17 @@ import SaveConfirmationModal from "./components/Save";
 export default function PengajuanPKL() {
   const navigate = useNavigate();
 
+  // STATE UNTUK USER
+  const [user] = useState(
+    JSON.parse(localStorage.getItem("user")) || { 
+      name: "", 
+      role: "Siswa" 
+    }
+  );
+
   const [listIndustri, setListIndustri] = useState([]);
   const [listKelompok, setListKelompok] = useState([]);
+  const [filteredKelompok, setFilteredKelompok] = useState([]); // STATE UNTUK KELOMPOK YANG DITAMPILKAN
   const [allKelas, setAllKelas] = useState([]);
   const [allSiswa, setAllSiswa] = useState([]);
   const [filteredSiswa, setFilteredSiswa] = useState([]);
@@ -37,6 +47,7 @@ export default function PengajuanPKL() {
   const [selectedSiswa, setSelectedSiswa] = useState([]);
   const [selectedIndustri, setSelectedIndustri] = useState("");
   const [selectedKelompok, setSelectedKelompok] = useState("");
+  const [selectedKelompokData, setSelectedKelompokData] = useState(null);
 
   const [kategoriPeserta, setKategoriPeserta] = useState("individu");
   const [catatan, setCatatan] = useState("");
@@ -47,7 +58,6 @@ export default function PengajuanPKL() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   
-  const [userData, setUserData] = useState(null);
   const [userKelasId, setUserKelasId] = useState(null);
   const [userJurusanId, setUserJurusanId] = useState(null);
   const [userKelasNama, setUserKelasNama] = useState("");
@@ -64,24 +74,115 @@ export default function PengajuanPKL() {
   const [studentDropdownState, setStudentDropdownState] = useState({});
   const [studentSearchQueries, setStudentSearchQueries] = useState({});
 
-  /* ================= GET LOGGED-IN USER'S DATA FROM LOCALSTORAGE ================= */
-  useEffect(() => {
-    try {
-      const userDataStr = localStorage.getItem('user');
-      
-      if (userDataStr) {
-        const parsedUser = JSON.parse(userDataStr);
-        console.log("👤 User yang login:", parsedUser);
-        setUserData(parsedUser);
-        setUserKelasId(parsedUser.kelas_id);
-      } else {
-        toast.error("Data user tidak ditemukan. Silakan login ulang.");
-      }
-    } catch (err) {
-      console.error("Failed to parse user data:", err);
-      toast.error("Gagal memuat data user");
+  // STATE UNTUK VALIDASI
+  const [validationError, setValidationError] = useState("");
+
+  // MAP UNTUK MENYIMPAN DATA SISWA BERDASARKAN ID (CACHE)
+  const [siswaMap, setSiswaMap] = useState({});
+
+  // FUNGSI CEK LEADER
+  const isCurrentUserLeader = (group) => {
+    if (!group || !group.members) return false;
+    
+    const currentUserName = user.name;
+    console.log("Current User Name:", currentUserName);
+    console.log("Group Members:", group.members);
+    
+    // Cari anggota yang is_leader = true
+    const leaderMember = group.members.find(m => m.is_leader === true);
+    console.log("Leader Member:", leaderMember);
+    
+    // Jika ketemu leader, bandingkan NAMA-nya dengan current user name
+    if (leaderMember) {
+      const isLeader = leaderMember.siswa?.nama === currentUserName;
+      console.log("Is Current User Leader?", isLeader);
+      return isLeader;
     }
-  }, []);
+    
+    return false;
+  };
+
+  // FUNGSI UNTUK CEK APAKAH KELOMPOK BISA DITAMPILKAN DI DROPDOWN
+  // HANYA KELOMPOK DENGAN tanggal_selesai: null
+  const isGroupEligibleForDropdown = (group) => {
+    if (!group) return false;
+    
+    // Hanya tampilkan kelompok dengan tanggal_selesai null
+    // dan status bukan rejected (opsional, bisa ditambahkan jika perlu)
+    return group.tanggal_selesai === null;
+  };
+
+  // FUNGSI UNTUK MENDAPATKAN NAMA SISWA DARI ID
+  const getSiswaNameById = async (siswaId) => {
+    // Cek dulu di cache
+    if (siswaMap[siswaId]) {
+      return siswaMap[siswaId];
+    }
+    
+    try {
+      // Jika tidak ada di cache, panggil API
+      const siswaData = await getSiswaById(siswaId);
+      const namaSiswa = siswaData.nama_lengkap || siswaData.nama || `Siswa ID: ${siswaId}`;
+      
+      // Simpan ke cache
+      setSiswaMap(prev => ({
+        ...prev,
+        [siswaId]: namaSiswa
+      }));
+      
+      return namaSiswa;
+    } catch (error) {
+      console.error(`Gagal mengambil data siswa ID ${siswaId}:`, error);
+      return `Siswa ID: ${siswaId}`;
+    }
+  };
+
+  // FUNGSI UNTUK MEMPROSES ERROR DARI API
+  const handleApiError = async (error, defaultMessage) => {
+    console.error("API Error:", error);
+    
+    const errorData = error?.response?.data || error;
+    console.log("Error data:", errorData);
+    
+    // Cek apakah ini error validasi grup dengan siswa_id
+    if (errorData?.error === "GROUP_VALIDATION_FAILED" && errorData?.message) {
+      const errorMessage = errorData.message;
+      
+      // Coba extract siswa_id dari pesan error
+      const siswaIdMatch = errorMessage.match(/siswa_id (\d+)/);
+      
+      if (siswaIdMatch && siswaIdMatch[1]) {
+        const siswaId = parseInt(siswaIdMatch[1]);
+        
+        // Ambil nama siswa
+        const namaSiswa = await getSiswaNameById(siswaId);
+        
+        // Tampilkan pesan error dalam Bahasa Indonesia dengan nama siswa
+        toast.error(`${namaSiswa} masih memiliki pengajuan individu yang pending. Silakan selesaikan atau batalkan pengajuan tersebut terlebih dahulu.`);
+        return;
+      }
+      
+      // Jika tidak bisa extract siswa_id, tampilkan pesan asli dalam Bahasa Indonesia
+      if (errorMessage.includes("pending individual application")) {
+        toast.error("Salah satu anggota masih memiliki pengajuan individu yang pending. Silakan selesaikan atau batalkan pengajuan tersebut terlebih dahulu.");
+        return;
+      }
+      
+      // Fallback ke pesan default
+      toast.error(defaultMessage || "Validasi grup gagal. Silakan periksa kembali data anggota.");
+      return;
+    }
+    
+    // Untuk error lainnya, tampilkan pesan default
+    toast.error(defaultMessage || error?.message || "Terjadi kesalahan. Silakan coba lagi.");
+  };
+
+  /* ================= SET USER KELAS ID ================= */
+  useEffect(() => {
+    if (user && user.kelas_id) {
+      setUserKelasId(user.kelas_id);
+    }
+  }, [user]);
 
   /* ================= FETCH ALL DATA ================= */
   useEffect(() => {
@@ -89,6 +190,7 @@ export default function PengajuanPKL() {
       try {
         setIsLoadingData(true);
 
+        // Fetch industri
         const industriRes = await getAvailableIndustri();
         const industriData = industriRes?.data || industriRes || [];
         const industriList = Array.isArray(industriData) ? industriData : [];
@@ -100,6 +202,7 @@ export default function PengajuanPKL() {
           })).filter(i => i.value)
         );
 
+        // Fetch kelompok
         try {
           const kelompokRes = await getMyPklGroups();
           console.log("📊 Data kelompok:", kelompokRes);
@@ -114,41 +217,53 @@ export default function PengajuanPKL() {
           }
        
           // Format data kelompok dengan struktur yang benar
-          setListKelompok(
-            kelompokData.map((k) => {
-              // Ambil data leader dari members yang is_leader = true
-              const leader = k.members?.find(m => m.is_leader)?.siswa || k.leader;
-              
-              // Filter members untuk mendapatkan anggota biasa (bukan leader)
-              const regularMembers = k.members?.filter(m => !m.is_leader) || [];
-              
-              // Hitung total anggota (leader + members biasa)
-              const totalAnggota = (leader ? 1 : 0) + regularMembers.length;
-              
-              return {
-                label: `Kelompok ${k.id}`,
-                value: k.id?.toString() || "",
-                anggota_count: totalAnggota,
-                anggota_count_display: regularMembers.length, // JUMLAH ANGGOTA (TANPA LEADER)
-                leader: leader,
-                members: k.members || [],
-                regular_members: regularMembers,
-                display_info: {
-                  nama_leader: leader?.nama || (k.leader?.nama || "Belum ada ketua"),
-                  anggota_list: regularMembers.map(m => m.siswa?.nama || m.nama || `Siswa ${m.siswa?.id || m.id}`),
-                  total_anggota: totalAnggota,
-                  total_anggota_tanpa_leader: regularMembers.length
-                }
-              };
-            })
+          const formattedKelompok = kelompokData.map((k) => {
+            // Ambil data leader dari members yang is_leader = true
+            const leader = k.members?.find(m => m.is_leader)?.siswa || k.leader;
+            
+            // Filter members untuk mendapatkan anggota biasa (bukan leader)
+            const regularMembers = k.members?.filter(m => !m.is_leader) || [];
+            
+            // Hitung total anggota (leader + members biasa)
+            const totalAnggota = (leader ? 1 : 0) + regularMembers.length;
+            
+            return {
+              ...k,
+              label: `Kelompok ${k.id}`,
+              value: k.id?.toString() || "",
+              anggota_count: totalAnggota,
+              anggota_count_display: regularMembers.length,
+              leader: leader,
+              leader_id: leader?.id || (k.leader?.id || null),
+              members: k.members || [],
+              regular_members: regularMembers,
+              display_info: {
+                nama_leader: leader?.nama || (k.leader?.nama || "Belum ada ketua"),
+                anggota_list: regularMembers.map(m => m.siswa?.nama || m.nama || `Siswa ${m.siswa?.id || m.id}`),
+                total_anggota: totalAnggota,
+                total_anggota_tanpa_leader: regularMembers.length
+              }
+            };
+          });
+          
+          setListKelompok(formattedKelompok);
+          
+          // PERBAIKAN: Filter kelompok yang eligible untuk dropdown
+          // Hanya kelompok dengan tanggal_selesai: null
+          const eligibleKelompok = formattedKelompok.filter(group => 
+            isGroupEligibleForDropdown(group)
           );
           
-          console.log("✅ Kelompok dengan detail anggota:", kelompokData);
+          setFilteredKelompok(eligibleKelompok);
+          console.log("✅ Kelompok yang eligible untuk dropdown:", eligibleKelompok);
+          
         } catch (err) {
           console.error("Gagal fetch kelompok:", err);
           setListKelompok([]);
+          setFilteredKelompok([]);
         }
 
+        // Fetch kelas
         const kelasRes = await getKelas();
         let kelasData = [];
         if (kelasRes?.data?.data) {
@@ -160,17 +275,23 @@ export default function PengajuanPKL() {
         }
         setAllKelas(kelasData);
 
+        // Fetch siswa
         const siswaRes = await getSiswa();
         let siswaData = [];
-        if (siswaRes?.data?.data) {
-          siswaData = siswaRes.data.data;
+        if (Array.isArray(siswaRes)) {
+          siswaData = siswaRes;
         } else if (siswaRes?.data) {
           siswaData = siswaRes.data;
-        } else if (Array.isArray(siswaRes)) {
-          siswaData = siswaRes;
         }
         console.log("📊 Total siswa dari API:", siswaData.length);
         setAllSiswa(siswaData);
+        
+        // Build siswa map dari data yang sudah ada
+        const initialSiswaMap = {};
+        siswaData.forEach(s => {
+          initialSiswaMap[s.id] = s.nama_lengkap || s.nama;
+        });
+        setSiswaMap(initialSiswaMap);
 
       } catch (err) {
         console.error("Failed to fetch data:", err);
@@ -202,14 +323,14 @@ export default function PengajuanPKL() {
 
   /* ===== FILTER SISWA BASED ON KELAS IDS DAN EXCLUDE USER YANG LOGIN ===== */
   useEffect(() => {
-    if (!kelasIdsInJurusan.length || !allSiswa.length || !userData) {
+    if (!kelasIdsInJurusan.length || !allSiswa.length || !user?.id) {
       setFilteredSiswa([]);
       setAvailableSiswa([]);
       return;
     }
 
     console.log("🔍 Memfilter siswa...");
-    console.log("👤 User ID yang akan di-exclude:", userData.id);
+    console.log("👤 User ID yang akan di-exclude:", user.id);
 
     const filtered = allSiswa.filter(siswa => 
       kelasIdsInJurusan.includes(siswa.kelas_id)
@@ -217,7 +338,7 @@ export default function PengajuanPKL() {
     
     console.log("📊 Siswa dengan jurusan sama (sebelum exclude):", filtered.length);
     
-    const available = filtered.filter(siswa => siswa.id !== userData.id);
+    const available = filtered.filter(siswa => siswa.id !== user.id);
     
     console.log("📊 Siswa yang tersedia (setelah exclude):", available.length);
 
@@ -237,7 +358,7 @@ export default function PengajuanPKL() {
     setAvailableSiswa(formatted);
     setSelectedSiswa([]);
     
-  }, [kelasIdsInJurusan, allSiswa, allKelas, userData]);
+  }, [kelasIdsInJurusan, allSiswa, allKelas, user]);
 
   /* ================= HANDLER ================= */
   const handleTambahSiswa = () => {
@@ -296,9 +417,11 @@ export default function PengajuanPKL() {
   const handleKategoriChange = (kategori) => {
     setKategoriPeserta(kategori);
     setSelectedKelompok("");
+    setSelectedKelompokData(null);
     setTanggalMulai(null);
     setTanggalSelesai(null);
     setSelectedSiswa([]);
+    setValidationError("");
     setIsChanged(true);
   };
 
@@ -312,6 +435,29 @@ export default function PengajuanPKL() {
   };
 
   const handleKelompokChange = (value, label) => {
+    // Cari data kelompok yang dipilih dari filteredKelompok
+    const selectedGroup = filteredKelompok.find(k => k.value === value);
+    setSelectedKelompokData(selectedGroup);
+    
+    // VALIDASI: Cek apakah user adalah ketua dari kelompok yang dipilih
+    if (selectedGroup && user) {
+      const isLeader = isCurrentUserLeader(selectedGroup);
+      
+      if (!isLeader) {
+        setValidationError("Anda bukan ketua kelompok ini. Hanya ketua kelompok yang dapat mengirim pengajuan PKL untuk kelompok.");
+        toast.error("Anda bukan ketua kelompok ini");
+      } else {
+        setValidationError("");
+        toast.success("Anda adalah ketua kelompok, silakan lanjutkan pengajuan");
+      }
+      
+      console.log("🔍 Validasi ketua:", {
+        isLeader,
+        userName: user.name,
+        groupId: value
+      });
+    }
+    
     setSelectedKelompok(value);
     setSelectedLabels((prev) => ({
       ...prev,
@@ -348,6 +494,22 @@ export default function PengajuanPKL() {
   };
 
   const handleSubmit = async () => {
+    // VALIDASI: Cek apakah user adalah ketua kelompok sebelum submit
+    if (kategoriPeserta === "kelompok") {
+      if (!selectedKelompokData) {
+        toast.error("Pilih kelompok terlebih dahulu");
+        return;
+      }
+      
+      // CEK lagi apakah user adalah ketua kelompok yang dipilih
+      const isLeader = isCurrentUserLeader(selectedKelompokData);
+      
+      if (!isLeader) {
+        toast.error("Anda bukan ketua kelompok ini. Hanya ketua yang dapat mengirim pengajuan PKL kelompok.");
+        return;
+      }
+    }
+
     if (!selectedIndustri) {
       toast.error("Pilih industri dulu");
       return;
@@ -369,7 +531,6 @@ export default function PengajuanPKL() {
         return;
       }
 
-      // KIRIM KE submitGroupPKL
       const payload = {
         catatan: catatan || "",
         industri_id: parseInt(selectedIndustri),
@@ -387,13 +548,14 @@ export default function PengajuanPKL() {
         navigate(-1);
       } catch (err) {
         console.error("Submit error:", err);
-        toast.error(err?.response?.data?.message || err?.message || "Gagal mengirim pengajuan kelompok");
+        // Gunakan fungsi handleApiError untuk memproses error
+        await handleApiError(err, "Gagal mengirim pengajuan kelompok");
       } finally {
         setIsLoading(false);
       }
       
     } else {
-      // INDIVIDU - menggunakan submitPengajuanPKL yang sudah ada
+      // INDIVIDU
       const payload = {
         kategori_peserta: kategoriPeserta,
         industri_id: parseInt(selectedIndustri),
@@ -413,22 +575,18 @@ export default function PengajuanPKL() {
         navigate(-1);
       } catch (err) {
         console.error("Submit error:", err);
-        toast.error(err?.message || "Gagal mengirim pengajuan individu");
+        // Untuk individu, mungkin juga perlu penanganan error serupa
+        await handleApiError(err, "Gagal mengirim pengajuan individu");
       } finally {
         setIsLoading(false);
       }
     }
   };
 
-  // ========== PERBAIKAN: LANGSUNG KEMBALI TANPA MODAL ==========
   const handleBackClick = (e) => {
-    // Mencegah event bubbling ke parent
     e.preventDefault();
     e.stopPropagation();
-    
     console.log("Button back diklik - langsung kembali");
-    
-    // Langsung kembali ke halaman sebelumnya
     navigate(-1);
   };
 
@@ -436,6 +594,7 @@ export default function PengajuanPKL() {
     setKategoriPeserta("individu");
     setSelectedIndustri("");
     setSelectedKelompok("");
+    setSelectedKelompokData(null);
     setSelectedSiswa([]);
     setTanggalMulai(null);
     setTanggalSelesai(null);
@@ -443,6 +602,7 @@ export default function PengajuanPKL() {
     setSelectedLabels({});
     setStudentDropdownState({});
     setStudentSearchQueries({});
+    setValidationError("");
     setIsChanged(false);
   };
 
@@ -495,7 +655,7 @@ export default function PengajuanPKL() {
     <div className="flex h-screen w-screen justify-center items-center bg-[#E1D6C4] p-4">
       <div className="flex flex-col w-full max-w-6xl h-[90vh] bg-white rounded-2xl shadow-lg overflow-hidden">
         
-        {/* Header - PERBAIKAN: LANGSUNG KEMBALI */}
+        {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
           <div
             onClick={handleBackClick}
@@ -674,103 +834,149 @@ export default function PengajuanPKL() {
                           />
 
                           <ul className="max-h-60 overflow-y-auto">
-                            {listKelompok.length > 0 ? (
-                              listKelompok
+                            {filteredKelompok.length > 0 ? (
+                              filteredKelompok
                                 .filter((opt) =>
                                   opt.label
                                     .toLowerCase()
                                     .includes((searchQueries.kelompok || "").toLowerCase())
                                 )
-                                .map((opt) => (
-                                  <li
-                                    key={opt.value}
-                                    onClick={() => {
-                                      handleKelompokChange(opt.value, `Kelompok #${opt.value}`);
-                                    }}
-                                    className="px-4 py-3 cursor-pointer hover:bg-orange-50 border-b border-gray-100 last:border-b-0"
-                                  >
-                                    <div className="flex flex-col gap-2">
-                                    
-                                      {/* Header Kelompok */}
-                                      <div className="flex justify-between items-center">
-                                        <span className="font-medium text-gray-900">
-                                          Kelompok #{opt.value}
-                                        </span>
-                                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                                          {opt.regular_members.length} Anggota 
-                                        </span>
-                                      </div>
-                                      
-                                      {/* Informasi Ketua Kelompok */}
-                                      {opt.leader && (
-                                        <div className="text-xs bg-blue-50 p-2 rounded-lg">
-                                          <span className="font-medium text-blue-700">Ketua Kelompok:</span>
-                                          <div className="mt-1 text-blue-600">
-                                            <div>{opt.leader.nama}</div>
-                                            <div className="text-blue-400 text-[10px]">NISN: {opt.leader.nisn} | {opt.leader.kelas}</div>
-                                          </div>
-                                        </div>
-                                      )}
-                                      
-                                      {/* Daftar Anggota (tanpa leader) */}
-                                      {opt.regular_members && opt.regular_members.length > 0 && (
-                                        <div className="text-xs">
-                                          <span className="font-medium text-gray-600">Anggota:</span>
-                                          <div className="pl-2 mt-1 space-y-1.5">
-                                            {opt.regular_members.slice(0, 3).map((member, idx) => (
-                                              <div key={member.siswa?.id || idx} className="flex flex-col border-l-2 border-gray-200 pl-2">
-                                                <span className="font-medium text-gray-700">
-                                                  {member.siswa?.nama || member.nama}
-                                                </span>
-                                                <span className="text-gray-400 text-[10px]">
-                                                  NISN: {member.siswa?.nisn || member.nisn} | {member.siswa?.kelas || member.kelas}
-                                                </span>
-                                              </div>
-                                            ))}
-                                            {opt.regular_members.length > 3 && (
-                                              <div className="text-gray-400 italic text-[10px] pl-2">
-                                                +{opt.regular_members.length - 3} anggota lainnya
-                                              </div>
+                                .map((opt) => {
+                                  // CEK apakah user adalah ketua kelompok ini
+                                  const isLeader = isCurrentUserLeader(opt);
+                                  
+                                  return (
+                                    <li
+                                      key={opt.value}
+                                      onClick={() => {
+                                        if (isLeader) {
+                                          handleKelompokChange(opt.value, `Kelompok #${opt.value}`);
+                                        } else {
+                                          toast.error("Anda bukan ketua kelompok ini. Hanya ketua yang dapat mengirim pengajuan PKL kelompok.");
+                                        }
+                                      }}
+                                      className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                                        isLeader 
+                                          ? "hover:bg-orange-50" 
+                                          : "opacity-60 cursor-not-allowed bg-gray-50"
+                                      }`}
+                                    >
+                                      <div className="flex flex-col gap-2">
+                                        
+                                        {/* Header Kelompok dengan Badge Leader/Non-Leader */}
+                                        <div className="flex justify-between items-center">
+                                          <span className="font-medium text-gray-900">
+                                            Kelompok #{opt.value}
+                                          </span>
+                                          <div className="flex gap-2">
+                                            {isLeader && (
+                                              <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
+                                                Ketua
+                                              </span>
                                             )}
+                                            {!isLeader && (
+                                              <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded-full">
+                                                Bukan Ketua
+                                              </span>
+                                            )}
+                                            <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                                              {opt.regular_members?.length || 0} Anggota 
+                                            </span>
                                           </div>
                                         </div>
-                                      )}
-                                      
-                                      {/* Status Industri */}
-                                      <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                                        <span className={`inline-block w-2 h-2 rounded-full ${
-                                          opt.industri?.id ? 'bg-green-500' : 'bg-yellow-500'
-                                        }`}></span>
-                                        {opt.industri?.id ? `Industri: ${opt.industri.nama}` : 'Belum pilih industri'}
+                                        
+                                        {/* Informasi Ketua Kelompok */}
+                                        {opt.leader && (
+                                          <div className={`text-xs ${isLeader ? 'bg-green-50' : 'bg-blue-50'} p-2 rounded-lg`}>
+                                            <span className={`font-medium ${isLeader ? 'text-green-700' : 'text-blue-700'}`}>
+                                              {isLeader ? 'Anda adalah' : 'Ketua Kelompok:'}
+                                            </span>
+                                            <div className={`mt-1 ${isLeader ? 'text-green-600' : 'text-blue-600'}`}>
+                                              <div>{opt.leader.nama}</div>
+                                              <div className={`${isLeader ? 'text-green-400' : 'text-blue-400'} text-[10px]`}>
+                                                NISN: {opt.leader.nisn} | {opt.leader.kelas}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Daftar Anggota (tanpa leader) */}
+                                        {opt.regular_members && opt.regular_members.length > 0 && (
+                                          <div className="text-xs">
+                                            <span className="font-medium text-gray-600">Anggota:</span>
+                                            <div className="pl-2 mt-1 space-y-1.5">
+                                              {opt.regular_members.slice(0, 3).map((member, idx) => (
+                                                <div key={member.siswa?.id || idx} className="flex flex-col border-l-2 border-gray-200 pl-2">
+                                                  <span className="font-medium text-gray-700">
+                                                    {member.siswa?.nama || member.nama}
+                                                  </span>
+                                                  <span className="text-gray-400 text-[10px]">
+                                                    NISN: {member.siswa?.nisn || member.nisn} | {member.siswa?.kelas || member.kelas}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                              {opt.regular_members.length > 3 && (
+                                                <div className="text-gray-400 italic text-[10px] pl-2">
+                                                  +{opt.regular_members.length - 3} anggota lainnya
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Status Industri */}
+                                        <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                          <span className={`inline-block w-2 h-2 rounded-full ${
+                                            opt.industri?.id && opt.industri.id !== 0 ? 'bg-green-500' : 'bg-yellow-500'
+                                          }`}></span>
+                                          {opt.industri?.id && opt.industri.id !== 0 
+                                            ? `Industri: ${opt.industri.nama}` 
+                                            : 'Belum pilih industri'}
+                                        </div>
+                                        
+                                        {/* Pesan jika bukan ketua */}
+                                        {!isLeader && (
+                                          <div className="text-xs text-red-500 mt-2 italic">
+                                            ⚠️ Hanya ketua kelompok yang dapat mengirim pengajuan PKL
+                                          </div>
+                                        )}
                                       </div>
-                                    </div>
-                                  </li>
-                                ))
+                                    </li>
+                                  );
+                                })
                             ) : (
-                              // Tampilkan pesan jika tidak ada kelompok
                               <li className="px-4 py-6 text-gray-500 text-center">
                                 <Users className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                <p>Belum ada kelompok yang tersedia</p>
+                                <p>Belum ada kelompok aktif</p>
                                 <p className="text-xs mt-1">Buat kelompok baru untuk memulai</p>
                               </li>
                             )}
                             
-                            {/* Option untuk membuat kelompok baru - selalu ditampilkan */}
+                            {/* Option untuk membuat kelompok baru */}
                             <li
                               onClick={handleBuatKelompok}
                               className="px-4 py-3 cursor-pointer hover:bg-orange-50 border-t-2 border-orange-200 bg-orange-50 text-orange-600 font-medium flex items-center gap-2 sticky bottom-0"
                             >
                               <Plus size={18} />
                               <span>Buat Kelompok Baru</span>
-        
                             </li>
                           </ul>
                         </div>
                       )}
                     </div>
+                    
+                    {/* Tampilkan pesan validasi jika user bukan ketua */}
+                    {validationError && (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-600 flex items-center gap-2">
+                          <span className="font-bold">⛔</span>
+                          {validationError}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   
-                  {listKelompok.length > 0 && (
+                  {filteredKelompok.length > 0 && !validationError && (
                     <div className="mt-1 text-xs text-gray-500 flex items-center gap-1 bg-blue-50 p-2 rounded-lg">
                       <span>Untuk membuat kelompok baru, Anda harus keluar dari kelompok saat ini terlebih dahulu melalui halaman Kelompok Saya</span>
                     </div>
@@ -793,7 +999,7 @@ export default function PengajuanPKL() {
                         placeholderText="dd/MM/yyyy"
                         customInput={<CustomDateInput />}
                         minDate={new Date()}
-                        className="w-full "
+                        className="w-full"
                       />
                     </div>
 
@@ -857,7 +1063,7 @@ export default function PengajuanPKL() {
           <button
             type="button"
             onClick={() => setIsSaveModalOpen(true)}
-            disabled={isLoading || isLoadingData}
+            disabled={isLoading || isLoadingData || (kategoriPeserta === "kelompok" && !!validationError)}
             className="button-radius"
             style={{
               "--btn-bg": "#EC933A",
@@ -871,7 +1077,7 @@ export default function PengajuanPKL() {
           </button>
         </div>
 
-        {/* Modals - Hanya save modal yang masih dipakai */}
+        {/* Modals */}
         <SaveConfirmationModal
           isOpen={isSaveModalOpen}
           onClose={() => setIsSaveModalOpen(false)}

@@ -316,7 +316,7 @@ export default function DataRealisasiKegiatan() {
               title={isLewat ? "Tidak dapat mengedit karena sudah melewati deadline" : "Edit foto bukti"}
             >
               <Edit size={14} />
-              Edit
+              Ubah
             </button>
           </div>
         );

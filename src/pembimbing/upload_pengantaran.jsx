@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
-import Add from "./components/Add";
+import Add from "./components/AddPhoto";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import uploadImg from "../assets/upload.svg";

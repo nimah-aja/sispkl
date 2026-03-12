@@ -35,6 +35,9 @@ import PindahPKL from "./koordinator/data_pindah_pkl"
 import Pembekalan from "./koordinator/jadwal_pembekalan"
 import PreviewPengajuan from "./koordinator/components/editPengajuan"; 
 import DataIndustri from "./koordinator/data_industri";
+import Sertifikat from "./koordinator/sertifikat";
+import PenilaianSertifikat from "./koordinator/penilaian"
+import FormPenilaian from "./koordinator/form_penilaian"
 
 // kapro
 import KaprodiDashboard from "./kapro/dashboard_kaprog";
@@ -59,6 +62,8 @@ import CetakDokumen from "./pembimbing/cetak_dokumen"
 import TugasTerbaruPage from "./pembimbing/components/TugasTerbaruPage";
 import BeritaAcara from "./pembimbing/berita_acara"
 import EditRealisasi from "./pembimbing/EditRealisasi";
+import Penilaian from "./pembimbing/penilaian";
+import LembarPenilaian from "./pembimbing/lembar_penilaian"
   
 // siswa
 import DashboardSiswa from "./siswa/dashboard_siswa";
@@ -139,6 +144,8 @@ function AppContent() {
             element={<BeritaAcara />}
           />
           <Route path="/guru/pembimbing/edit-realisasi" element={<EditRealisasi />} />
+           <Route path="/guru/pembimbing/penilaian" element={<Penilaian />} />
+           <Route path="/guru/pembimbing/lembarPenilaian" element={<LembarPenilaian />} />
 
 
         {/* Koordinator */}
@@ -153,6 +160,9 @@ function AppContent() {
         <Route path = "/guru/koordinator/pembekalan" element = {<Pembekalan/>}/>
         <Route path = "/guru/koordinator/editPengajuan" element = {<PreviewPengajuan/>}/>
         <Route path = "/guru/koordinator/industri" element = {<DataIndustri/>}/>
+        <Route path = "/guru/koordinator/sertifikat" element = {<Sertifikat/>}/>
+        <Route path = "/guru/koordinator/penilaian" element = {<PenilaianSertifikat/>}/>
+        <Route path = "/guru/koordinator/form" element = {<FormPenilaian/>}/>
 
         {/* Kapro */}
         <Route path="/guru/kaprodi" element={<KaprodiDashboard/>}/>

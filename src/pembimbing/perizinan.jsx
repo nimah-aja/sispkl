@@ -11,6 +11,7 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  Calendar,
 } from "lucide-react";
 
 import * as XLSX from "xlsx";
@@ -35,11 +36,18 @@ export default function DataPerizinanSiswa() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterJenis, setFilterJenis] = useState("");
   const [filterKelas, setFilterKelas] = useState("");
+  
+  // Filter Tanggal
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  
   const [openDetail, setOpenDetail] = useState(false);
   const [detailMode, setDetailMode] = useState("view");
   const [detailData, setDetailData] = useState(null);
   const [openExport, setOpenExport] = useState(false);
   const exportRef = useRef(null);
+  const dateFilterRef = useRef(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -48,6 +56,17 @@ export default function DataPerizinanSiswa() {
     name: localStorage.getItem("nama_guru") || "Guru",
     role: "Pembimbing",
   };
+
+  // Click outside untuk menutup date filter
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target)) {
+        setShowDateFilter(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fetchData = async () => {
     const izin = await getIzinPembimbing();
@@ -77,7 +96,7 @@ export default function DataPerizinanSiswa() {
         kelas: kelasMap[s?.kelas_id] || "-",
         waktu,
         tanggal: dayjs(waktu).format("DD MMMM YYYY"),
-        tanggalKey: dayjs(waktu).format("YYYY-MM-DD"),
+        tanggalRaw: dayjs(waktu).format("YYYY-MM-DD"), // Untuk filter
         jam: dayjs(waktu).format("HH:mm"),
         alasan: alasanFinal, // Gunakan alasan yang sudah dinormalisasi
         keterangan: i.keterangan || "-",
@@ -139,22 +158,58 @@ export default function DataPerizinanSiswa() {
 
   const statusOptions = ["pending", "approved", "rejected"];
   
-  // MODIFIED: Ambil nilai unik dari alasan yang sudah dinormalisasi
+  // Ambil nilai unik dari alasan yang sudah dinormalisasi
   const jenisOptions = [...new Set(data.map((d) => d.alasan))];
   
   const kelasOptions = [...new Set(data.map((d) => d.kelas))];
 
+  // MODIFIED: Filter dengan tambahan pencarian tanggal
   const filtered = data.filter((i) => {
     const s = search.toLowerCase();
-    return (
-      (i.nama + i.kelas + i.alasan + (i.keterangan || "")).toLowerCase().includes(s) &&
-      (filterStatus ? i.status === filterStatus : true) &&
-      (filterJenis ? i.alasan === filterJenis : true) &&
-      (filterKelas ? i.kelas === filterKelas : true)
-    );
+    
+    // Pencarian teks biasa (termasuk tanggal)
+    const textMatch = (
+      i.nama + 
+      i.kelas + 
+      i.alasan + 
+      (i.keterangan || "") + 
+      i.tanggal + // Tambahkan tanggal ke pencarian
+      i.statusLabel
+    ).toLowerCase().includes(s);
+    
+    // Filter dropdown
+    const statusMatch = filterStatus ? i.status === filterStatus : true;
+    const jenisMatch = filterJenis ? i.alasan === filterJenis : true;
+    const kelasMatch = filterKelas ? i.kelas === filterKelas : true;
+    
+    // Filter tanggal
+    let dateMatch = true;
+    if (startDate || endDate) {
+      const itemDate = i.tanggalRaw;
+      
+      if (startDate && endDate) {
+        // Range tanggal
+        dateMatch = itemDate >= startDate && itemDate <= endDate;
+      } else if (startDate) {
+        // Dari tanggal tertentu ke atas
+        dateMatch = itemDate >= startDate;
+      } else if (endDate) {
+        // Sampai tanggal tertentu
+        dateMatch = itemDate <= endDate;
+      }
+    }
+    
+    return textMatch && statusMatch && jenisMatch && kelasMatch && dateMatch;
   });
 
   const totalPages = Math.ceil(filtered.filter(item => item.type === "approved" || item.type === "rejected").length / itemsPerPage);
+
+  // ============ RESET FILTER TANGGAL ============
+  const resetDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setShowDateFilter(false);
+  };
 
   // ============ FORMAT DATE LABEL ============
   const getDateLabel = (date) => {
@@ -227,7 +282,7 @@ export default function DataPerizinanSiswa() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, filterStatus, filterJenis, filterKelas]);
+  }, [search, filterStatus, filterJenis, filterKelas, startDate, endDate]);
 
   // ================= EXPORT =================
   const exportData = filtered.map((d, i) => ({
@@ -241,24 +296,34 @@ export default function DataPerizinanSiswa() {
   }));
 
   const handleExportExcel = () => {
+    if (!exportData.length) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "PerizinanPKL");
-    XLSX.writeFile(wb, "Data_Perizinan_PKL.xlsx");
+    XLSX.writeFile(wb, `Data_Perizinan_PKL_${dayjs().format("YYYY-MM-DD")}.xlsx`);
     setOpenExport(false);
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
+    if (!exportData.length) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+    const doc = new jsPDF({
+      orientation: 'landscape'
+    });
     doc.text("Data Perizinan PKL", 14, 15);
     autoTable(doc, {
       startY: 20,
       head: [["No", "Nama", "Kelas", "Jenis", "Keterangan", "Status", "Tanggal"]],
       body: exportData.map((d) => [d.No, d.Nama, d.Kelas, d.Jenis, d.Keterangan, d.Status, d.Tanggal]),
-      styles: { fontSize: 9 },
+      styles: { fontSize: 8 },
       headStyles: { fillColor: [100, 30, 33] },
     });
-    doc.save("Data_Perizinan_PKL.pdf");
+    doc.save(`Data_Perizinan_PKL_${dayjs().format("YYYY-MM-DD")}.pdf`);
     setOpenExport(false);
   };
 
@@ -289,7 +354,7 @@ export default function DataPerizinanSiswa() {
     { name: "statusLabel", label: "Status" },
     { 
       name: "rejection_reason", 
-      label: "Alasan Ditolak", 
+      label: "Alasan Ditolak",
       condition: (data) => data?.status === "rejected" 
     },
     { 
@@ -305,7 +370,6 @@ export default function DataPerizinanSiswa() {
     {
       name: "rejection_reason",
       label: "Alasan Penolakan",
-      type: "textarea",
       full: true,
       required: true,
     },
@@ -316,6 +380,9 @@ export default function DataPerizinanSiswa() {
     return viewFields;
   };
 
+  // Info filter aktif
+  const isDateFilterActive = startDate || endDate;
+
   return (
     <div className="bg-white min-h-screen">
       <Header user={user} />
@@ -323,45 +390,118 @@ export default function DataPerizinanSiswa() {
       <div className="flex">
         <Sidebar active={active} setActive={setActive} />
 
-        <main className="flex-1 p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-none md:rounded-l-3xl shadow-inner">
-          <div className="flex items-center mb-4 sm:mb-6 gap-1 w-full relative">
+        <main className="flex-1 p-4 sm:p-6 md:p-10 bg-[#641E21] rounded-none md:rounded-l-3xl shadow-inner">  
+          <div className="flex items-center justify-between mb-4 sm:mb-6 w-full">
             <h2 className="text-white font-bold text-base sm:text-lg">
               Perizinan PKL
             </h2>
 
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setOpenExport(!openExport)}
-                className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
-              >
-                <Download size={18} />
-              </button>
+            <div className="flex items-center gap-2">
+              {/* Tombol Filter Tanggal */}
+              <div className="relative" ref={dateFilterRef}>
+                <button
+                  onClick={() => setShowDateFilter(!showDateFilter)}
+                  className={`flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full ${
+                    isDateFilterActive ? "bg-white/20" : ""
+                  }`}
+                  title="Filter Tanggal"
+                >
+                  <Calendar size={18} />
+                  {isDateFilterActive && (
+                    <span className="text-xs bg-orange-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                      !
+                    </span>
+                  )}
+                </button>
 
-              {openExport && (
-                <div className="absolute left-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50">
-                  <button
-                    onClick={handleExportExcel}
-                    className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100"
-                  >
-                    <FileSpreadsheet size={16} className="text-green-600" />
-                    Excel
-                  </button>
-                  <button
-                    onClick={handleExportPDF}
-                    className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100"
-                  >
-                    <FileText size={16} className="text-red-600" />
-                    PDF
-                  </button>
-                </div>
-              )}
+                {showDateFilter && (
+                  <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[300px]">
+                    <h3 className="font-semibold text-gray-700 mb-3">Filter Berdasarkan Tanggal</h3>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Tanggal Mulai</label>
+                        <input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#EC933A]"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Tanggal Akhir</label>
+                        <input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#EC933A]"
+                        />
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={resetDateFilter}
+                          className="flex-1 px-3 py-2 !bg-gray-200 text-gray-700 rounded-lg hover:!bg-gray-300 text-sm"
+                        >
+                          Atur Ulang
+                        </button>
+                        <button
+                          onClick={() => setShowDateFilter(false)}
+                          className="flex-1 px-3 py-2 !bg-[#641E21] text-white rounded-lg hover:!bg-[#7a2a2e] text-sm"
+                        >
+                          Terapkan
+                        </button>
+                      </div>
+                    </div>
+
+                    {isDateFilterActive && (
+                      <div className="mt-3 p-2 bg-orange-50 rounded-lg text-xs text-orange-700">
+                        <span className="font-semibold">Filter aktif: </span>
+                        {startDate && `Dari ${dayjs(startDate).format("DD MMM YYYY")}`}
+                        {startDate && endDate && " - "}
+                        {endDate && `Sampai ${dayjs(endDate).format("DD MMM YYYY")}`}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Tombol Export */}
+              <div className="relative" ref={exportRef}>
+                <button
+                  onClick={() => setOpenExport(!openExport)}
+                  className="flex items-center gap-2 px-3 py-2 text-white !bg-transparent hover:bg-white/10 rounded-full"
+                >
+                  <Download size={18} />
+                </button>
+
+                {openExport && (
+                  <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-md p-2 z-50 min-w-[150px]">
+                    <button
+                      onClick={handleExportExcel}
+                      className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100 rounded"
+                    >
+                      <FileSpreadsheet size={16} className="text-green-600" />
+                      Excel
+                    </button>
+                    <button
+                      onClick={handleExportPDF}
+                      className="!bg-transparent flex items-center gap-2 px-3 py-2 text-sm w-full hover:!bg-gray-100 rounded"
+                    >
+                      <FileText size={16} className="text-red-600" />
+                      PDF
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <SearchBar
             query={search}
             setQuery={setSearch}
-            placeholder="Cari nama, kelas, jenis izin..."
+            placeholder="Cari nama, kelas, jenis izin, status, atau tanggal..."
             filters={[
               {
                 label: "Status",
@@ -379,6 +519,18 @@ export default function DataPerizinanSiswa() {
               { label: "Kelas", value: filterKelas, options: kelasOptions, onChange: setFilterKelas },
             ]}
           />
+
+          {/* Info jumlah data dan filter */}
+          <div className="flex justify-between items-center mt-4 mb-2">
+            {isDateFilterActive && (
+              <button
+                onClick={resetDateFilter}
+                className="!bg-transparent text-xs text-white/80 hover:text-white underline"
+              >
+                Atur Ulang Filter Tanggal
+              </button>
+            )}
+          </div>
 
           <div className="mt-6 space-y-3">
             {/* SECTION 1: MENUNGGU PERSETUJUAN */}
@@ -419,7 +571,7 @@ export default function DataPerizinanSiswa() {
                                     {item.nama} • <span className="text-sm font-medium text-gray-500">{item.kelas}</span>
                                   </h3>
                                   <p className="text-sm text-gray-600 mt-0.5">
-                                    {item.alasan} • {item.keterangan}
+                                    {item.alasan} • {item.keterangan !== "-" ? item.keterangan : "Tidak ada keterangan"}
                                   </p>
                                 </div>
                               </div>
@@ -431,7 +583,7 @@ export default function DataPerizinanSiswa() {
                           {item.hasActions && (
                             <div className="flex gap-2 mt-3 ml-9">
                               <button
-                                className="px-4 py-2 rounded-lg text-white !bg-[#EC933A]"
+                                className="px-4 py-2 rounded-lg text-white !bg-[#EC933A] hover:!bg-[#d47d2c] transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setDetailData(item);
@@ -441,7 +593,7 @@ export default function DataPerizinanSiswa() {
                                 Terima
                               </button>
                               <button
-                                className="px-4 py-2 rounded-lg text-white !bg-[#BC2424]"
+                                className="px-4 py-2 rounded-lg text-white !bg-[#BC2424] hover:!bg-[#9e1e1e] transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setDetailData(item);
@@ -466,7 +618,7 @@ export default function DataPerizinanSiswa() {
               <div className="mb-8">
                 <div className="mb-3">
                   <h3 className="text-white font-bold text-lg border-b border-white/20 pb-2">
-                    Izin Terima & Tolak
+                     Izin Diterima & Ditolak
                   </h3>
                 </div>
 
@@ -521,8 +673,8 @@ export default function DataPerizinanSiswa() {
 
             {/* Pagination - hanya untuk bagian Izin Terima & Tolak */}
             {filtered.filter(item => item.type === "approved" || item.type === "rejected").length > itemsPerPage && (
-              <div className="flex justify-between items-center mt-4 text-white">
-                <p className="text-sm sm:text-base">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mt-4 text-white">
+                <p className="text-sm">
                   Halaman {currentPage} dari {totalPages} halaman
                 </p>
                 <Pagination

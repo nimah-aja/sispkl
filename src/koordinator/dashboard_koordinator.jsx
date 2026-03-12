@@ -14,7 +14,7 @@ import Detail from "./components/Detail";
 // utils
 import { getSiswa } from "../utils/services/admin/get_siswa";
 import { getPKLApplicationSummary } from "../utils/services/kapro/pengajuanPKL";
-import { getTotalPembimbing } from "../utils/services/kapro/pembimbing";
+import { getGuru } from "../utils/services/admin/get_guru"; // Import getGuru
 import { getApprovedPKL } from "../utils/services/koordinator/pengajuan";
 
 // assets
@@ -71,8 +71,9 @@ export default function KoordinatorDashboard() {
 
         const totalUniqueSiswa = uniqueSiswa.size;
 
-        // Ambil total pembimbing
-        const totalPembimbing = await getTotalPembimbing();
+        // Ambil data guru dan hitung jumlah pembimbing (is_pembimbing: true)
+        const guruList = await getGuru(); // Ini akan memanggil API /api/guru
+        const totalPembimbing = guruList.filter(guru => guru.is_pembimbing === true).length;
 
         // DASHBOARD CARD
         setDataDisplay([

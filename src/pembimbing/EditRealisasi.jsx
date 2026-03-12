@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 
 // Components
-import Add from "./components/Add";
+import Add from "./components/AddPhoto";
 
 // Services
 import { getRealisasiById, updateRealisasiFoto } from "../utils/services/pembimbing/realisasi";
@@ -541,7 +541,7 @@ export default function EditRealisasi() {
 
   return (
     <Add
-      title="Edit Bukti Realisasi Kegiatan"
+      title="Ubah Bukti Realisasi Kegiatan"
       fields={fields}
       submitText={loading ? "Menyimpan..." : "Simpan"}
       cancelText="Batal"

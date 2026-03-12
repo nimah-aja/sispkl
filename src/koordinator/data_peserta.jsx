@@ -16,8 +16,7 @@ import SaveConfirmationModal from "./components/Save";
 import DeleteConfirmation from "./components/Delete";
 
 // utils API
-import { getApprovedPKL } from "../utils/services/koordinator/pengajuan"; // Ganti import
-import { getPembimbingList } from "../utils/services/kapro/pembimbing";
+import { getApprovedPKL } from "../utils/services/koordinator/pengajuan";
 
 // assets
 import addImg from "../assets/addSidebar.svg";
@@ -33,6 +32,7 @@ export default function DataPeserta() {
   const [kelas, setKelas] = useState("");
   const [industri, setIndustri] = useState("");
   const [status, setStatus] = useState("");
+  const [jurusanFilter, setJurusanFilter] = useState("");
 
   const [peserta, setPeserta] = useState([]);
 
@@ -60,18 +60,7 @@ export default function DataPeserta() {
   useEffect(() => {
     const fetchPeserta = async () => {
       try {
-        const [appRes, pembimbingList] = await Promise.all([
-          getApprovedPKL(), // Ganti dengan getApprovedPKL
-          getPembimbingList(),
-        ]);
-
-        // =============================
-        // MAP PEMBIMBING ID -> NAMA
-        // =============================
-        const pembimbingMap = {};
-        pembimbingList.forEach((g) => {
-          pembimbingMap[g.id] = g.nama;
-        });
+        const appRes = await getApprovedPKL();
 
         // =============================
         // AMBIL ARRAY DATA
@@ -93,12 +82,45 @@ export default function DataPeserta() {
             nama: item.siswa_username || "-",
             industri: item.industri_nama || "-",
             kelas: item.kelas_nama || "-",
-            jurusan: item.jurusan_nama || "-", // Ganti guru dengan jurusan
+            jurusan: item.jurusan_nama || "-", // Ini akan berisi "Rekayasa Perangkat Lunak", "Teknik Komputer dan Jaringan", dll
             status: item.status || "Menunggu",
           });
         });
 
-        setPeserta(Array.from(pesertaMap.values()));
+        // Ambil array dari Map
+        let pesertaArray = Array.from(pesertaMap.values());
+        
+        // =============================
+        // URUTKAN BERDASARKAN JURUSAN (NAMA LENGKAP)
+        // =============================
+        // Urutan prioritas jurusan berdasarkan nama lengkap
+        const jurusanOrder = {
+          "Rekayasa Perangkat Lunak": 1,
+          "Teknik Komputer dan Jaringan": 2,
+          "Desain Komunikasi Visual": 3,
+          "Akuntansi dan Keuangan Lembaga": 4,
+          "Otomatisasi dan Tata Kelola Perkantoran": 5,
+          "Bisnis Daring dan Pemasaran": 6,
+          "Usaha Perjalanan Wisata": 7,
+          "Perhotelan": 8,
+          "Tata Boga": 9,
+          // Tambahkan jurusan lain sesuai kebutuhan
+        };
+
+        // Urutkan berdasarkan jurusan (prioritas) lalu berdasarkan nama
+        pesertaArray.sort((a, b) => {
+          const orderA = jurusanOrder[a.jurusan] || 999; // Jurusan yang tidak dikenal diurutkan di akhir
+          const orderB = jurusanOrder[b.jurusan] || 999;
+          
+          if (orderA !== orderB) {
+            return orderA - orderB; // Urut berdasarkan prioritas jurusan
+          }
+          
+          // Jika jurusan sama, urut berdasarkan nama
+          return a.nama.localeCompare(b.nama);
+        });
+
+        setPeserta(pesertaArray);
       } catch (err) {
         console.error("Gagal load peserta PKL:", err);
       }
@@ -107,15 +129,12 @@ export default function DataPeserta() {
     fetchPeserta();
   }, []);
 
-  const statusLabelMap = {
-    Approved: "Disetujui",
-    Rejected: "Ditolak",
-    Pending: "Menunggu",
-  };
-
   // ===============================
   // FILTER OPTIONS (DINAMIS)
   // ===============================
+  // Ambil daftar jurusan unik untuk filter (dalam bentuk nama lengkap)
+  const uniqueJurusan = [...new Set(peserta.map((p) => p.jurusan))].sort();
+
   const filters = [
     {
       label: "Kelas",
@@ -124,32 +143,42 @@ export default function DataPeserta() {
       onChange: setKelas,
     },
     {
+      label: "Konsentrasi Keahlian",
+      value: jurusanFilter,
+      options: uniqueJurusan,
+      onChange: setJurusanFilter,
+    },
+    {
       label: "Industri",
       value: industri,
       options: [...new Set(peserta.map((p) => p.industri))],
       onChange: setIndustri,
     },
-    // {
-    //   label: "Status",
-    //   value: status,
-    //   options: [...new Set(peserta.map((p) => p.status))],
-    //   onChange: setStatus,
-    // },
   ];
 
   // ===============================
   // FILTER DATA
   // ===============================
   const filteredPeserta = peserta.filter((item) => {
-    return (
-      item.nama.toLowerCase().includes(query.toLowerCase()) &&
-      (kelas ? item.kelas === kelas : true) &&
-      (industri ? item.industri === industri : true) &&
-      (status ? item.status === status : true)
-    );
+    // Filter berdasarkan query (nama)
+    const matchesQuery = item.nama.toLowerCase().includes(query.toLowerCase());
+    
+    // Filter berdasarkan kelas
+    const matchesKelas = kelas ? item.kelas === kelas : true;
+    
+    // Filter berdasarkan jurusan (nama lengkap)
+    const matchesJurusan = jurusanFilter ? item.jurusan === jurusanFilter : true;
+    
+    // Filter berdasarkan industri
+    const matchesIndustri = industri ? item.industri === industri : true;
+    
+    // Filter berdasarkan status
+    const matchesStatus = status ? item.status === status : true;
+    
+    return matchesQuery && matchesKelas && matchesJurusan && matchesIndustri && matchesStatus;
   });
 
-  useEffect(() => setCurrentPage(1), [query, kelas, industri, status]);
+  useEffect(() => setCurrentPage(1), [query, kelas, jurusanFilter, industri, status]);
 
   const totalPages = Math.ceil(filteredPeserta.length / itemsPerPage);
   const paginatedData = filteredPeserta.slice(
@@ -161,12 +190,12 @@ export default function DataPeserta() {
   // TABLE COLUMNS
   // ===============================
   const columns = [
+    { label: "No", key: "no" },
     { label: "NISN", key: "nisn" },
     { label: "Nama", key: "nama" },
-    { label: "Industri", key: "industri" },
+    { label: "Konsentrasi Keahlian", key: "jurusan" }, // Nama lengkap kompetensi keahlian
     { label: "Kelas", key: "kelas" },
-    { label: "Konsentrasi Keahlian", key: "jurusan" }, // Ganti Guru dengan Jurusan
-    // { label: "Status", key: "status" },
+    { label: "Industri", key: "industri" },
   ];
 
   // ===============================
@@ -176,9 +205,9 @@ export default function DataPeserta() {
     No: i + 1,
     NISN: item.nisn,
     Nama: item.nama,
-    Industri: item.industri,
+    "Kompetensi Keahlian": item.jurusan,
     Kelas: item.kelas,
-    Jurusan: item.jurusan, // Ganti Guru dengan Jurusan
+    Industri: item.industri,
     Status: item.status,
   }));
 
@@ -265,17 +294,10 @@ export default function DataPeserta() {
 
           <Table
             columns={columns}
-            data={paginatedData}
-            // showEdit
-            // showDelete
-            // onEdit={(row) => {
-            //   setEditData(row);
-            //   setMode("edit");
-            // }}
-            // onDelete={(row) => {
-            //   setSelectedRow(row);
-            //   setIsDeleteOpen(true);
-            // }}
+            data={paginatedData.map((item, index) => ({
+              ...item,
+              no: (currentPage - 1) * itemsPerPage + index + 1
+            }))}
           />
 
           {totalPages > 1 && (

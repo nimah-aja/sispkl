@@ -454,7 +454,7 @@ export default function SuratPengantaranPage() {
               </div>
 
               {/* PREVIEW SURAT DENGAN PEMBUKA DINAMIS */}
-              <div className="border border-gray-300 rounded-lg p-6 bg-gray-50" style={{ fontFamily: "Arial, sans-serif" }}>
+              <div className="border border-gray-300 rounded-lg p-6 bg-gray-5" style={{ fontFamily: "Arial, sans-serif" }}>
                 {/* KOP SURAT DENGAN LOGO DARI URL */}
                 <div className="flex items-center justify-center relative pb-1 min-h-[100px]">
                   <img
@@ -534,11 +534,11 @@ export default function SuratPengantaranPage() {
 
                 {/* TANDA TANGAN - Menggunakan tempatSurat dari state */}
                 <div className="text-right text-sm">
-                  <p className="mb-2">{dataSuratTugas.tempatSurat}, {dataSuratTugas.tanggalDibuat}</p>
+                  <p className="mb-2 mr-6">{dataSuratTugas.tempatSurat}, {dataSuratTugas.tanggalDibuat}</p>
                   <p className="font-bold mb-20">Kepala {formData.guru1?.dinas || "SMK Negeri 2 Singosari"}</p>
-                  <p className="font-bold text-base mb-1 underline">{dataSuratTugas.namaKepsek}</p>
-                  <p className="text-xs mb-1">{dataSuratTugas.pangkatGolongan}</p>
-                  <p className="text-xs">NIP. {dataSuratTugas.nipKepsek}</p>
+                  <p className="font-bold text-base mb-1 underline mr-10">{dataSuratTugas.namaKepsek}</p>
+                  <p className="text-xs mb-1 mr-14">{dataSuratTugas.pangkatGolongan}</p>
+                  <p className="text-xs mr-14">NIP. {dataSuratTugas.nipKepsek}</p>
                 </div>
               </div>
             </div>

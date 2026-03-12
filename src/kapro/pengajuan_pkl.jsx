@@ -29,12 +29,19 @@ const DataPengajuanPKL = () => {
   const [openExport, setOpenExport] = useState(false);
   const [submissions, setSubmissions] = useState([]);
   const [groupSubmissions, setGroupSubmissions] = useState([]);
-  const [siswaDalamKelompok, setSiswaDalamKelompok] = useState(new Set());
+  
+  // SET untuk menyimpan siswa_id yang ada di kelompok dengan status SUBMITTED/PENDING (yang HARUS disembunyikan)
+  const [siswaDalamKelompokPending, setSiswaDalamKelompokPending] = useState(new Set());
+  
+  // FLAG untuk menandai apakah data kelompok sudah selesai di-fetch
+  const [isGroupDataLoaded, setIsGroupDataLoaded] = useState(false);
+  
   const exportRef = useRef(null);
   const [guruOptions, setGuruOptions] = useState([]);
   const [pembimbingOptions, setPembimbingOptions] = useState([]);
   const [activeTab, setActiveTab] = useState("individu");
-   const [jurusanList, setJurusanList] = useState([]);
+  const [jurusanList, setJurusanList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -51,49 +58,52 @@ const DataPengajuanPKL = () => {
     fetchJurusan();
   }, []);
 
-
   // Ambil jurusan pertama dari jurusanList untuk role
   const userJurusan = jurusanList.length > 0 ? jurusanList[0].nama : "";
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
-    role: jurusanList.length > 0 ? `KAKONLI ${jurusanList[0].kode}` : "KAKONLI",
+    role: jurusanList.length > 0 ? `KA KONLI ${jurusanList[0].kode}` : "KA KONLI",
   }; 
 
-  // Fetch group submissions dan kumpulkan siswa_id yang sudah dalam kelompok
+  // Fetch group submissions dan kumpulkan siswa_id
   const fetchGroupSubmissions = async () => {
     try {
       console.log("Starting to fetch group submissions...");
       const res = await getGroupReview();
-      console.log("Group review data (array):", res);
+      console.log("Group review data:", res);
       
-      if (!Array.isArray(res)) {
-        console.error("Response is not an array:", res);
-        toast.error("Format response tidak sesuai");
+      // Jika response null atau undefined, set array kosong
+      if (!res) {
+        console.log("Group submissions response is null/undefined");
         setGroupSubmissions([]);
+        setSiswaDalamKelompokPending(new Set());
+        setIsGroupDataLoaded(true);
         return;
       }
       
-      if (res.length === 0) {
-        console.log("Tidak ada data kelompok");
-        setGroupSubmissions([]);
-        setSiswaDalamKelompok(new Set());
-        return;
-      }
+      // Pastikan res adalah array
+      const groupData = Array.isArray(res) ? res : [];
+      console.log("Group data (array):", groupData);
       
-      // Kumpulkan semua siswa_id yang ada di kelompok
-      const siswaIds = new Set();
-      res.forEach(group => {
-        group.members?.forEach(member => {
-          if (member.siswa?.id) {
-            siswaIds.add(member.siswa.id);
-          }
-        });
+      // PERBAIKAN: Hanya kumpulkan siswa_id yang ada di kelompok dengan status SUBMITTED/PENDING
+      const siswaPendingIds = new Set();
+      
+      groupData.forEach(group => {
+        // Hanya proses kelompok dengan status submitted atau pending
+        if (group.status === "submitted" || group.status === "pending") {
+          group.members?.forEach(member => {
+            if (member.siswa?.id) {
+              siswaPendingIds.add(member.siswa.id);
+            }
+          });
+        }
       });
       
-      console.log("Siswa dalam kelompok:", Array.from(siswaIds));
-      setSiswaDalamKelompok(siswaIds);
+      console.log("Siswa dalam kelompok PENDING:", Array.from(siswaPendingIds));
       
-      const mapped = res.map((item) => {
+      setSiswaDalamKelompokPending(siswaPendingIds);
+      
+      const mapped = groupData.map((item) => {
         let type = "submit";
         if (item.status === "approved") type = "approved";
         else if (item.status === "rejected") type = "rejected";
@@ -116,48 +126,67 @@ const DataPengajuanPKL = () => {
         };
       });
 
-      console.log("Mapped submissions:", mapped);
+      console.log("Mapped group submissions:", mapped);
       setGroupSubmissions(mapped);
+      
+      // Tandai bahwa data kelompok sudah selesai di-fetch
+      setIsGroupDataLoaded(true);
       
     } catch (err) {
       console.error("Gagal ambil data group review", err);
       toast.error("Gagal memuat data kelompok PKL");
       setGroupSubmissions([]);
-      setSiswaDalamKelompok(new Set());
+      setSiswaDalamKelompokPending(new Set());
+      setIsGroupDataLoaded(true);
     }
   };
 
-  // Fetch individu submissions dan filter yang sudah ada di kelompok
+  // Fetch individu submissions - HANYA dipanggil setelah group data selesai
   const fetchSubmissions = async () => {
+    // Pastikan group data sudah loaded sebelum fetch individu
+    if (!isGroupDataLoaded) {
+      console.log("Menunggu group data selesai sebelum fetch individu...");
+      return;
+    }
+    
     try {
+      setIsLoading(true);
       const res = await getPKLApplications();
       console.log("Individual submissions response:", res);
       
-      // Res memiliki struktur { data: [...], total: ... }
+      // Response: { data: [...], total: ... }
       const applicationsData = res.data || [];
+      console.log("Applications data array:", applicationsData);
       
-      // Filter out siswa yang sudah ada dalam kelompok
+      // PERBAIKAN: Hanya filter siswa yang ada di kelompok PENDING/SUBMITTED
+      // Siswa dengan kelompok APPROVED/REJECTED tetap ditampilkan
       const filteredData = applicationsData.filter(item => {
         const siswaId = item.application?.siswa_id;
-        const isInGroup = siswaDalamKelompok.has(siswaId);
-        if (isInGroup) {
-          console.log(`Siswa ID ${siswaId} (${item.siswa_username}) sudah dalam kelompok, tidak ditampilkan di individu`);
+        const isInPendingGroup = siswaDalamKelompokPending.has(siswaId);
+        
+        if (isInPendingGroup) {
+          console.log(`Siswa ID ${siswaId} (${item.siswa_username}) ada di kelompok PENDING, tidak ditampilkan di individu`);
         }
-        return !isInGroup;
+        
+        return !isInPendingGroup; // Hanya filter yang pending
       });
       
-      console.log(`Total individu: ${applicationsData.length}, Setelah filter: ${filteredData.length}`);
+      console.log(`Total individu: ${applicationsData.length}, Setelah filter pending: ${filteredData.length}`);
       
       const mapped = filteredData.map((item) => {
+        const status = item.application?.status || "";
         let type = "submit";
-        if (item.application.status === "Approved") type = "approved";
-        else if (item.application.status === "Rejected") type = "rejected";
+        
+        // Pastikan case-insensitive
+        if (status.toLowerCase() === "approved") type = "approved";
+        else if (status.toLowerCase() === "rejected") type = "rejected";
+        else type = "submit";
 
         return {
-          id: item.application.id,
-          name: item.siswa_username,
-          description: `${type === "submit" ? "Mengajukan PKL" : type === "approved" ? "Disetujui PKL" : "Ditolak PKL"} di ${item.industri_nama}`,
-          time: item.application.tanggal_permohonan,
+          id: item.application?.id || item.id,
+          name: item.siswa_username || "Unknown",
+          description: `${type === "submit" ? "Mengajukan PKL" : type === "approved" ? "Disetujui PKL" : "Ditolak PKL"} di ${item.industri_nama || "Unknown"}`,
+          time: item.application?.tanggal_permohonan || item.created_at || new Date().toISOString(),
           type,
           hasActions: type === "submit",
           raw: item,
@@ -169,25 +198,64 @@ const DataPengajuanPKL = () => {
     } catch (err) {
       console.error("Gagal ambil data pengajuan PKL", err);
       toast.error("Gagal memuat data pengajuan PKL");
+      setSubmissions([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Effect untuk fetch data kelompok dulu, baru individu
+  // Effect utama untuk fetch data secara berurutan
   useEffect(() => {
     const fetchAllData = async () => {
+      setIsLoading(true);
+      
+      // Step 1: Reset states
+      setSiswaDalamKelompokPending(new Set());
+      setIsGroupDataLoaded(false);
+      setGroupSubmissions([]);
+      setSubmissions([]);
+      
+      // Step 2: Fetch group submissions dulu
       await fetchGroupSubmissions();
-      // Setelah group submissions di-fetch, baru fetch individu
+      
+      // Step 3: Setelah group data selesai, fetch individu akan dipanggil oleh effect terpisah
     };
     
     fetchAllData();
   }, []);
 
-  // Effect untuk fetch individu setelah group submissions berubah
+  // Effect untuk fetch individu ketika group data sudah loaded
   useEffect(() => {
-    if (groupSubmissions.length > 0 || siswaDalamKelompok.size > 0) {
+    if (isGroupDataLoaded) {
+      console.log("Group data loaded, now fetching individual submissions...");
       fetchSubmissions();
     }
-  }, [groupSubmissions, siswaDalamKelompok]);
+  }, [isGroupDataLoaded]);
+
+  // Effect untuk refetch ketika groupSubmissions berubah (misal setelah approve/reject)
+  useEffect(() => {
+    if (groupSubmissions.length >= 0 && isGroupDataLoaded) {
+      // Rebuild siswaDalamKelompokPending dari groupSubmissions terbaru
+      const siswaPendingIds = new Set();
+      
+      groupSubmissions.forEach(group => {
+        // Hanya proses kelompok dengan status submitted/pending
+        if (group.status === "submitted" || group.status === "pending") {
+          group.members?.forEach(member => {
+            if (member.siswa?.id) {
+              siswaPendingIds.add(member.siswa.id);
+            }
+          });
+        }
+      });
+      
+      console.log("Updated siswa dalam kelompok PENDING:", Array.from(siswaPendingIds));
+      setSiswaDalamKelompokPending(siswaPendingIds);
+      
+      // Refetch individu dengan data kelompok terbaru
+      fetchSubmissions();
+    }
+  }, [groupSubmissions]);
 
   const handleOpenDetail = (item) => {
     console.log("Opening detail for item:", item);
@@ -293,14 +361,23 @@ const DataPengajuanPKL = () => {
   }));
 
   const handleExportExcel = () => {
+    if (exportData.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "PengajuanPKL");
     XLSX.writeFile(workbook, "DataPengajuanPKL.xlsx");
     setOpenExport(false);
+    toast.success("Data berhasil diekspor ke Excel");
   };
 
   const handleExportPDF = () => {
+    if (exportData.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
     const doc = new jsPDF();
     doc.text("Data Pengajuan PKL", 14, 15);
     autoTable(doc, {
@@ -312,6 +389,7 @@ const DataPengajuanPKL = () => {
     });
     doc.save("DataPengajuanPKL.pdf");
     setOpenExport(false);
+    toast.success("Data berhasil diekspor ke PDF");
   };
 
   const handleSubmitDetail = async (mode, payload) => {
@@ -340,8 +418,8 @@ const DataPengajuanPKL = () => {
         }
 
         // Refresh data setelah submit
+        setIsGroupDataLoaded(false);
         await fetchGroupSubmissions();
-        // fetchSubmissions akan otomatis terpanggil via useEffect
       } else {
         // Untuk kelompok
         const reviewId = detailData?.id;
@@ -358,6 +436,7 @@ const DataPengajuanPKL = () => {
         }
 
         // Refresh data kelompok
+        setIsGroupDataLoaded(false);
         await fetchGroupSubmissions();
       }
 
@@ -401,7 +480,7 @@ const DataPengajuanPKL = () => {
       <div className="mb-8">
         <div className="mb-3">
           <h3 className="text-white font-bold text-lg border-b border-white/20 pb-2">
-            {title}
+            {title} ({submissions.length})
           </h3>
         </div>
         
@@ -530,7 +609,7 @@ const DataPengajuanPKL = () => {
       <div className="mb-8">
         <div className="mb-3">
           <h3 className="text-white font-bold text-lg border-b border-white/20 pb-2">
-            {title}
+            {title} ({submissions.length})
           </h3>
         </div>
         
@@ -725,7 +804,7 @@ const DataPengajuanPKL = () => {
       
       const currentStatus = detailData?.application?.status;
       
-      if (currentStatus === "Pending") {
+      if (currentStatus === "Pending" || currentStatus === "pending") {
         return [
           ...baseViewFields,
           { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
@@ -736,7 +815,8 @@ const DataPengajuanPKL = () => {
           { name: "tanggal_permohonan", label: "Tanggal Permohonan" },
           { name: "namaPembimbing", label: "Nama Pembimbing" },
           { name: "kaprog", label: "Diproses Oleh" },
-          { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL" },
+          { name: "catatan", label: "Catatan", type: "textarea" },
+          { name: "dokumen_urls", label: "Bukti Dokumen Diterima PKL", type: "images" },
         ];
       }
     } else {
@@ -780,7 +860,7 @@ const DataPengajuanPKL = () => {
           { name: "submitted_at", label: "Tanggal Pengajuan" },
           { name: "pembimbing_nama", label: "Nama Pembimbing" },
           { name: "approved_at", label: "Tanggal Diproses" },
-          { name: "catatan", label: "Catatan" },
+          { name: "catatan", label: "Catatan", type: "textarea" },
           ...memberFields
         ];
       }
@@ -795,7 +875,7 @@ const DataPengajuanPKL = () => {
         nisn: detailData?.siswa_nisn || "",
         kelas: detailData?.kelas_nama || "",
         jurusan: detailData?.jurusan_nama || "",
-        status: StatusPKL[detailData?.application?.status || ""],
+        status: StatusPKL[detailData?.application?.status || ""] || detailData?.application?.status || "-",
         tanggal_permohonan: detailData?.application?.tanggal_permohonan 
           ? dayjs(detailData.application.tanggal_permohonan).format("DD MMM YYYY HH:mm") 
           : "-",
@@ -821,7 +901,7 @@ const DataPengajuanPKL = () => {
         leader_nisn: detailData?.leader?.nisn || "",
         leader_kelas: detailData?.leader?.kelas || "",
         member_count: detailData?.member_count || 0,
-        status: StatusPKL[detailData?.status || ""],
+        status: StatusPKL[detailData?.status || ""] || detailData?.status || "-",
         tanggal_mulai: detailData?.tanggal_mulai ? dayjs(detailData.tanggal_mulai).format("DD MMM YYYY") : "-",
         tanggal_selesai: detailData?.tanggal_selesai ? dayjs(detailData.tanggal_selesai).format("DD MMM YYYY") : "-",
         created_at: detailData?.created_at ? dayjs(detailData.created_at).format("DD MMM YYYY HH:mm") : "-",
@@ -909,6 +989,15 @@ const DataPengajuanPKL = () => {
             </button>
           </div>
 
+          {/* Info Banner untuk Individu */}
+          {activeTab === "individu" && siswaDalamKelompokPending.size > 0 && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <span className="font-bold">ℹ️ Info:</span> {siswaDalamKelompokPending.size} siswa memiliki pengajuan kelompok yang sedang diproses dan tidak ditampilkan di tab Individu. Silakan cek di tab Kelompok.
+              </p>
+            </div>
+          )}
+
           <SearchBar
             query={query}
             setQuery={setQuery}
@@ -922,20 +1011,45 @@ const DataPengajuanPKL = () => {
           />
 
           <div className="mt-6 space-y-3">
-            {renderSubmissionGroup('Menunggu Persetujuan', 'submit', true)}
-            {renderCombinedGroup('Pengajuan Terima & Tolak', ['approved', 'rejected'])}
-
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-4 text-white">
-                <p className="text-sm sm:text-base">
-                  Halaman {currentPage} dari {totalPages} halaman
-                </p>
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
+            {isLoading ? (
+              <div className="text-center py-10">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
+                <p className="text-white mt-2">Memuat data...</p>
               </div>
+            ) : (
+              <>
+                {renderSubmissionGroup('Menunggu Persetujuan', 'submit', true)}
+                {renderCombinedGroup('Pengajuan Terima & Tolak', ['approved', 'rejected'])}
+
+                {filteredSubmissions.length === 0 && activeTab === "individu" && (
+                  <div className="bg-white rounded-lg p-8 text-center">
+                    <p className="text-gray-500">
+                      {siswaDalamKelompokPending.size > 0 
+                        ? "Semua pengajuan individu yang pending sudah masuk dalam kelompok."
+                        : "Tidak ada data pengajuan PKL individu"}
+                    </p>
+                  </div>
+                )}
+
+                {filteredGroupSubmissions.length === 0 && activeTab === "kelompok" && (
+                  <div className="bg-white rounded-lg p-8 text-center">
+                    <p className="text-gray-500">Tidak ada data pengajuan PKL kelompok</p>
+                  </div>
+                )}
+
+                {totalPages > 1 && (
+                  <div className="flex justify-between items-center mt-4 text-white">
+                    <p className="text-sm sm:text-base">
+                      Halaman {currentPage} dari {totalPages} halaman
+                    </p>
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
 

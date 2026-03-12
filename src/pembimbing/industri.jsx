@@ -159,8 +159,8 @@ export default function GuruPage() {
     { label: "Alamat", key: "alamat" },
     { label: "No. Telepon", key: "no_telp" },
     { label: "Email", key: "email" },
-    { label: "PIC", key: "pic" },
-    { label: "No. PIC", key: "pic_telp" },
+    { label: "Pembimbing Industri", key: "pic" },
+    { label: "No. Pembimbing Industri", key: "pic_telp" },
     { label: "Jumlah Siswa", key: "jumlah_siswa", sortable: false },
   ];
 

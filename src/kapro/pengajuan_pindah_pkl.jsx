@@ -54,7 +54,7 @@ const KaproPindahPKL = () => {
     const user = React.useMemo(() => ({
       name: localStorage.getItem("nama_guru") || "Guru SMK",
       role: jurusanList.length > 0 
-        ? `KAKONLI ${jurusanList[0].kode}` 
+        ? `KA KONLI ${jurusanList[0].kode}` 
         : "Memuat jurusan...",
     }), [jurusanList]);
 

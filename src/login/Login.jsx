@@ -38,7 +38,7 @@ export default function PKLManagementSystem() {
   const isSiswa = activeRole === "Siswa";
   const [sekolah, setSekolah] = useState(null);
   const [loadingSekolah, setLoadingSekolah] = useState(true);
-  const [maskot, setMaskot] = useState(null); // State untuk maskot
+  const [maskot, setMaskot] = useState(inorasiellipse9); // State untuk maskot dengan default inorasi
 
   // Auto cek access token / refresh
   useEffect(() => {
@@ -69,29 +69,38 @@ export default function PKLManagementSystem() {
     checkToken();
   }, []);
 
-  // Ambil data sekolah dan maskot dari localStorage
+  // Ambil data sekolah dan maskot dari API (TIDAK PAKAI LOCALSTORAGE)
   useEffect(() => {
     const fetchSekolah = async () => {
       try {
+        setLoadingSekolah(true);
         const res = await getSekolah();
-        // asumsi API kamu return { success, data }
-        setSekolah(res.data);
+        console.log("Response getSekolah di login:", res);
+        
+        if (res.success && res.data) {
+          // Set data sekolah
+          setSekolah(res.data);
+          
+          // Set maskot dari API menggunakan url_logo_maskot
+          if (res.data.url_logo_maskot && res.data.url_logo_maskot !== "") {
+            console.log("Maskot dari API:", res.data.url_logo_maskot.substring(0, 50) + "...");
+            setMaskot(res.data.url_logo_maskot);
+          } else {
+            console.log("Tidak ada maskot dari API, menggunakan default");
+            setMaskot(inorasiellipse9);
+          }
+        }
       } catch (err) {
         console.error("Gagal ambil data sekolah", err);
+        // Tetap gunakan default jika gagal fetch
+        setMaskot(inorasiellipse9);
       } finally {
         setLoadingSekolah(false);
       }
     };
 
     fetchSekolah();
-    
-    // Ambil maskot dari localStorage
-    const savedMaskot = localStorage.getItem('schoolMaskot');
-    if (savedMaskot) {
-      setMaskot(savedMaskot);
-      console.log("Maskot dimuat dari localStorage:", savedMaskot.substring(0, 50) + "...");
-    }
-  }, []);
+  }, []); // Hanya dijalankan sekali saat komponen mount
 
   // notifikasi toast saat timeout
   const showToast = (msg, type = "success", dur = 4000) => {
@@ -262,8 +271,12 @@ useEffect(() => {
             style={{ backgroundColor: "#CBC1AF" }}
           />
 
-          {/* Tampilkan Maskot jika ada, jika tidak tampilkan Inorasi */}
-          {maskot ? (
+          {/* Tampilkan loading atau maskot */}
+          {loadingSekolah ? (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+            </div>
+          ) : (
             <img
               src={maskot}
               alt="Maskot Sekolah"
@@ -271,15 +284,11 @@ useEffect(() => {
                         top-1/2 left-1/2 
                         -translate-x-1/2 -translate-y-1/2 
                         z-20"
-            />
-          ) : (
-            <img
-              src={inorasiellipse9}
-              alt="Inorasi"
-              className="absolute w-[420px] 
-                        top-1/2 left-1/2 
-                        -translate-x-1/2 -translate-y-1/2 
-                        z-20"
+              onError={(e) => {
+                // Jika gambar gagal dimuat, gunakan default
+                console.error("Gagal memuat maskot:", maskot);
+                e.target.src = inorasiellipse9;
+              }}
             />
           )}
 
@@ -341,15 +350,22 @@ useEffect(() => {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center mb-4">
-              <img
-                src={sekolah?.logo_url || norr}
-                alt="Logo Sekolah"
-                className="w-17 h-17 object-contain"
-              />
+              {loadingSekolah ? (
+                <div className="w-17 h-17 bg-gray-300 animate-pulse rounded"></div>
+              ) : (
+                <img
+                  src={sekolah?.logo_url || norr}
+                  alt="Logo Sekolah"
+                  className="w-17 h-17 object-contain"
+                  onError={(e) => {
+                    e.target.src = norr;
+                  }}
+                />
+              )}
             </div>
             <h4 className="text-white text-3xl font-bold mb-2 text-left">Sistem Pengelolaan PKL</h4>
             <p className="text-red-200 text-left">
-              {sekolah?.nama_sekolah || "Nama Sekolah"}
+              {loadingSekolah ? "Memuat..." : (sekolah?.nama_sekolah || "Nama Sekolah")}
             </p>
           </div>
 

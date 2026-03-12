@@ -23,7 +23,7 @@ import Add from "./components/Add";
 import DeleteConfirmationModal from "./components/Delete";
 import SaveConfirmationModal from "./components/Save";
 import Pagination from "./components/Pagination"; 
-import Detail from "../pembimbing/components/Detail";
+import Detail from "./components/Detail"; // Komponen Detail yang sudah dimodifikasi
 
 // import request
 import { getIndustri } from "../utils/services/admin/get_industri";
@@ -143,7 +143,7 @@ export default function IndustriPage() {
       // Data lengkap untuk detail
       created_at: item.created_at || new Date().toISOString(),
       updated_at: item.updated_at || new Date().toISOString(),
-      // Link maps untuk detail (contoh, bisa disesuaikan dengan data yang ada)
+      // Link maps untuk detail - menggunakan type TEXTAREA di detailFields
       maps_link: `https://www.google.com/maps/search/${encodeURIComponent(item.alamat || '')}`,
     };
   });
@@ -229,7 +229,7 @@ export default function IndustriPage() {
     currentPage * itemsPerPage
   );
 
-  // DETAIL FIELDS - MENAMBAHKAN FIELD LINK MAPS (HANYA DI DETAIL)
+  // DETAIL FIELDS - MENGGUNAKAN TYPE TEXTAREA UNTUK LINK MAPS
   const detailFields = [
     { name: "nama", label: "Nama Industri", type: "text" },
     { name: "alamat", label: "Alamat", type: "text" },
@@ -237,19 +237,9 @@ export default function IndustriPage() {
       name: "maps_link", 
       label: "Lokasi Maps", 
       type: "textarea",
-      render: (value) => (
-        <div className="flex items-center gap-2">
-          <MapPin size={16} className="text-red-500" />
-          <a 
-            href={value} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
-          >
-            {value || "Lihat di Google Maps"}
-          </a>
-        </div>
-      )
+      size: "full" // MENGGUNAKAN TEXTAREA AGAR TAMPILANNYA BERBEDA
+      // Komponen Detail akan tetap mendeteksi URL meskipun type="textarea"
+      // karena fungsi renderValue() akan memprosesnya
     },
     { name: "bidang", label: "Bidang", type: "text" },
     { name: "email", label: "Email", type: "text" },
@@ -261,17 +251,14 @@ export default function IndustriPage() {
     { name: "active_students", label: "Siswa Aktif", type: "text" },
     { name: "pending_applications", label: "Pending", type: "text" },
     { name: "remaining_slots", label: "Sisa Kuota", type: "text" },
-    // { name: "created_at", label: "Dibuat Pada", type: "text" },
-    // { name: "updated_at", label: "Diperbarui Pada", type: "text" },
   ];
 
-  // kolom tabel - MENAMBAHKAN KOLOM AKSI UNTUK DETAIL
+  // kolom tabel - TIDAK ADA TOMBOL MAPS, HANYA IKON DETAIL
   const columns = [
     { label: "Nama Industri", key: "nama" },
-    { label: "Alamat", key: "alamat" },
+    { label: "Alamat", key: "alamat" }, // HANYA TEKS ALAMAT, TANPA IKON
     { label: "Bidang", key: "bidang" },
     { label: "Email", key: "email" },
-    // { label: "No. Telp", key: "no_telp", sortable: false },
     { label: "Pembimbing", key: "pic" },
     { label: "No. Telp Pembimbing", key: "pic_telp", sortable: false },
     {
@@ -284,14 +271,14 @@ export default function IndustriPage() {
       sortable: false,
       render: (_value, row) => (
         <div className="flex gap-2">
-          {/* Tombol Detail - Hanya Icon Mata */}
+          {/* Tombol Detail - SATU-SATUNYA TOMBOL DI TABEL */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               setSelectedDetailData(row);
               setOpenDetail(true);
             }}
-            className=" rounded-md !bg-transparent text-white hover:opacity-90 transition-opacity"
+            className="rounded-md !bg-transparent text-white hover:opacity-90 transition-opacity"
             title="Lihat Detail"
           >
             <FileSearch size={26} className="!text-orange-400" />
@@ -316,7 +303,7 @@ export default function IndustriPage() {
     },
     { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
     {
-      label: "Kompetensi Keahlian", 
+      label: "Konsentrasi Keahlian", 
       name: "jurusan_id", 
       width: "half", 
       type: "select",
@@ -706,7 +693,7 @@ export default function IndustriPage() {
         />
       </div>
 
-      {/* DETAIL MODAL */}
+      {/* DETAIL MODAL - DI SINI LETAK LINK MAPS NYA! */}
       {openDetail && selectedDetailData && (
         <Detail
           title="Detail Industri"
@@ -716,6 +703,8 @@ export default function IndustriPage() {
             ...selectedDetailData,
             created_at: dayjs(selectedDetailData.created_at).format("DD-MM-YYYY HH:mm"),
             updated_at: dayjs(selectedDetailData.updated_at).format("DD-MM-YYYY HH:mm"),
+            // maps_link akan diproses oleh komponen Detail dengan type="textarea"
+            // tapi tetap akan jadi link karena fungsi renderValue() akan mendeteksinya sebagai URL
           }}
           onClose={() => {
             setOpenDetail(false);

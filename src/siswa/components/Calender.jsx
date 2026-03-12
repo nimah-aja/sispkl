@@ -232,18 +232,23 @@ const CalendarPKL = ({ pklData, kegiatan = [] }) => {
             );
 
             const isToday = day.isSame(dayjs(), "day");
+            
+            // CEK APAKAH TANGGAL DARI BULAN YANG BERBEDA
+            const isDiffMonth = !day.isSame(currentMonth, "month");
 
             return (
               <div
                 key={day.format()}
-                className="p-2 border h-24 rounded-xl cursor-pointer hover:bg-purple-50"
+                className={`p-2 border h-24 rounded-xl cursor-pointer hover:bg-purple-50 transition ${
+                  isDiffMonth ? "bg-gray-100 opacity-60" : "bg-white"
+                }`}
                 onClick={() => openEventsModal(day)}
               >
                 <div
                   className={`${
                     isToday
                       ? "font-extrabold text-lg text-purple-700"
-                      : "font-bold"
+                      : `font-bold ${isDiffMonth ? "text-gray-400" : "text-gray-800"}`
                   }`}
                 >
                   {day.date()}
@@ -253,13 +258,13 @@ const CalendarPKL = ({ pklData, kegiatan = [] }) => {
                   <div
                     key={e.id}
                     className="text-xs text-white rounded px-1 truncate mt-1"
-                    style={{ backgroundColor: e.color }}
+                    style={{ backgroundColor: e.color, opacity: isDiffMonth ? 0.6 : 1 }}
                   >
                     {e.title}
                   </div>
                 ))}
                 {dayEvents.length > 2 && (
-                  <div className="text-xs text-purple-700 font-bold">
+                  <div className={`text-xs font-bold ${isDiffMonth ? "text-purple-300" : "text-purple-700"}`}>
                     +{dayEvents.length - 2}
                   </div>
                 )}

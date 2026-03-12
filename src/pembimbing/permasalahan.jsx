@@ -37,6 +37,7 @@ export default function DataPermasalahanSiswa() {
   const [processingId, setProcessingId] = useState(null); // Untuk loading state button
 
   const [siswaOptions, setSiswaOptions] = useState([]);
+  const [siswaAktifOptions, setSiswaAktifOptions] = useState([]); // STATE UNTUK SISWA AKTIF
   // Map berdasarkan siswa_id untuk mendapatkan data industri
   const [siswaMapById, setSiswaMapById] = useState(new Map()); // Untuk mapping siswa_id -> data industri
 
@@ -163,6 +164,120 @@ export default function DataPermasalahanSiswa() {
   };
 
   /* =====================
+     FUNGSI UNTUK CEK APAKAH SISWA AKTIF
+     (tanggal mulai <= hari ini <= tanggal selesai)
+  ===================== */
+  const isSiswaAktif = (tanggalMulai, tanggalSelesai) => {
+    if (!tanggalMulai || !tanggalSelesai) return false;
+    
+    const today = dayjs().startOf('day');
+    const startDate = dayjs(tanggalMulai).startOf('day');
+    const endDate = dayjs(tanggalSelesai).startOf('day');
+    
+    // Aktif jika hari ini >= tanggal mulai DAN hari ini <= tanggal selesai
+    return (today.isAfter(startDate) || today.isSame(startDate)) && 
+           (today.isBefore(endDate) || today.isSame(endDate));
+  };
+
+  /* =====================
+     LOAD SISWA DARI getGuruSiswa
+  ===================== */
+  useEffect(() => {
+    const fetchSiswa = async () => {
+      try {
+        const response = await getGuruSiswa();
+        console.log("Guru Siswa response:", response);
+        
+        // Response memiliki struktur { data: [...], total: number }
+        const siswaData = response.data || [];
+        
+        // Map untuk opsi dropdown (berdasarkan nama)
+        const siswaOptionsTemp = [];
+        // Map berdasarkan ID siswa untuk mendapatkan data industri
+        const siswaMapByIdTemp = new Map();
+        // Array untuk menyimpan siswa aktif
+        const siswaAktifTemp = [];
+        
+        siswaData.forEach(item => {
+          // Simpan mapping berdasarkan siswa_id (untuk mengambil data industri)
+          siswaMapByIdTemp.set(item.siswa_id, {
+            id: item.siswa_id,
+            industri_id: item.industri_id,
+            industri_nama: item.industri_nama,
+            username: item.siswa_username,
+            nama: item.siswa_nama,
+            tanggal_mulai: item.tanggal_mulai,
+            tanggal_selesai: item.tanggal_selesai,
+            status: item.status,
+          });
+          
+          // Cek apakah siswa aktif
+          const aktif = isSiswaAktif(item.tanggal_mulai, item.tanggal_selesai);
+          
+          if (aktif) {
+            // Hanya tambahkan ke dropdown jika siswa aktif
+            // Cegah duplikasi berdasarkan nama
+            if (!siswaOptionsTemp.some(opt => opt.value === item.siswa_nama)) {
+              siswaOptionsTemp.push({
+                label: `${item.siswa_nama} (${item.industri_nama})`,
+                value: item.siswa_nama, // Value berupa NAMA untuk dropdown
+              });
+            }
+            
+            // Tambahkan ke array siswa aktif
+            siswaAktifTemp.push({
+              id: item.siswa_id,
+              nama: item.siswa_nama,
+              industri: item.industri_nama,
+              tanggal_mulai: item.tanggal_mulai,
+              tanggal_selesai: item.tanggal_selesai
+            });
+          } else {
+            console.log(`Siswa ${item.siswa_nama} tidak aktif:`, {
+              tanggal_mulai: item.tanggal_mulai,
+              tanggal_selesai: item.tanggal_selesai,
+              today: dayjs().format('YYYY-MM-DD')
+            });
+          }
+        });
+
+        console.log("Siswa aktif:", siswaAktifTemp);
+        console.log("Siswa options (hanya aktif):", siswaOptionsTemp);
+        
+        setSiswaOptions(siswaOptionsTemp);
+        setSiswaAktifOptions(siswaAktifTemp);
+        setSiswaMapById(siswaMapByIdTemp);
+
+        // Update data permasalahan dengan industri dari mapping berdasarkan siswa_id
+        setDataPermasalahan(prev => {
+          return prev.map(item => {
+            // Cari data siswa berdasarkan siswa_id
+            const siswaData = siswaMapByIdTemp.get(item.siswa_id);
+            
+            return {
+              ...item,
+              industri: siswaData?.industri_nama || "Industri tidak ditemukan"
+            };
+          });
+        });
+
+      } catch (e) {
+        console.error("Gagal fetch guru siswa:", e);
+        toast.error("Gagal memuat data siswa");
+      }
+    };
+
+    fetchSiswa(); // Fetch siswa dari getGuruSiswa
+  }, []);
+
+  // Fetch permasalahan setelah siswaMapById tersedia
+  useEffect(() => {
+    if (siswaMapById.size > 0) {
+      fetchPermasalahan();
+    }
+  }, [siswaMapById]);
+
+  /* =====================
      FETCH DATA PERMASALAHAN DARI API
   ===================== */
   const fetchPermasalahan = async () => {
@@ -214,78 +329,6 @@ export default function DataPermasalahanSiswa() {
       setLoading(false);
     }
   };
-
-  /* =====================
-     LOAD SISWA DARI getGuruSiswa
-  ===================== */
-  useEffect(() => {
-    const fetchSiswa = async () => {
-      try {
-        const response = await getGuruSiswa();
-        console.log("Guru Siswa response:", response);
-        
-        // Response memiliki struktur { data: [...], total: number }
-        const siswaData = response.data || [];
-        
-        // Map untuk opsi dropdown (berdasarkan nama)
-        const siswaOptionsTemp = [];
-        // Map berdasarkan ID siswa untuk mendapatkan data industri
-        const siswaMapByIdTemp = new Map();
-        
-        siswaData.forEach(item => {
-          // Cegah duplikasi berdasarkan nama untuk dropdown
-          if (!siswaMapByIdTemp.has(item.siswa_id)) {
-            siswaOptionsTemp.push({
-              label: `${item.siswa_nama}`,
-              value: item.siswa_nama, // Value berupa NAMA untuk dropdown
-            });
-          }
-          
-          // Simpan mapping berdasarkan siswa_id (untuk mengambil data industri)
-          // Gunakan siswa_id sebagai key
-          siswaMapByIdTemp.set(item.siswa_id, {
-            id: item.siswa_id,
-            industri_id: item.industri_id,
-            industri_nama: item.industri_nama,
-            username: item.siswa_username,
-            nama: item.siswa_nama,
-            tanggal_mulai: item.tanggal_mulai,
-            tanggal_selesai: item.tanggal_selesai,
-            status: item.status,
-          });
-        });
-
-        setSiswaOptions(siswaOptionsTemp);
-        setSiswaMapById(siswaMapByIdTemp);
-
-        // Update data permasalahan dengan industri dari mapping berdasarkan siswa_id
-        setDataPermasalahan(prev => {
-          return prev.map(item => {
-            // Cari data siswa berdasarkan siswa_id
-            const siswaData = siswaMapByIdTemp.get(item.siswa_id);
-            
-            return {
-              ...item,
-              industri: siswaData?.industri_nama || "Industri tidak ditemukan"
-            };
-          });
-        });
-
-      } catch (e) {
-        console.error("Gagal fetch guru siswa:", e);
-        toast.error("Gagal memuat data siswa");
-      }
-    };
-
-    fetchSiswa(); // Fetch siswa dari getGuruSiswa
-  }, []);
-
-  // Fetch permasalahan setelah siswaMapById tersedia
-  useEffect(() => {
-    if (siswaMapById.size > 0) {
-      fetchPermasalahan();
-    }
-  }, [siswaMapById]);
 
   /* =====================
      FILTER & PAGINATION
@@ -485,15 +528,23 @@ export default function DataPermasalahanSiswa() {
       
       // Cari siswa_id berdasarkan nama dari siswaMapById
       let siswaId = null;
+      let siswaData = null;
       for (const [id, data] of siswaMapById.entries()) {
         if (data.nama === raw.nama) {
           siswaId = id;
+          siswaData = data;
           break;
         }
       }
       
       if (!siswaId) {
         toast.error("Data siswa tidak ditemukan");
+        return;
+      }
+      
+      // Validasi tambahan: Pastikan siswa masih aktif
+      if (!isSiswaAktif(siswaData.tanggal_mulai, siswaData.tanggal_selesai)) {
+        toast.error("Siswa tidak dalam masa PKL aktif. Tidak dapat menambah permasalahan.");
         return;
       }
       
@@ -774,6 +825,7 @@ export default function DataPermasalahanSiswa() {
         ]}
         onSubmit={handleAddSubmit}
         onCancel={() => handleModeChange("list")}
+        containerStyle={{ maxHeight: "600px" }}
       />
     );
   }

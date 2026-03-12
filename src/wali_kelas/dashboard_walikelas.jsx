@@ -120,6 +120,11 @@ export default function DashboardWaliKelas() {
         const izinData = izinRes.data || izinRes || [];
         const totalPerizinan = Array.isArray(izinData) ? izinData.length : 0;
 
+        // Hitung jumlah siswa dengan status "Sedang PKL"
+        const jumlahSiswaPKL = res.siswa_list.filter(
+          siswa => siswa.status_pkl === "Sedang PKL"
+        ).length;
+
         // SET DATA DISPLAY
         setDataDisplay([
           {
@@ -127,6 +132,13 @@ export default function DashboardWaliKelas() {
             icon: userIcon,
             value: res.kelas_info?.total_siswa || 0,
           },
+
+          {
+            title: "Jumlah Siswa PKL",
+            icon: userIcon,
+            value: jumlahSiswaPKL, 
+          },
+          
           {
             title: "Perizinan",
             icon: surrelIcon,
@@ -244,7 +256,7 @@ export default function DashboardWaliKelas() {
                     key={idx}
                     item={item}
                     onClick={() => {
-                      if (item.title === "Jumlah Siswa PKL") navigate("/guru/wali_kelas/siswa");
+                      if (item.title === "Jumlah Siswa") navigate("/guru/wali_kelas/siswa");
                       else if (item.title === "Perizinan") navigate("/guru/wali_kelas/dataperizinansiswa");
                     }}
                   />
