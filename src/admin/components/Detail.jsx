@@ -68,7 +68,7 @@ export default function Detail({
 
 
   return (
-    <div className="fixed inset-0  flex items-center justify-end">
+    <div className="fixed inset-0  z-99999 flex items-center justify-end">
       
       {/* BACKDROP / PORTAL */}
       <div

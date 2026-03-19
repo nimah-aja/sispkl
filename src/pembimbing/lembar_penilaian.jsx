@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Download, Upload, X } from 'lucide-react';
+import { Save, Download, Upload, X, Search } from 'lucide-react';
 import toast from "react-hot-toast";
 import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -11,16 +11,47 @@ import Header from "./components/HeaderBiasa";
 
 // Import utils untuk generate PDF
 import { generateAndDownloadFormPenilaian } from "../utils/lettersApi";
+// Import utils untuk get guru
+import { getGuru, fetchGuruById } from "../utils/services/admin/get_guru";
+// Import utils untuk get industri
+import { getIndustri, getIndustriById } from "../utils/services/admin/get_industri";
 
 // Set locale ke Indonesia
 dayjs.locale('id');
 
+// FUNGSI BARU: Untuk mendapatkan jenis nomor dari localStorage berdasarkan industri ID
+const getJenisNomorFromLocal = (industriId, jenis) => {
+  try {
+    if (!industriId) return null;
+    
+    const key = `jenis_nomor_industri_${industriId}`;
+    const existingData = localStorage.getItem(key);
+    if (!existingData) return null;
+    
+    const data = JSON.parse(existingData);
+    return data[jenis] || null;
+  } catch (error) {
+    console.error('Gagal membaca jenis nomor dari localStorage:', error);
+    return null;
+  }
+};
+
 export default function Penilaian() {
   const location = useLocation();
   const [active, setActive] = useState("penilaian");
+  const [guruList, setGuruList] = useState([]);
+  const [industriList, setIndustriList] = useState([]);
+  const [selectedIndustriId, setSelectedIndustriId] = useState(null);
+  const [loadingGuru, setLoadingGuru] = useState(false);
+  const [loadingIndustri, setLoadingIndustri] = useState(false);
+  const [showIndustriSearch, setShowIndustriSearch] = useState(false);
+  const [industriSearchQuery, setIndustriSearchQuery] = useState("");
+  
+  // Ambil data guru dari localStorage
   const user = {
     name: localStorage.getItem("nama_guru") || "Guru SMK",
     role: "Pembimbing",
+    kode_guru: localStorage.getItem("kode_guru") // Ambil kode_guru dari localStorage
   };
 
   const schoolInfo = {
@@ -57,7 +88,12 @@ export default function Penilaian() {
     tanggal_mulai_preview: "",
     tanggal_selesai_preview: "",
     nama_instruktur: "",
-    nama_pembimbing: ""
+    jabatan_instruktur: "",
+    nip_instruktur: "",
+    jenis_nomor_instruktur: "", // TAMBAHKAN
+    nama_pembimbing: "",
+    jabatan_pembimbing: "",
+    nip_pembimbing: ""
   });
 
   // Tujuan pembelajaran default untuk 4 aspek (jika data dari API kurang)
@@ -74,13 +110,13 @@ export default function Penilaian() {
   // State untuk nilai - SKOR dan DESKRIPSI (kosong default)
   const [nilai, setNilai] = useState({
     skor_1: "",
-    desc_1: "",  // Kosong, tidak diisi default
+    desc_1: "",
     skor_2: "",
-    desc_2: "",  // Kosong, tidak diisi default
+    desc_2: "",
     skor_3: "",
-    desc_3: "",  // Kosong, tidak diisi default
+    desc_3: "",
     skor_4: "",
-    desc_4: ""   // Kosong, tidak diisi default
+    desc_4: ""
   });
 
   const [kehadiran, setKehadiran] = useState({
@@ -99,6 +135,152 @@ export default function Penilaian() {
     return dayjs(tanggal).format('DD MMMM YYYY');
   };
 
+  // Fungsi untuk mengambil data guru
+  const fetchGuruData = async () => {
+    setLoadingGuru(true);
+    try {
+      const data = await getGuru();
+      setGuruList(data);
+      console.log("Data guru berhasil dimuat:", data);
+      
+      // Cari guru berdasarkan kode_guru dari localStorage
+      if (user.kode_guru) {
+        const guruDitemukan = data.find(g => g.kode_guru === user.kode_guru);
+        if (guruDitemukan) {
+          console.log("Guru ditemukan berdasarkan kode_guru:", guruDitemukan);
+          // Update data pembimbing dengan NIP yang ditemukan
+          setSiswa(prev => ({
+            ...prev,
+            nama_pembimbing: prev.nama_pembimbing || guruDitemukan.nama || user.name,
+            nip_pembimbing: guruDitemukan.nip || prev.nip_pembimbing || ""
+          }));
+        } else {
+          console.log("Guru dengan kode_guru", user.kode_guru, "tidak ditemukan");
+        }
+      }
+    } catch (error) {
+      console.error("Gagal mengambil data guru:", error);
+    } finally {
+      setLoadingGuru(false);
+    }
+  };
+
+  // FUNGSI BARU: Fetch semua data industri
+  const fetchIndustriData = async () => {
+    setLoadingIndustri(true);
+    try {
+      const data = await getIndustri();
+      setIndustriList(data);
+      console.log("Data industri berhasil dimuat:", data);
+    } catch (error) {
+      console.error("Gagal mengambil data industri:", error);
+      toast.error("Gagal memuat data industri");
+    } finally {
+      setLoadingIndustri(false);
+    }
+  };
+
+  // FUNGSI BARU: Cari industri berdasarkan nama
+  const cariIndustriBerdasarkanNama = (namaIndustri) => {
+    if (!namaIndustri || industriList.length === 0) return null;
+    
+    // Cari industri dengan nama yang match (case insensitive)
+    const industriDitemukan = industriList.find(industri => 
+      industri.nama.toLowerCase() === namaIndustri.toLowerCase()
+    );
+    
+    return industriDitemukan;
+  };
+
+  // FUNGSI BARU: Handle ketika tempat PKL berubah
+  const handleTempatPKLChange = (e) => {
+    const namaIndustri = e.target.value;
+    setSiswa(prev => ({ ...prev, tempat_pkl: namaIndustri }));
+    
+    // Cari data instruktur berdasarkan nama industri
+    if (namaIndustri.trim() !== "") {
+      const industriData = cariIndustriBerdasarkanNama(namaIndustri);
+      
+      if (industriData) {
+        setSelectedIndustriId(industriData.id);
+        
+        // Ambil jenis nomor dari localStorage
+        const jenisNomorInstruktur = getJenisNomorFromLocal(industriData.id, 'jenis_nomor_pembimbing') || "NP";
+        
+        console.log("Data industri ditemukan:", industriData);
+        console.log("Jenis nomor instruktur dari localStorage:", jenisNomorInstruktur);
+        
+        // Update data instruktur dengan data dari industri
+        setSiswa(prev => ({
+          ...prev,
+          nama_instruktur: industriData.pic || prev.nama_instruktur,
+          jabatan_instruktur: industriData.jabatan_pembimbing || "Instruktur Dunia Kerja",
+          nip_instruktur: industriData.nip_pembimbing || prev.nip_instruktur,
+          jenis_nomor_instruktur: jenisNomorInstruktur
+        }));
+        toast.success(`Data instruktur dari ${industriData.nama} berhasil dimuat`);
+      }
+    }
+  };
+
+  // FUNGSI BARU: Pilih industri dari dropdown pencarian
+  const pilihIndustri = (industri) => {
+    setSelectedIndustriId(industri.id);
+    
+    // Ambil jenis nomor dari localStorage
+    const jenisNomorInstruktur = getJenisNomorFromLocal(industri.id, 'jenis_nomor_pembimbing') || "NP";
+    
+    setSiswa(prev => ({
+      ...prev,
+      tempat_pkl: industri.nama,
+      nama_instruktur: industri.pic || prev.nama_instruktur,
+      jabatan_instruktur: industri.jabatan_pembimbing || "Instruktur Dunia Kerja",
+      nip_instruktur: industri.nip_pembimbing || prev.nip_instruktur,
+      jenis_nomor_instruktur: jenisNomorInstruktur
+    }));
+    setShowIndustriSearch(false);
+    setIndustriSearchQuery("");
+    toast.success(`Data instruktur dari ${industri.nama} berhasil dimuat`);
+  };
+
+  // Filter industri berdasarkan query pencarian
+  const filteredIndustri = industriList.filter(industri =>
+    industri.nama.toLowerCase().includes(industriSearchQuery.toLowerCase())
+  );
+
+  // Fungsi untuk mendapatkan data guru berdasarkan kode_guru
+  const getGuruByKode = (kodeGuru) => {
+    if (!kodeGuru || guruList.length === 0) return null;
+    return guruList.find(g => g.kode_guru === kodeGuru);
+  };
+
+  // AMBIL DATA GURU DAN INDUSTRI SAAT KOMPONEN DIMUAT
+  useEffect(() => {
+    fetchGuruData();
+    fetchIndustriData();
+  }, []);
+
+  // Effect untuk mengisi data instruktur otomatis jika tempat_pkl sudah ada
+  useEffect(() => {
+    if (siswa.tempat_pkl && industriList.length > 0) {
+      const industriData = cariIndustriBerdasarkanNama(siswa.tempat_pkl);
+      if (industriData && !siswa.nama_instruktur) {
+        setSelectedIndustriId(industriData.id);
+        
+        // Ambil jenis nomor dari localStorage
+        const jenisNomorInstruktur = getJenisNomorFromLocal(industriData.id, 'jenis_nomor_pembimbing') || "NP";
+        
+        setSiswa(prev => ({
+          ...prev,
+          nama_instruktur: industriData.pic || prev.nama_instruktur,
+          jabatan_instruktur: industriData.jabatan_pembimbing || "Instruktur Dunia Kerja",
+          nip_instruktur: industriData.nip_pembimbing || prev.nip_instruktur,
+          jenis_nomor_instruktur: jenisNomorInstruktur
+        }));
+      }
+    }
+  }, [industriList, siswa.tempat_pkl]);
+
   // Load data dari localStorage saat halaman dimuat
   useEffect(() => {
     const savedData = localStorage.getItem('penilaian_data');
@@ -107,19 +289,28 @@ export default function Penilaian() {
         const parsedData = JSON.parse(savedData);
         console.log("Memuat data dari localStorage:", parsedData);
         
+        // Cari data guru pembimbing berdasarkan kode_guru
+        const guruPembimbing = getGuruByKode(user.kode_guru);
+        
         if (parsedData.siswa) {
           setSiswa({
             nama: parsedData.siswa.nama || "",
             nisn: parsedData.siswa.nisn || "",
             kelas: parsedData.siswa.kelas || "",
             konsentrasi_keahlian: parsedData.siswa.konsentrasi_keahlian || "",
-            tempat_pkl: parsedData.siswa.industri || "",
-            tanggal_mulai: parsedData.siswa.tanggal_mulai_input || "",
-            tanggal_selesai: parsedData.siswa.tanggal_selesai_input || "",
+            tempat_pkl: parsedData.siswa.industri || parsedData.siswa.tempat_pkl || "",
+            tanggal_mulai: parsedData.siswa.tanggal_mulai_input || parsedData.siswa.tanggal_mulai || "",
+            tanggal_selesai: parsedData.siswa.tanggal_selesai_input || parsedData.siswa.tanggal_selesai || "",
             tanggal_mulai_preview: parsedData.siswa.tanggal_mulai_preview || "",
             tanggal_selesai_preview: parsedData.siswa.tanggal_selesai_preview || "",
             nama_instruktur: parsedData.siswa.nama_instruktur || "",
-            nama_pembimbing: parsedData.siswa.nama_pembimbing || ""
+            jabatan_instruktur: parsedData.siswa.jabatan_instruktur || "",
+            nip_instruktur: parsedData.siswa.nip_instruktur || "",
+            jenis_nomor_instruktur: parsedData.siswa.jenis_nomor_instruktur || "NP", // TAMBAHKAN
+            // Prioritaskan data dari guru yang ditemukan berdasarkan kode_guru
+            nama_pembimbing: guruPembimbing?.nama || parsedData.siswa.nama_pembimbing || user.name || "",
+            jabatan_pembimbing: parsedData.siswa.jabatan_pembimbing || "Guru Mapel PKL",
+            nip_pembimbing: guruPembimbing?.nip || parsedData.siswa.nip_pembimbing || ""
           });
         }
         
@@ -152,10 +343,44 @@ export default function Penilaian() {
           });
         }
         
+        // Set kehadiran dari data yang dimuat - PRIORITAS dari parsedData
+        setKehadiran({
+          sakit: parsedData.sakit !== undefined ? parsedData.sakit.toString() : "",
+          izin: parsedData.izin !== undefined ? parsedData.izin.toString() : "",
+          alpa: parsedData.alpa !== undefined ? parsedData.alpa.toString() : ""
+        });
+        
+        // Set tempat dan tanggal dari data yang dimuat
+        if (parsedData.tempat_tanggal) {
+          const parts = parsedData.tempat_tanggal.split(', ');
+          if (parts.length > 0) setTempat(parts[0]);
+        }
+        
         toast.success("Data penilaian berhasil dimuat");
         
       } catch (error) {
         console.error("Gagal parse data dari localStorage:", error);
+      }
+    }
+    
+    // Coba ambil data summary izin dari localStorage berdasarkan application_id
+    const applicationId = new URLSearchParams(location.search).get('application_id');
+    if (applicationId) {
+      const izinSummary = localStorage.getItem(`izin_summary_${applicationId}`);
+      if (izinSummary) {
+        try {
+          const parsedIzin = JSON.parse(izinSummary);
+          console.log("Data summary izin ditemukan:", parsedIzin);
+          setKehadiran(prev => ({
+            ...prev,
+            sakit: parsedIzin.sakit?.toString() || "0",
+            izin: parsedIzin.izin?.toString() || "0",
+            alpa: parsedIzin.alpa?.toString() || "0"
+          }));
+          toast.success("Data kehadiran berhasil dimuat");
+        } catch (error) {
+          console.error("Gagal parse data izin summary:", error);
+        }
       }
     }
   }, [location.search]);
@@ -251,9 +476,27 @@ export default function Penilaian() {
 
     const tempatTanggal = `${tempat}, ${formatTanggalIndonesia(tanggalPenilaian)}`;
 
+    // Cari data guru pembimbing berdasarkan kode_guru
+    const guruPembimbing = getGuruByKode(user.kode_guru);
+
     const payload = {
       school_info: schoolInfo,
-      siswa: siswa,
+      siswa: {
+        nama: siswa.nama,
+        nisn: siswa.nisn || "",
+        kelas: siswa.kelas || "",
+        konsentrasi_keahlian: siswa.konsentrasi_keahlian || "",
+        tempat_pkl: siswa.tempat_pkl || "",
+        tanggal_mulai: siswa.tanggal_mulai_preview || formatTanggalIndonesia(siswa.tanggal_mulai),
+        tanggal_selesai: siswa.tanggal_selesai_preview || formatTanggalIndonesia(siswa.tanggal_selesai),
+        nama_instruktur: siswa.nama_instruktur || "",
+        jabatan_instruktur: siswa.jabatan_instruktur || "",
+        nip_instruktur: siswa.nip_instruktur || "",
+        jenis_nomor_instruktur: siswa.jenis_nomor_instruktur || "NP", // TAMBAHKAN
+        nama_pembimbing: guruPembimbing?.nama || siswa.nama_pembimbing || user.name || "",
+        jabatan_pembimbing: siswa.jabatan_pembimbing || "Guru Mapel PKL",
+        nip_pembimbing: guruPembimbing?.nip || siswa.nip_pembimbing || ""
+      },
       tujuan_pembelajaran: tujuanPembelajaran,
       nilai: {
         skor_1: nilai.skor_1 ? parseInt(nilai.skor_1) : 0,
@@ -265,6 +508,7 @@ export default function Penilaian() {
         skor_4: nilai.skor_4 ? parseInt(nilai.skor_4) : 0,
         desc_4: nilai.desc_4 || ""
       },
+      jenis_nomor: siswa.jenis_nomor_instruktur || "NP", // JENIS NOMOR UNTUK INSTRUKTUR
       sakit: kehadiran.sakit ? parseInt(kehadiran.sakit) : 0,
       izin: kehadiran.izin ? parseInt(kehadiran.izin) : 0,
       alpa: kehadiran.alpa ? parseInt(kehadiran.alpa) : 0,
@@ -272,6 +516,10 @@ export default function Penilaian() {
     };
 
     console.log("Payload yang akan dikirim:", payload);
+    
+    // Simpan ke localStorage
+    localStorage.setItem('penilaian_data', JSON.stringify(payload));
+    
     toast.success("Data penilaian berhasil disimpan!");
   };
 
@@ -286,6 +534,9 @@ export default function Penilaian() {
     try {
       const tempatTanggal = `${tempat}, ${formatTanggalIndonesia(tanggalPenilaian)}`;
 
+      // Cari data guru pembimbing berdasarkan kode_guru
+      const guruPembimbing = getGuruByKode(user.kode_guru);
+
       const payload = {
         school_info: schoolInfo,
         siswa: {
@@ -294,10 +545,15 @@ export default function Penilaian() {
           kelas: siswa.kelas || "",
           konsentrasi_keahlian: siswa.konsentrasi_keahlian || "",
           tempat_pkl: siswa.tempat_pkl || "",
-          tanggal_mulai: siswa.tanggal_mulai_preview || "",
-          tanggal_selesai: siswa.tanggal_selesai_preview || "",
+          tanggal_mulai: siswa.tanggal_mulai_preview || formatTanggalIndonesia(siswa.tanggal_mulai),
+          tanggal_selesai: siswa.tanggal_selesai_preview || formatTanggalIndonesia(siswa.tanggal_selesai),
           nama_instruktur: siswa.nama_instruktur || "",
-          nama_pembimbing: siswa.nama_pembimbing || ""
+          jabatan_instruktur: siswa.jabatan_instruktur || "",
+          nip_instruktur: siswa.nip_instruktur || "",
+          jenis_nomor_instruktur: siswa.jenis_nomor_instruktur || "NP", // TAMBAHKAN
+          nama_pembimbing: guruPembimbing?.nama || siswa.nama_pembimbing || user.name || "",
+          jabatan_pembimbing: siswa.jabatan_pembimbing || "Guru Mapel PKL",
+          nip_pembimbing: guruPembimbing?.nip || siswa.nip_pembimbing || ""
         },
         tujuan_pembelajaran: tujuanPembelajaran,
         nilai: {
@@ -310,6 +566,7 @@ export default function Penilaian() {
           skor_4: nilai.skor_4 ? parseInt(nilai.skor_4) : 0,
           desc_4: nilai.desc_4 || ""
         },
+        jenis_nomor: siswa.jenis_nomor_instruktur || "NP", // JENIS NOMOR UNTUK INSTRUKTUR
         sakit: kehadiran.sakit ? parseInt(kehadiran.sakit) : 0,
         izin: kehadiran.izin ? parseInt(kehadiran.izin) : 0,
         alpa: kehadiran.alpa ? parseInt(kehadiran.alpa) : 0,
@@ -534,7 +791,7 @@ export default function Penilaian() {
                     <p><span className="font-bold inline-block w-44">Kelas</span>: {siswa.kelas || "-"}</p>
                     <p><span className="font-bold inline-block w-44">Konsentrasi Keahlian</span>: {siswa.konsentrasi_keahlian || "-"}</p>
                     <p><span className="font-bold inline-block w-44">Tempat PKL</span>: {siswa.tempat_pkl || "-"}</p>
-                    <p><span className="font-bold inline-block w-44">Tanggal PKL</span>: Mulai: {siswa.tanggal_mulai_preview || "-"} <span className="ml-8">Selesai: {siswa.tanggal_selesai_preview || "-"}</span></p>
+                    <p><span className="font-bold inline-block w-44">Tanggal PKL</span>: Mulai: {siswa.tanggal_mulai_preview || formatTanggalIndonesia(siswa.tanggal_mulai) || "-"} <span className="ml-8">Selesai: {siswa.tanggal_selesai_preview || formatTanggalIndonesia(siswa.tanggal_selesai) || "-"}</span></p>
                     <p><span className="font-bold inline-block w-44">Nama Instruktur</span>: {siswa.nama_instruktur || "-"}</p>
                     <p><span className="font-bold inline-block w-44">Nama Pembimbing</span>: {siswa.nama_pembimbing || "-"}</p>
                   </div>
@@ -631,19 +888,38 @@ export default function Penilaian() {
                   </div>
 
                   <div className="flex justify-between items-start mt-12">
-                    <div className="text-center">
-                      <p className="font-bold text-sm mb-16">Guru Mapel PKL,</p>
-                      <p className="font-bold text-sm">(............................)</p>
-                    </div>
+                    <div className="text-left mt-7">
+                        <p className="font-bold text-sm mb-16">
+                          {siswa.jabatan_pembimbing || "Guru Mapel PKL,"}
+                        </p>
 
-                    <div className="text-center">
-                      <p className="text-sm mb-1">{tempat}, {formatTanggalIndonesia(tanggalPenilaian)}</p>
-                      <p className="font-bold text-sm mb-14">Instruktur Dunia Kerja</p>
-                      <p className="font-bold text-sm">(............................)</p>
+                        <p className="border-b font-bold text-sm inline-block min-w-[100px]">
+                          {siswa.nama_pembimbing}
+                        </p>
+
+                        <p className="text-xs mt-1">
+                          {siswa.nip_pembimbing ? `NIP. ${siswa.nip_pembimbing}` : "NIP. -"}
+                        </p>
+                      </div>
+
+                    <div className="text-left">
+                      <p className="text-sm mb-1">
+                        {tempat}, {formatTanggalIndonesia(tanggalPenilaian)}
+                      </p>
+
+                      <p className="font-bold text-sm mb-14">
+                        {siswa.jabatan_instruktur || "Instruktur Dunia Kerja"}
+                      </p>
+
+                      <p className="border-b font-bold text-sm inline-block min-w-[150px]">
+                        {siswa.nama_instruktur}
+                      </p>
+
+                      <p className="text-xs mt-1">
+                        {siswa.nip_instruktur ? `${siswa.jenis_nomor_instruktur || "NIP"}. ${siswa.nip_instruktur}` : "NIP. -"}
+                      </p>
                     </div>
                   </div>
-
-                  <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
                 </div>
               </div>
             </div>
@@ -715,18 +991,67 @@ export default function Penilaian() {
                       />
                     </div>
 
-                    <div>
+                    <div className="relative">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Tempat PKL
                       </label>
-                      <input
-                        type="text"
-                        name="tempat_pkl"
-                        value={siswa.tempat_pkl}
-                        onChange={handleSiswaChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Contoh: PT NAMA STUDIOS INDONESIA"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          name="tempat_pkl"
+                          value={siswa.tempat_pkl}
+                          onChange={handleTempatPKLChange}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Ketik nama industri..."
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowIndustriSearch(!showIndustriSearch)}
+                          className="px-3 py-2 !bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                          title="Cari industri"
+                        >
+                          <Search size={20} className="text-gray-600" />
+                        </button>
+                      </div>
+                      
+                      {/* Dropdown pencarian industri */}
+                      {showIndustriSearch && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          <div className="p-2 border-b">
+                            <input
+                              type="text"
+                              value={industriSearchQuery}
+                              onChange={(e) => setIndustriSearchQuery(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Cari nama industri..."
+                              autoFocus
+                            />
+                          </div>
+                          {loadingIndustri ? (
+                            <div className="p-4 text-center text-gray-500">Memuat data...</div>
+                          ) : filteredIndustri.length > 0 ? (
+                            filteredIndustri.map((industri) => (
+                              <div
+                                key={industri.id}
+                                onClick={() => pilihIndustri(industri)}
+                                className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-0"
+                              >
+                                <p className="font-medium">{industri.nama}</p>
+                                <p className="text-xs text-gray-500">
+                                  PIC: {industri.pic || "-"} | Jabatan: {industri.jabatan_pembimbing || "-"}
+                                </p>
+                                {industri.nip_pembimbing && (
+                                  <p className="text-xs text-gray-500">NIP: {industri.nip_pembimbing}</p>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center text-gray-500">
+                              {industriSearchQuery ? "Industri tidak ditemukan" : "Ketik untuk mencari industri"}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -757,32 +1082,112 @@ export default function Penilaian() {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nama Instruktur
-                      </label>
-                      <input
-                        type="text"
-                        name="nama_instruktur"
-                        value={siswa.nama_instruktur}
-                        onChange={handleSiswaChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Contoh: Bapak / Ibu Pimpinan"
-                      />
+                    {/* Data Instruktur */}
+                    <div className="border-t border-gray-200 pt-4 mt-2">
+                      <h5 className="font-medium text-gray-700 mb-3">Data Instruktur Dunia Kerja</h5>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nama Instruktur
+                          </label>
+                          <input
+                            type="text"
+                            name="nama_instruktur"
+                            value={siswa.nama_instruktur}
+                            onChange={handleSiswaChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Akan terisi otomatis dari data industri"
+                          />
+                          
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Jabatan Instruktur
+                          </label>
+                          <input
+                            type="text"
+                            name="jabatan_instruktur"
+                            value={siswa.jabatan_instruktur}
+                            onChange={handleSiswaChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Contoh: Industrial Engineer"
+                          />
+                          
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {siswa.jenis_nomor_instruktur} Instruktur (jika ada)
+                          </label>
+                          <input
+                            type="text"
+                            name="nip_instruktur"
+                            value={siswa.nip_instruktur}
+                            onChange={handleSiswaChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Contoh: 19850101 201001 2 005 atau -"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Jenis Nomor Instruktur
+                          </label>
+                          <input
+                            type="text"
+                            name="jenis_nomor_instruktur"
+                            value={siswa.jenis_nomor_instruktur}
+                            onChange={handleSiswaChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Contoh: NIP, NIK, NIDN, dll"
+                          />
+                          
+                        </div>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nama Pembimbing
-                      </label>
-                      <input
-                        type="text"
-                        name="nama_pembimbing"
-                        value={siswa.nama_pembimbing}
-                        onChange={handleSiswaChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Contoh: Guru Mapel PKL"
-                      />
+                    {/* Data Guru Mapel (Pembimbing) */}
+                    <div className="border-t border-gray-200 pt-4 mt-2">
+                      <h5 className="font-medium text-gray-700 mb-3">Data Guru Mapel PKL</h5>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nama Guru Mapel
+                          </label>
+                          <input
+                            type="text"
+                            name="nama_pembimbing"
+                            value={siswa.nama_pembimbing}
+                            onChange={handleSiswaChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Contoh: Aldian S.Pd."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Jabatan Pembimbing
+                          </label>
+                          <input
+                            type="text"
+                            name="jabatan_pembimbing"
+                            value={siswa.jabatan_pembimbing}
+                            onChange={handleSiswaChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Contoh: Guru Mapel PKL"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            NIP Pembimbing
+                          </label>
+                          <input
+                            type="text"
+                            name="nip_pembimbing"
+                            value={siswa.nip_pembimbing}
+                            onChange={handleSiswaChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Contoh: 19850101 201001 2 005"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

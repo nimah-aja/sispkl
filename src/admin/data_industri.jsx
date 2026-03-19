@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -11,6 +11,14 @@ import {
   Clock,
   CheckCircle,
   UserMinus,
+  Building,
+  MapPin,
+  Mail,
+  Phone,
+  User,
+  Briefcase,
+  Hash,
+  Calendar
 } from "lucide-react";
 
 
@@ -21,6 +29,7 @@ import Sidebar from "./components/Sidebar";
 import Table from "./components/Table";
 import SearchBar from "./components/Search";
 import Add from "./components/Add";
+import Detail from "./components/Detail"; // IMPORT DETAIL COMPONENT
 import DeleteConfirmationModal from "./components/Delete";
 import SaveConfirmationModal from "./components/Save";
 import Pagination from "./components/Pagination"; 
@@ -65,8 +74,10 @@ export default function IndustriPage() {
   const [selectedPembimbing, setSelectedPembimbing] = useState("");
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [modeView, setModeView] = useState("master"); 
-
   
+  // State untuk detail view
+  const [detailRow, setDetailRow] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const [industriStatistik, setIndustriStatistik] = useState([]);
 
@@ -142,23 +153,28 @@ export default function IndustriPage() {
       active_students: stat?.active_students ?? "-",
       pending_applications: stat?.pending_applications ?? "-",
       remaining_slots: stat?.remaining_slots ?? "-",
+      approved_applications: stat?.approved_applications ?? "-",
     };
   });
 
 
-  // validasi karakter
+  // validasi karakter - UPDATED with all fields
   const validateIndustri = (data) => {
     const errors = {};
     if (!data.alamat || data.alamat.length < 10)
-      errors.alamat = `Kolom Alamat Industri minimal 10 karakter. Tambahkan ${10 - (data.kode?.length || 0)} karakter lagi.`;
+      errors.alamat = `Kolom Alamat Industri minimal 10 karakter. Tambahkan ${10 - (data.alamat?.length || 0)} karakter lagi.`;
     if (!data.nama || data.nama.length < 3)
       errors.nama = `Kolom Nama Industri minimal 3 karakter. Tambahkan ${3 - (data.nama?.length || 0)} karakter lagi.`;
     if (!data.no_telp || data.no_telp.length < 10)
-      errors.no_telp = `Kolom No. telp Industri minimal 10 karakter. Tambahkan ${10 - (data.kode?.length || 0)} karakter lagi.`;
+      errors.no_telp = `Kolom No. telp Industri minimal 10 karakter. Tambahkan ${10 - (data.no_telp?.length || 0)} karakter lagi.`;
     if (!data.pic || data.pic.length < 2)
-      errors.pic = `Kolom PIC Industri minimal 2 karakter. Tambahkan ${2 - (data.nama?.length || 0)} karakter lagi.`;
+      errors.pic = `Kolom PIC/Pembimbing Industri minimal 2 karakter. Tambahkan ${2 - (data.pic?.length || 0)} karakter lagi.`;
     if (!data.pic_telp || data.pic_telp.length < 10)
-      errors.pic_telp = `Kolom PIC telp Industri minimal 10 karakter. Tambahkan ${10 - (data.nama?.length || 0)} karakter lagi.`;
+      errors.pic_telp = `Kolom No. Telp PIC minimal 10 karakter. Tambahkan ${10 - (data.pic_telp?.length || 0)} karakter lagi.`;
+    if (!data.bidang || data.bidang.length < 3)
+      errors.bidang = `Kolom Bidang Industri minimal 3 karakter. Tambahkan ${3 - (data.bidang?.length || 0)} karakter lagi.`;
+    if (data.email && !data.email.includes('@'))
+      errors.email = "Format email tidak valid";
     return errors;
   };
 
@@ -199,10 +215,13 @@ export default function IndustriPage() {
     const matchSearch =
       b.nama.toLowerCase().includes(s) ||
       b.alamat.toLowerCase().includes(s) ||
-      b.bidang.toLowerCase().includes(s) ||
-      b.email.toLowerCase().includes(s) ||
-      b.no_telp.toLowerCase().includes(s) ||
-      b.pic.toLowerCase().includes(s) || 
+      (b.bidang && b.bidang.toLowerCase().includes(s)) ||
+      (b.email && b.email.toLowerCase().includes(s)) ||
+      (b.no_telp && b.no_telp.toLowerCase().includes(s)) ||
+      (b.pic && b.pic.toLowerCase().includes(s)) || 
+      (b.nama_pimpinan && b.nama_pimpinan.toLowerCase().includes(s)) ||
+      (b.jabatan_pimpinan && b.jabatan_pimpinan.toLowerCase().includes(s)) ||
+      (b.jabatan_pembimbing && b.jabatan_pembimbing.toLowerCase().includes(s)) ||
       jurusanNama.includes(s);
 
     const matchFilterJurusan = filterIndustri
@@ -210,7 +229,7 @@ export default function IndustriPage() {
     : true;
 
     const matchFilterBidang = filterBidang
-      ? b.bidang.toLowerCase() === filterBidang.toLowerCase()
+      ? b.bidang && b.bidang.toLowerCase() === filterBidang.toLowerCase()
       : true;
 
     return matchSearch && matchFilterJurusan && matchFilterBidang;
@@ -240,8 +259,8 @@ export default function IndustriPage() {
     currentPage * itemsPerPage
   );
 
-  // kolom tabel
-    const columns = [
+  // kolom tabel - UPDATED with all fields and add detail button
+  const columns = [
     {
       label: "",
       key: "expand",
@@ -263,7 +282,6 @@ export default function IndustriPage() {
     },
     { label: "Nama Industri", key: "nama" },
     { label: "Alamat", key: "alamat" },
-    { label: "Email", key: "email" },
     { label: "No. Telp", key: "no_telp", sortable: false },
     { label: "Pembimbing", key: "pic" },
     { label: "No. Telp Pembimbing", key: "pic_telp", sortable: false },
@@ -271,24 +289,44 @@ export default function IndustriPage() {
       label: "Konsentrasi Keahlian",
       key: "jurusan_nama",
     },
+    {
+      label: "Detail",
+      key: "actions",
+      render: (_, row) => (
+        <button
+          onClick={() => {
+            setDetailRow(row);
+            setIsDetailOpen(true);
+          }}
+          className="p-2 text-orange-600 !bg-transparent hover:bg-blue-50 rounded-full transition-colors"
+          title="Lihat Detail"
+        >
+          <Eye size={18} />
+        </button>
+      ),
+    },
   ];
 
 
-  // kolom input
+  // kolom input - UPDATED with all fields from payload
   const inputFields = [
     { label: "Nama Industri", name: "nama", width: "full", minLength: 3 },
     { label: "Alamat", name: "alamat", width: "full", minLength: 10 },
-    { label: "Bidang", name: "bidang", width: "half" },
-    { label: "Email", name: "email", width: "half", placeholder : "Contoh : PT@gmail.com" },
-    { label: "No. Telp", name: "no_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
-    {
-      label: "Pembimbing",
-      name: "pic",
-      width: "half",
-      type: "text",
-    },
-
-    { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10, placeholder : "Min 10 digit" },
+    { label: "Bidang", name: "bidang", width: "half", minLength: 3 },
+    { label: "Email", name: "email", width: "half", placeholder: "Contoh : pt@gmail.com", type: "email" },
+    { label: "No. Telp Industri", name: "no_telp", width: "half", minLength: 10, placeholder: "Min 10 digit" },
+    
+    // PIC/Pembimbing fields
+    { label: "Nama Pembimbing", name: "pic", width: "half", type: "text", minLength: 2 },
+    { label: "No. Telp Pembimbing", name: "pic_telp", width: "half", minLength: 10, placeholder: "Min 10 digit" },
+    { label: "Jabatan Pembimbing", name: "jabatan_pembimbing", width: "half", type: "text" },
+    { label: "NIP Pembimbing", name: "nip_pembimbing", width: "half", type: "text" },
+    
+    // Pimpinan fields
+    { label: "Nama Pimpinan", name: "nama_pimpinan", width: "half", type: "text" },
+    { label: "Jabatan Pimpinan", name: "jabatan_pimpinan", width: "half", type: "text" },
+    { label: "NIP Pimpinan", name: "nip_pimpinan", width: "half", type: "text" },
+    
     {
       label: "Kompetensi Keahlian", 
       name: "jurusan_id", 
@@ -301,18 +339,94 @@ export default function IndustriPage() {
     },
   ];
 
-  // Export
+  // Fields untuk detail view
+  const detailFields = [
+    { 
+      label: "Nama Industri", 
+      name: "nama", 
+      icon: <Building size={18} />,
+      full: true 
+    },
+    { 
+      label: "Bidang", 
+      name: "bidang", 
+      icon: <Briefcase size={18} /> 
+    },
+    { 
+      label: "Alamat", 
+      name: "alamat", 
+      icon: <MapPin size={18} />,
+      full: true 
+    },
+    { 
+      label: "Email", 
+      name: "email", 
+      icon: <Mail size={18} /> 
+    },
+    { 
+      label: "No. Telepon", 
+      name: "no_telp", 
+      icon: <Phone size={18} /> 
+    },
+    { 
+      label: "Nama Pembimbing", 
+      name: "pic", 
+      icon: <User size={18} /> 
+    },
+    { 
+      label: "No. Telp Pembimbing", 
+      name: "pic_telp", 
+      icon: <Phone size={18} /> 
+    },
+    { 
+      label: "Jabatan Pembimbing", 
+      name: "jabatan_pembimbing", 
+      icon: <Briefcase size={18} /> 
+    },
+    { 
+      label: "NIP Pembimbing", 
+      name: "nip_pembimbing", 
+      icon: <Hash size={18} /> 
+    },
+    { 
+      label: "Nama Pimpinan", 
+      name: "nama_pimpinan", 
+      icon: <User size={18} /> 
+    },
+    { 
+      label: "Jabatan Pimpinan", 
+      name: "jabatan_pimpinan", 
+      icon: <Briefcase size={18} /> 
+    },
+    { 
+      label: "NIP Pimpinan", 
+      name: "nip_pimpinan", 
+      icon: <Hash size={18} /> 
+    },
+    { 
+      label: "Konsentrasi Keahlian", 
+      name: "jurusan_nama", 
+      icon: <Building size={18} /> 
+    },
+  ];
+
+  // Export - UPDATED with all fields
   const exportData = React.useMemo(
   () =>
     dataWithNo.map((item, i) => ({
       No: i + 1,
       "Nama Industri": item.nama,
-      Alamat: item.alamat,
-      Bidang: item.bidang,
-      Email: item.email,
-      "No. Telp": item.no_telp,
-      Pembimbing: item.pic,
-      "No. Telp Pembimbing": item.pic_telp,
+      "Bidang": item.bidang,
+      "Alamat": item.alamat,
+      "Email": item.email,
+      "No. Telp Industri": item.no_telp,
+      "Nama PIC/Pembimbing": item.pic,
+      "No. Telp PIC": item.pic_telp,
+      "Jabatan Pembimbing": item.jabatan_pembimbing || "-",
+      "NIP Pembimbing": item.nip_pembimbing || "-",
+      "Nama Pimpinan": item.nama_pimpinan || "-",
+      "Jabatan Pimpinan": item.jabatan_pimpinan || "-",
+      "NIP Pimpinan": item.nip_pimpinan || "-",
       "Konsentrasi Keahlian": item.jurusan_nama,
     })),
   [dataWithNo]
@@ -327,7 +441,7 @@ const handleExportPdf = () => {
     startY: 20,
     head: [Object.keys(exportData[0] || {})],
     body: exportData.map((item) => Object.values(item)),
-    styles: { fontSize: 10 },
+    styles: { fontSize: 8 },
     headStyles: { fillColor: [100, 30, 33] },
   });
 
@@ -342,7 +456,7 @@ const handleExportExcel = () => {
   XLSX.writeFile(workbook, "data_industri.xlsx");
 };
 
-  // form add
+  // form add - UPDATED with all fields
   if (mode === "add") {
     return (
       <>
@@ -354,13 +468,30 @@ const handleExportExcel = () => {
           onSubmit={async (formData, setFieldErrors) => {
             const newIndustri = Object.fromEntries(formData);
 
-            // pastikan jurusan_id jadi integer
+            // Convert jurusan_id to integer
             if (newIndustri.jurusan_id) {
               newIndustri.jurusan_id = parseInt(newIndustri.jurusan_id, 10);
             }
 
+            // Set default values for optional fields to null if empty
+            const optionalFields = [
+              'nama_pimpinan', 'jabatan_pimpinan', 'nip_pimpinan',
+              'jabatan_pembimbing', 'nip_pembimbing'
+            ];
+            
+            optionalFields.forEach(field => {
+              if (!newIndustri[field] || newIndustri[field].trim() === '') {
+                newIndustri[field] = null;
+              }
+            });
+
             // validasi karakter
             const errors = validateIndustri(newIndustri);
+
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(errors);
+              return;
+            }
 
             try {
               setPendingData(newIndustri);
@@ -369,31 +500,27 @@ const handleExportExcel = () => {
               const apiError = err.response?.data?.error;
               const rawMessage = apiError?.message || "";
 
-              // Error kode industri sudah ada
+              // Error handling
               if (rawMessage.toLowerCase().includes("email must be a valid email address")) {
-                toast.error("email tidak valid");
+                toast.error("Email tidak valid");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("jurusan not found")) {
-                toast.error("konsentrasi keahlian tidak tersedia di sistem");
+                toast.error("Konsentrasi keahlian tidak tersedia di sistem");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("email already exists")) {
                 toast.error("Alamat email tersebut sudah tersedia");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("pic phone number already exists")) {
-                toast.error("Nomer telepon pembimbing tersebut sudah tersedia");
+                toast.error("Nomor telepon PIC tersebut sudah tersedia");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("nama industri already exists")) {
                 toast.error("Nama industri tersebut sudah tersedia");
                 return; 
@@ -401,11 +528,6 @@ const handleExportExcel = () => {
 
               // error lain bisa masuk toast umum
               toast.error(apiError?.message || "Gagal menambahkan data");
-
-              if (Object.keys(errors).length > 0) {
-                setFieldErrors(errors);
-                return;
-              }
             }
 
           }}
@@ -427,13 +549,7 @@ const handleExportExcel = () => {
               setMode("list");
             } catch (err) {
               const apiError = err.response?.data?.error;
-              const rawMessage = apiError?.message || "";
-
-              if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode konsentrasi keahlian ini sudah ada.");
-              } else {
-                toast.error(apiError?.message || "Gagal menambahkan data");
-              }
+              toast.error(apiError?.message || "Gagal menambahkan data");
             }
           }}
           imageSrc={saveImg}
@@ -442,7 +558,7 @@ const handleExportExcel = () => {
     );
   }
 
-  //form edit
+  //form edit - UPDATED with all fields
   if (mode === "edit" && selectedRow) {
     return (
       <>
@@ -460,8 +576,25 @@ const handleExportExcel = () => {
               updatedIndustri.jurusan_id = parseInt(updatedIndustri.jurusan_id, 10);
             }
 
+            // Set default values for optional fields to null if empty
+            const optionalFields = [
+              'nama_pimpinan', 'jabatan_pimpinan', 'nip_pimpinan',
+              'jabatan_pembimbing', 'nip_pembimbing'
+            ];
+            
+            optionalFields.forEach(field => {
+              if (!updatedIndustri[field] || updatedIndustri[field].trim() === '') {
+                updatedIndustri[field] = null;
+              }
+            });
+
             // validasi karakter
             const errors = validateIndustri(updatedIndustri);
+
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(errors);
+              return;
+            }
 
             try {
               setPendingData(updatedIndustri);
@@ -470,43 +603,34 @@ const handleExportExcel = () => {
               const apiError = err.response?.data?.error;
               const rawMessage = apiError?.message || ""
 
-              // Error kode industri sudah ada
+              // Error handling
               if (rawMessage.toLowerCase().includes("email must be a valid email address")) {
-                toast.error("email tidak valid");
+                toast.error("Email tidak valid");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("jurusan not found")) {
-                toast.error("konsentrasi keahlian tidak tersedia di sistem");
+                toast.error("Konsentrasi keahlian tidak tersedia di sistem");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("email already exists")) {
                 toast.error("Alamat email tersebut sudah tersedia");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("pic phone number already exists")) {
-                toast.error("Nomer telepon pembimbing tersebut sudah tersedia");
+                toast.error("Nomor telepon PIC tersebut sudah tersedia");
                 return; 
               }
 
-              // Error kode industri sudah ada
               if (rawMessage.toLowerCase().includes("nama industri already exists")) {
                 toast.error("Nama industri tersebut sudah tersedia");
                 return; 
               }
 
               // error lain bisa masuk toast umum
-              toast.error(apiError?.message || "Gagal menambahkan data");
-
-              if (Object.keys(errors).length > 0) {
-                setFieldErrors(errors);
-                return; 
-              }
+              toast.error(apiError?.message || "Gagal mengubah data");
             }
           }}
           onCancel={() => setMode("list")}
@@ -528,13 +652,7 @@ const handleExportExcel = () => {
               setMode("list");
             } catch (err) {
               const apiError = err.response?.data?.error;
-              const rawMessage = apiError?.message || "";
-
-              if (rawMessage.toLowerCase().includes("jurusan with this kode already exists")) {
-                toast.error("Kode konsentrasi keahlian ini sudah ada.");
-              } else {
-                toast.error(apiError?.message || "Gagal memperbarui data");
-              }
+              toast.error(apiError?.message || "Gagal memperbarui data");
             }
           }}
           imageSrc={saveImg}
@@ -542,9 +660,6 @@ const handleExportExcel = () => {
       </>
     );
   }
-
-  
-
 
   // main
   return (
@@ -680,7 +795,6 @@ const handleExportExcel = () => {
                         <p className="mt-1 font-semibold">{row.remaining_slots || "-"}</p>
                       </div>
 
-                      {/* ===== TAMBAHKAN BIDANG DI SAMPING SISA ===== */}
                       <div className="flex flex-col items-center text-center">
                         <div className="flex items-center gap-1 font-semibold">
                           <span>Bidang</span>
@@ -688,7 +802,6 @@ const handleExportExcel = () => {
                         <p className="mt-1 font-semibold">{row.bidang || "-"}</p>
                       </div>
                     </div>
-
                   )}
                 />
 
@@ -726,6 +839,21 @@ const handleExportExcel = () => {
           imageSrc={deleteImg}
         />
       </div>
+
+      {/* Detail Modal */}
+      {isDetailOpen && detailRow && (
+        <Detail
+          title="Detail Industri"
+          fields={detailFields}
+          initialData={detailRow}
+          onClose={() => {
+            setIsDetailOpen(false);
+            setDetailRow(null);
+          }}
+          size="half"
+          mode="view"
+        />
+      )}
     </div>
   );
 }

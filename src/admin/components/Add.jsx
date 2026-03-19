@@ -1,6 +1,6 @@
 import "react-datepicker/dist/react-datepicker.css";
 import React, { useState, useRef, useMemo, useEffect } from "react";
-import { ArrowLeft, Eye, EyeOff, Calendar, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Calendar, X, Plus, Trash2 } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { id } from "date-fns/locale";
 import { format } from "date-fns";
@@ -44,6 +44,46 @@ export default function Add({
   const [dropdownState, setDropdownState] = useState({});
   const [searchQueries, setSearchQueries] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // ===== FITUR DINAMIS UNTUK TUJUAN PEMBELAJARAN =====
+  const [tpItems, setTpItems] = useState(() => {
+    // Inisialisasi dari initialData jika ada
+    if (initialData.items && initialData.items.length > 0) {
+      return initialData.items.map(item => ({
+        id: item.id || Date.now() + Math.random(),
+        tujuan_pembelajaran: item.tujuan_pembelajaran || ""
+      }));
+    }
+    // Default 1 item kosong
+    return [{ id: Date.now(), tujuan_pembelajaran: "" }];
+  });
+
+  const MAX_TP = 4; // Batas maksimal TP
+
+  const handleAddTP = () => {
+    if (tpItems.length < MAX_TP) {
+      setTpItems([
+        ...tpItems,
+        { id: Date.now() + Math.random(), tujuan_pembelajaran: "" }
+      ]);
+      setIsChanged(true);
+    }
+  };
+
+  const handleRemoveTP = (id) => {
+    if (tpItems.length > 1) {
+      setTpItems(tpItems.filter(item => item.id !== id));
+      setIsChanged(true);
+    }
+  };
+
+  const handleTPChange = (id, value) => {
+    setTpItems(tpItems.map(item => 
+      item.id === id ? { ...item, tujuan_pembelajaran: value } : item
+    ));
+    setIsChanged(true);
+  };
+  // ===== END FITUR DINAMIS =====
 
   // Date
   const DateInput = React.forwardRef(
@@ -170,7 +210,11 @@ export default function Add({
     const formData = new FormData(e.target);
     const errors = {};
 
+    // Validasi untuk field biasa
     fields.forEach((field) => {
+      // Skip jika ini adalah field TP (akan divalidasi terpisah)
+      if (field.name === 'tujuan_pembelajaran') return;
+      
       let value;
       if (field.type === "multiselect") {
         value = formData.getAll(field.name);
@@ -209,6 +253,19 @@ export default function Add({
         errors[field.name] = `Kolom ${field.label} dengan nilai "${value}" sudah ada.`;
       }
     });
+
+    // Validasi untuk TP dinamis
+    const hasTPField = fields.some(f => f.name === 'tujuan_pembelajaran');
+    if (hasTPField) {
+      // Validasi minimal 1 TP terisi
+      const validTPs = tpItems.filter(item => item.tujuan_pembelajaran.trim() !== '');
+      if (validTPs.length === 0) {
+        errors.tujuan_pembelajaran = "Minimal 1 tujuan pembelajaran harus diisi.";
+      } else {
+        // Tambahkan TP items ke formData
+        formData.append('tp_items', JSON.stringify(tpItems.filter(item => item.tujuan_pembelajaran.trim() !== '')));
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -324,8 +381,22 @@ export default function Add({
       }, {})
     );
     setSwitchValues(initialSwitches);
+    
+    // Reset TP items
+    if (initialData.items && initialData.items.length > 0) {
+      setTpItems(initialData.items.map(item => ({
+        id: item.id || Date.now() + Math.random(),
+        tujuan_pembelajaran: item.tujuan_pembelajaran || ""
+      })));
+    } else {
+      setTpItems([{ id: Date.now(), tujuan_pembelajaran: "" }]);
+    }
+    
     setIsChanged(false);
   };
+
+  // Cek apakah ada field TP
+  const hasTPField = fields.some(f => f.name === 'tujuan_pembelajaran');
 
   // main
   return (
@@ -367,206 +438,195 @@ export default function Add({
               className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 p-1 gap-4 overflow-y-auto"
               style={{ maxHeight: "100%" }}
             >
-              {fields.map((field, idx) => (
-                <div
-                  key={field.name}
-                  className={field.width === "full" ? "col-span-2 relative" : "relative"}
-                >
-                  <label className="block mb-1 text-sm font-bold text-gray-700">
-                    {field.label}
-                  </label>
+              {fields.map((field, idx) => {
+                // Skip field TP karena akan dirender terpisah
+                if (field.name === 'tujuan_pembelajaran') return null;
+                
+                return (
+                  <div
+                    key={field.name}
+                    className={field.width === "full" ? "col-span-2 relative" : "relative"}
+                  >
+                    <label className="block mb-1 text-sm font-bold text-gray-700">
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
 
-                  {field.type === "select" ? (
-                    <div className="relative w-full max-w-[600px]">
-                      {/* Trigger */}
+                    {field.type === "select" ? (
+                      <div className="relative w-full max-w-[600px]">
+                        {/* Trigger */}
+                        <div
+                          onClick={() => toggleDropdown(field.name)}
+                          className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+                        >
+                          {selectedLabels[field.name] || `Pilih ${field.label}`}
+                          <img
+                            src={arrow}
+                            alt="arrow"
+                            className={`w-4 h-4 ml-2 transition-transform duration-200 ${
+                              dropdownState[field.name] ? "rotate-180" : "rotate-0"
+                            }`}
+                          />
+                        </div>
+
+                        {dropdownState[field.name] && (
+                          <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                            {/* Input Search */}
+                            <input
+                              type="text"
+                              placeholder={`Cari ${field.label}...`}
+                              className="w-full px-3 py-2 border-b text-sm focus:outline-none"
+                              value={searchQueries[field.name] || ""}
+                              onChange={(e) => handleSearchChange(field.name, e.target.value)}
+                            />
+
+                            <ul className="max-h-48 overflow-y-auto">
+                              {field.options
+                                .filter((opt) =>
+                                  opt.label
+                                    .toLowerCase()
+                                    .includes((searchQueries[field.name] || "").toLowerCase())
+                                )
+                                .map((opt) => (
+                                  <li
+                                    key={opt.value}
+                                    onClick={() => {
+                                      if (opt.disabled) return; 
+
+                                      handleChange(field.name, opt.value);
+                                      setSelectedLabels((prev) => ({
+                                        ...prev,
+                                        [field.name]: opt.label,
+                                      }));
+                                      setDropdownState((prev) => ({
+                                        ...prev,
+                                        [field.name]: false,
+                                      }));
+                                      handleSearchChange(field.name, "");
+                                    }}
+                                    className={`px-4 py-2 cursor-pointer
+                                      ${opt.disabled
+                                        ? "text-gray-400 cursor-not-allowed bg-gray-50"
+                                        : "hover:bg-orange-50"}
+                                    `}
+                                  >
+                                    {opt.label}
+                                    {opt.disabled && (
+                                      <span className="ml-2 text-xs italic">(sudah jadi wali)</span>
+                                    )}
+                                  </li>
+                                ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ) : field.type === "switch" ? (
                       <div
-                        onClick={() => toggleDropdown(field.name)}
-                        className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+                        onClick={() => handleToggle(field.name)}
+                        className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition ${
+                          switchValues[field.name] ? "bg-[#641E20]" : "bg-[#E1D6C4]"
+                        }`}
                       >
-                        {selectedLabels[field.name] || `Pilih ${field.label}`}
-                        <img
-                          src={arrow}
-                          alt="arrow"
-                          className={`w-4 h-4 ml-2 transition-transform duration-200 ${
-                            dropdownState[field.name] ? "rotate-180" : "rotate-0"
+                        <div
+                          className={`bg-white w-6 h-6 rounded-full shadow-md transform transition ${
+                            switchValues[field.name] ? "translate-x-6" : ""
                           }`}
                         />
+                        <input
+                          type="hidden"
+                          name={field.name}
+                          value={switchValues[field.name] ? "true" : "false"}
+                        />
                       </div>
-
-                      {dropdownState[field.name] && (
-                        <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
-                          {/* Input Search */}
-                          <input
-                            type="text"
-                            placeholder={`Cari ${field.label}...`}
-                            className="w-full px-3 py-2 border-b text-sm focus:outline-none"
-                            value={searchQueries[field.name] || ""}
-                            onChange={(e) => handleSearchChange(field.name, e.target.value)}
-                          />
-
-                          <ul className="max-h-48 overflow-y-auto">
-                            {field.options
-                              .filter((opt) =>
-                                opt.label
-                                  .toLowerCase()
-                                  .includes((searchQueries[field.name] || "").toLowerCase())
-                              )
-                              .map((opt) => (
-                                <li
-                                  key={opt.value}
-                                  onClick={() => {
-                                    if (opt.disabled) return; 
-
-                                    handleChange(field.name, opt.value);
-                                    setSelectedLabels((prev) => ({
-                                      ...prev,
-                                      [field.name]: opt.label,
-                                    }));
-                                    setDropdownState((prev) => ({
-                                      ...prev,
-                                      [field.name]: false,
-                                    }));
-                                    handleSearchChange(field.name, "");
-                                  }}
-                                  className={`px-4 py-2 cursor-pointer
-                                    ${opt.disabled
-                                      ? "text-gray-400 cursor-not-allowed bg-gray-50"
-                                      : "hover:bg-orange-50"}
-                                  `}
-                                >
-                                  {opt.label}
-                                  {opt.disabled && (
-                                    <span className="ml-2 text-xs italic">(sudah jadi wali)</span>
-                                  )}
-                                </li>
-
-                              ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                    ) : field.type === "switch" ? (
-                    <div
-                      onClick={() => handleToggle(field.name)}
-                      className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition ${
-                        switchValues[field.name] ? "bg-[#641E20]" : "bg-[#E1D6C4]"
-                      }`}
-                    >
-                      <div
-                        className={`bg-white w-6 h-6 rounded-full shadow-md transform transition ${
-                          switchValues[field.name] ? "translate-x-6" : ""
-                        }`}
-                      />
-                      <input
-                        type="hidden"
-                        name={field.name}
-                        value={switchValues[field.name] ? "true" : "false"}
-                      />
-                    </div>
-                  ) : field.type === "multiselect" ? (
-                    <div className="relative" ref={(el) => (multiRefs.current[idx] = el)}>
-                      <div
-                        tabIndex={0}
-                        className={`w-full p-3 border rounded-lg cursor-pointer bg-white flex flex-wrap gap-1 items-center ${
-                          fieldErrors[field.name]
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-orange-500"
-                        }`}
-                        onClick={() => setFocusedIdx(focusedIdx === idx ? null : idx)}
-                      >
-                        {selectedValues.length > 0 ? (
-                          selectedValues.map((val, i) => (
-                            <div
-                              key={i}
-                              className=" pl-2 pb-1 flex items-center bg-[#651C23] text-white px-1 rounded-full text-sm"
-                            >
-                              {val}
+                    ) : field.type === "multiselect" ? (
+                      <div className="relative" ref={(el) => (multiRefs.current[idx] = el)}>
+                        <div
+                          tabIndex={0}
+                          className={`w-full p-3 border rounded-lg cursor-pointer bg-white flex flex-wrap gap-1 items-center ${
+                            fieldErrors[field.name]
+                              ? "border-red-500 focus:ring-red-500"
+                              : "border-gray-300 focus:ring-orange-500"
+                          }`}
+                          onClick={() => setFocusedIdx(focusedIdx === idx ? null : idx)}
+                        >
+                          {selectedValues.length > 0 ? (
+                            selectedValues.map((val, i) => (
                               <div
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleOption(field.name, val);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
+                                key={i}
+                                className=" pl-2 pb-1 flex items-center bg-[#651C23] text-white px-1 rounded-full text-sm"
+                              >
+                                {val}
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
                                     e.stopPropagation();
                                     toggleOption(field.name, val);
-                                  }
-                                }}
-                                className="h-8 text-white font-bold hover:text-gray-700 flex items-center gap-2 cursor-pointer select-none pl-1 pr-1"
-                              >
-                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]"> 
-                                  <img  src={silang}/>
-                                </span>
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.stopPropagation();
+                                      toggleOption(field.name, val);
+                                    }
+                                  }}
+                                  className="h-8 text-white font-bold hover:text-gray-700 flex items-center gap-2 cursor-pointer select-none pl-1 pr-1"
+                                >
+                                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#651C23] font-bold hover:text-gray-700 relative top-[2px]"> 
+                                    <img  src={silang}/>
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          ))
-                        ) : (
+                            ))
+                          ) : (
+                            
+                            <span className="text-gray-400">
+                              {field.placeholder || `Pilih ${field.label}`}
+                            </span>
+                          )}
                           
-                          <span className="text-gray-400">
-                            {field.placeholder || `Pilih ${field.label}`}
-                          </span>
-                        )}
-                        
-                        <img
-                          src={arrow}
-                          alt="arrow"
-                          className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-transform duration-200 ${
-                            focusedIdx === idx ? "rotate-180" : "rotate-0"
-                          }`}
-                        />
-                      </div>
-
-                      {selectedValues.map((val, i) => (
-                        <input key={i} type="hidden" name={field.name} value={val} />
-                      ))}
-
-                      {focusedIdx === idx && (
-                        <div className="absolute z-50 bg-white border-[#641E20] rounded-lg shadow-md mt-1 max-h-40 overflow-y-auto w-full">
-                          {field.options?.map((opt, i) => {
-                            const val = opt.value || opt;
-                            const isChecked = selectedValues.includes(val);
-                            return (
-                              <label
-                                key={i}
-                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                                onClick={() => toggleOption(field.name, val)}
-                              >
-                                <input
-                                  className="accent-[#641E20] "
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  readOnly
-                                />
-                                {opt.label || opt}
-                              </label>
-                            );
-                          })}
+                          <img
+                            src={arrow}
+                            alt="arrow"
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-transform duration-200 ${
+                              focusedIdx === idx ? "rotate-180" : "rotate-0"
+                            }`}
+                          />
                         </div>
-                      )}
-                    </div>
-                  ) : field.type === "textarea" ? (
-                    <textarea
-                      name={field.name}
-                      rows={field.rows || 3}
-                      ref={(el) => (inputRefs.current[idx] = el)}
-                      placeholder={field.placeholder || `Masukkan ${field.label}`}
-                      defaultValue={initialData[field.name] || ""}
-                      onKeyDown={(e) => handleKeyDown(e, idx)}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
-                        fieldErrors[field.name]
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-orange-500"
-                      }`}
-                    />
-                  ) : field.type === "password" ? (
-                    <div className="relative w-full">
-                      <input
+
+                        {selectedValues.map((val, i) => (
+                          <input key={i} type="hidden" name={field.name} value={val} />
+                        ))}
+
+                        {focusedIdx === idx && (
+                          <div className="absolute z-50 bg-white border-[#641E20] rounded-lg shadow-md mt-1 max-h-40 overflow-y-auto w-full">
+                            {field.options?.map((opt, i) => {
+                              const val = opt.value || opt;
+                              const isChecked = selectedValues.includes(val);
+                              return (
+                                <label
+                                  key={i}
+                                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                  onClick={() => toggleOption(field.name, val)}
+                                >
+                                  <input
+                                    className="accent-[#641E20] "
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    readOnly
+                                  />
+                                  {opt.label || opt}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ) : field.type === "textarea" ? (
+                      <textarea
                         name={field.name}
-                        type={showPassword ? "text" : "password"}
-                         placeholder={field.placeholder || `Masukkan ${field.label}`}
+                        rows={field.rows || 3}
                         ref={(el) => (inputRefs.current[idx] = el)}
+                        placeholder={field.placeholder || `Masukkan ${field.label}`}
                         defaultValue={initialData[field.name] || ""}
                         onKeyDown={(e) => handleKeyDown(e, idx)}
                         className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
@@ -575,102 +635,183 @@ export default function Add({
                             : "border-gray-300 focus:ring-orange-500"
                         }`}
                       />
+                    ) : field.type === "password" ? (
+                      <div className="relative w-full">
+                        <input
+                          name={field.name}
+                          type={showPassword ? "text" : "password"}
+                           placeholder={field.placeholder || `Masukkan ${field.label}`}
+                          ref={(el) => (inputRefs.current[idx] = el)}
+                          defaultValue={initialData[field.name] || ""}
+                          onKeyDown={(e) => handleKeyDown(e, idx)}
+                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
+                            fieldErrors[field.name]
+                              ? "border-red-500 focus:ring-red-500"
+                              : "border-gray-300 focus:ring-orange-500"
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
+                      </div>
+                    ): field.type === "date" ? (
+                      <div>
+                        <DatePicker
+                          selected={dateValues[field.name]}
+                          onChange={(date) =>
+                            setDateValues((prev) => ({ ...prev, [field.name]: date }))
+                          }
+                          className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
+                          calendarClassName=" w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
+                          dayClassName={() =>
+                            "hover:!bg-[#EC933A] hover:!text-white rounded-full"
+                          }
+                          dateFormat="dd/MM/yyyy"
+                          popperModifiers={[
+                            {
+                              name: "preventOverflow",
+                              options: {
+                                altAxis: true,
+                                tether: false, 
+                              },
+                            },
+                            {
+                              name: "offset",
+                              options: {
+                                offset: [0, 10], 
+                              },
+                            },
+                          ]}
+                          withPortal
+                          locale={id} 
+                          placeholderText={field.placeholder || `Pilih ${field.label}`}
+                          customInput={
+                            <DateInput
+                              clearValue={() =>
+                                setDateValues((prev) => ({ ...prev, [field.name]: null }))
+                              }
+                            />
+                          }
+                          todayButton="Hari Ini"
+                          popperPlacement="bottom-start"
+                          renderCustomHeader={({ monthDate, decreaseMonth, increaseMonth }) => (
+                            <div className="flex justify-between items-center px-4 py-2 bg-transparent border-b">
+                              <button onClick={decreaseMonth} type="button" className="border-none outline-none 
+                                focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
+                                ◀
+                              </button>
+                              <span className="font-bold text-black">
+                                {format(monthDate, "MMMM yyyy", { locale: id })}
+                              </span>
+                              <button onClick={increaseMonth} type="button" className="border-none outline-none 
+                                focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
+                                ▶
+                              </button>
+                            </div>
+                          )}
+                        />
+                        {/* hidden input */}
+                        <input
+                          type="hidden"
+                          name={field.name}
+                          value={
+                            dateValues[field.name]
+                              ? dateValues[field.name].toISOString().split("T")[0]
+                              : ""
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <input
+                        name={field.name}
+                        type={field.type || "text"}
+                        ref={(el) => (inputRefs.current[idx] = el)}
+                        defaultValue={initialData[field.name] || ""}
+                        placeholder={field.placeholder || `Masukkan ${field.label}`}
+                        onKeyDown={(e) => handleKeyDown(e, idx)}
+                        className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
+                          fieldErrors[field.name]
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-orange-500"
+                        }`}
+                      />
+                    )}
+
+                    {fieldErrors[field.name] && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors[field.name]}</p>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Render TP Fields Dinamis */}
+              {hasTPField && (
+                <>
+                  <div className="col-span-2">
+                    <label className="block mb-1 text-sm font-bold text-gray-700">
+                      Tujuan Pembelajaran
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    
+                    {tpItems.map((item, index) => (
+                      <div key={item.id} className="flex items-start gap-2 mb-3">
+                        <div className="flex-1">
+                          <textarea
+                            value={item.tujuan_pembelajaran}
+                            onChange={(e) => handleTPChange(item.id, e.target.value)}
+                            rows={2}
+                            placeholder={`Tujuan Pembelajaran ${index + 1}`}
+                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
+                              fieldErrors.tujuan_pembelajaran && index === 0 && !item.tujuan_pembelajaran.trim()
+                                ? "border-red-500 focus:ring-red-500"
+                                : "border-gray-300 focus:ring-orange-500"
+                            }`}
+                          />
+                        </div>
+                        
+                        {/* Tombol hapus (hanya untuk TP > 1) */}
+                        {tpItems.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTP(item.id)}
+                            className="!bg-transparent mt-2 p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                            title="Hapus tujuan pembelajaran"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* Error message untuk TP */}
+                    {fieldErrors.tujuan_pembelajaran && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors.tujuan_pembelajaran}</p>
+                    )}
+                  </div>
+
+                  {/* Tombol tambah TP */}
+                  <div className="col-span-2 flex justify-between items-center">
+                    {tpItems.length < MAX_TP ? (
                       <button
                         type="button"
-                        className="password-toggle-btn absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={handleAddTP}
+                        className="inline-flex items-center px-3 py-1.5 !bg-green-50 text-green-600 border border-green-200 rounded-md hover:bg-green-100 transition-colors"
                       >
-                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                        <Plus className="w-4 h-4 mr-1" />
+                        Tambah Tujuan Pembelajaran
                       </button>
-                    </div>
-                  ): field.type === "date" ? (
-                    <div>
-                      <DatePicker
-                        selected={dateValues[field.name]}
-                        onChange={(date) =>
-                          setDateValues((prev) => ({ ...prev, [field.name]: date }))
-                        }
-                        className="min-w-[250px] w-full p-3 border rounded-lg focus:ring-2 focus:outline-none border-gray-300 focus:ring-orange-500"
-                        calendarClassName=" w-[450px] !bg-white !text-black rounded-lg shadow-lg p-2"
-                        dayClassName={() =>
-                          "hover:!bg-[#EC933A] hover:!text-white rounded-full"
-                        }
-                        dateFormat="dd/MM/yyyy"
-                        popperModifiers={[
-                          {
-                            name: "preventOverflow",
-                            options: {
-                              altAxis: true,
-                              tether: false, 
-                            },
-                          },
-                          {
-                            name: "offset",
-                            options: {
-                              offset: [0, 10], 
-                            },
-                          },
-                        ]}
-                        withPortal
-                        locale={id} 
-                        placeholderText={field.placeholder || `Pilih ${field.label}`}
-                        customInput={
-                          <DateInput
-                            clearValue={() =>
-                              setDateValues((prev) => ({ ...prev, [field.name]: null }))
-                            }
-                          />
-                        }
-                        todayButton="Hari Ini"
-                        popperPlacement="bottom-start"
-                        renderCustomHeader={({ monthDate, decreaseMonth, increaseMonth }) => (
-                          <div className="flex justify-between items-center px-4 py-2 bg-transparent border-b">
-                            <button onClick={decreaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
-                              ◀
-                            </button>
-                            <span className="font-bold text-black">
-                              {format(monthDate, "MMMM yyyy", { locale: id })}
-                            </span>
-                            <button onClick={increaseMonth} type="button" className="border-none outline-none 
-                              focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 text-orange-500 hover:text-orange-700 !bg-transparent">
-                              ▶
-                            </button>
-                          </div>
-                        )}
-                      />
-                      {/* hidden input */}
-                      <input
-                        type="hidden"
-                        name={field.name}
-                        value={
-                          dateValues[field.name]
-                            ? dateValues[field.name].toISOString().split("T")[0]
-                            : ""
-                        }
-                      />
-                    </div>
-                  ) : (
-                    <input
-                      name={field.name}
-                      type={field.type || "text"}
-                      ref={(el) => (inputRefs.current[idx] = el)}
-                      defaultValue={initialData[field.name] || ""}
-                      placeholder={field.placeholder || `Masukkan ${field.label}`}
-                      onKeyDown={(e) => handleKeyDown(e, idx)}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:outline-none ${
-                        fieldErrors[field.name]
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-orange-500"
-                      }`}
-                    />
-                  )}
-
-                  {fieldErrors[field.name] && (
-                    <p className="text-red-500 text-xs mt-1">{fieldErrors[field.name]}</p>
-                  )}
-                </div>
-              ))}
+                    ) : (
+                      <p className="text-sm text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md">
+                        Maksimal {MAX_TP} tujuan pembelajaran
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </form>
           </div>
         </div>
@@ -739,5 +880,3 @@ export default function Add({
   );
   
 }
-
-

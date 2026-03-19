@@ -45,6 +45,97 @@ export default function DaftarFormPenilaian() {
     role: "Koordinator",
   };
 
+  // Fungsi untuk validasi nomor sertifikat dengan format yang ditentukan
+  const validateNomorSertifikat = (nomorSertifikat) => {
+    if (!nomorSertifikat || nomorSertifikat.trim() === '') {
+      return { isValid: true }; // Opsional, tidak wajib diisi
+    }
+
+    // Format: 420/XXXX/101.6.9.19/YYYY
+    // - 420 harus tetap (prefix)
+    // - XXXX adalah nomor urut (bisa diubah, harus angka)
+    // - 101.6.9.19 harus tetap (kode sekolah) - TIDAK BOLEH DIUBAH
+    // - YYYY adalah tahun (bisa diubah, harus angka 4 digit)
+    
+    // Regex yang memastikan 101.6.9.19 tetap dan tidak bisa diubah
+    const regex = /^420\/(\d{1,4})\/101\.6\.9\.19\/(\d{4})$/;
+    
+    if (!regex.test(nomorSertifikat)) {
+      return { 
+        isValid: false, 
+        error: 'Format nomor sertifikat harus: 420/[nomor_urut]/101.6.9.19/[tahun]\nContoh: 420/1013/101.6.9.19/2026\nBagian 101.6.9.19 tidak boleh diubah!' 
+      };
+    }
+
+    const matches = nomorSertifikat.match(regex);
+    const nomorUrut = matches[1];
+    const tahun = matches[2];
+
+    // Validasi nomor urut (sudah pasti angka 1-4 digit dari regex)
+    // Validasi tahun (1900-2099)
+    const tahunInt = parseInt(tahun);
+    if (tahunInt < 1900 || tahunInt > 2099) {
+      return { 
+        isValid: false, 
+        error: 'Tahun harus antara 1900 - 2099' 
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  // Fungsi untuk menyimpan nomor sertifikat ke localStorage
+  const saveNomorSertifikatToLocal = (formId, nomorSertifikat) => {
+    try {
+      // Ambil data existing dari localStorage
+      const existingData = localStorage.getItem('nomorSertifikatForms');
+      let nomorSertifikatData = existingData ? JSON.parse(existingData) : {};
+      
+      // Tambah atau update data untuk formId ini
+      nomorSertifikatData[formId] = {
+        nomorSertifikat,
+        updatedAt: dayjs().toISOString()
+      };
+      
+      // Simpan kembali ke localStorage
+      localStorage.setItem('nomorSertifikatForms', JSON.stringify(nomorSertifikatData));
+      
+      return true;
+    } catch (error) {
+      console.error('Gagal menyimpan nomor sertifikat ke localStorage:', error);
+      return false;
+    }
+  };
+
+  // Fungsi untuk mendapatkan nomor sertifikat dari localStorage
+  const getNomorSertifikatFromLocal = (formId) => {
+    try {
+      const existingData = localStorage.getItem('nomorSertifikatForms');
+      if (!existingData) return null;
+      
+      const nomorSertifikatData = JSON.parse(existingData);
+      return nomorSertifikatData[formId]?.nomorSertifikat || null;
+    } catch (error) {
+      console.error('Gagal membaca nomor sertifikat dari localStorage:', error);
+      return null;
+    }
+  };
+
+  // Fungsi untuk menghapus nomor sertifikat dari localStorage
+  const removeNomorSertifikatFromLocal = (formId) => {
+    try {
+      const existingData = localStorage.getItem('nomorSertifikatForms');
+      if (!existingData) return;
+      
+      const nomorSertifikatData = JSON.parse(existingData);
+      delete nomorSertifikatData[formId];
+      
+      localStorage.setItem('nomorSertifikatForms', JSON.stringify(nomorSertifikatData));
+    } catch (error) {
+      console.error('Gagal menghapus nomor sertifikat dari localStorage:', error);
+    }
+  };
+
   // Fetch data form penilaian
   useEffect(() => {
     fetchForms();
@@ -66,7 +157,9 @@ export default function DaftarFormPenilaian() {
         form.nama?.toLowerCase().includes(term) ||
         form.items?.some(item => 
           item.tujuan_pembelajaran?.toLowerCase().includes(term)
-        )
+        ) ||
+        // Tambahkan pencarian berdasarkan nomor sertifikat
+        getNomorSertifikatFromLocal(form.id)?.toLowerCase().includes(term)
       );
     }
 
@@ -91,6 +184,7 @@ export default function DaftarFormPenilaian() {
       const response = await getFormsPenilaian();
       const formsData = response.data || [];
       setForms(formsData);
+      
       // Filter awal juga diterapkan di sini
       const filteredData = formsData.filter(form => form.items?.length <= MAX_TP);
       setFilteredForms(filteredData);
@@ -147,6 +241,18 @@ export default function DaftarFormPenilaian() {
       
       // Ambil nilai dari formData
       const nama = formData.get("nama");
+      const nomorSertifikat = formData.get("nomor_sertifikat");
+      
+      // Validasi nomor sertifikat dengan format baru
+      if (nomorSertifikat && nomorSertifikat.trim() !== '') {
+        const validation = validateNomorSertifikat(nomorSertifikat);
+        if (!validation.isValid) {
+          setFieldErrors({
+            nomor_sertifikat: validation.error
+          });
+          return;
+        }
+      }
       
       // Kumpulkan tujuan pembelajaran yang tidak kosong
       const items = [];
@@ -179,7 +285,11 @@ export default function DaftarFormPenilaian() {
         items
       };
 
-      setPendingData(payload);
+      // Simpan data sementara termasuk nomor sertifikat
+      setPendingData({
+        ...payload,
+        nomorSertifikat: nomorSertifikat || null
+      });
       setIsConfirmSaveOpen(true);
       
     } catch (error) {
@@ -213,6 +323,18 @@ export default function DaftarFormPenilaian() {
       
       // Ambil nilai dari formData
       const nama = formData.get("nama");
+      const nomorSertifikat = formData.get("nomor_sertifikat");
+      
+      // Validasi nomor sertifikat dengan format baru
+      if (nomorSertifikat && nomorSertifikat.trim() !== '') {
+        const validation = validateNomorSertifikat(nomorSertifikat);
+        if (!validation.isValid) {
+          setFieldErrors({
+            nomor_sertifikat: validation.error
+          });
+          return;
+        }
+      }
       
       // Kumpulkan tujuan pembelajaran yang tidak kosong
       const items = [];
@@ -245,7 +367,11 @@ export default function DaftarFormPenilaian() {
         items
       };
 
-      setPendingData(payload);
+      // Simpan data sementara termasuk nomor sertifikat
+      setPendingData({
+        ...payload,
+        nomorSertifikat: nomorSertifikat || null
+      });
       setIsConfirmSaveOpen(true);
       
     } catch (error) {
@@ -275,10 +401,25 @@ export default function DaftarFormPenilaian() {
   const handleSaveConfirm = async () => {
     try {
       if (mode === "add") {
-        await createFormPenilaian(pendingData);
+        const response = await createFormPenilaian(pendingData);
+        
+        // Simpan nomor sertifikat ke localStorage setelah form berhasil dibuat
+        if (response.data && response.data.id && pendingData.nomorSertifikat) {
+          saveNomorSertifikatToLocal(response.data.id, pendingData.nomorSertifikat);
+        }
+        
         toast.success("Form penilaian berhasil dibuat!");
       } else if (mode === "edit" && selectedForm) {
         await updateFormPenilaian(selectedForm.id, pendingData);
+        
+        // Update nomor sertifikat di localStorage
+        if (pendingData.nomorSertifikat) {
+          saveNomorSertifikatToLocal(selectedForm.id, pendingData.nomorSertifikat);
+        } else {
+          // Jika nomor sertifikat dikosongkan, hapus dari localStorage
+          removeNomorSertifikatFromLocal(selectedForm.id);
+        }
+        
         toast.success("Form penilaian berhasil diperbarui!");
       }
       
@@ -294,14 +435,18 @@ export default function DaftarFormPenilaian() {
     }
   };
 
-  // Prepare initial data untuk edit - PERBAIKAN UTAMA
+  // Prepare initial data untuk edit
   const getEditInitialData = () => {
     if (!selectedForm) return {};
+    
+    // Ambil nomor sertifikat dari localStorage
+    const nomorSertifikat = getNomorSertifikatFromLocal(selectedForm.id);
     
     // Data dasar dengan menyertakan items array
     const data = {
       id: selectedForm.id,
       nama: selectedForm.nama || "",
+      nomor_sertifikat: nomorSertifikat || "",
       // Simpan items untuk digunakan di Add component
       items: selectedForm.items || []
     };
@@ -330,6 +475,15 @@ export default function DaftarFormPenilaian() {
       width: "full",
       required: true,
       minLength: 3
+    },
+    {
+      name: "nomor_sertifikat",
+      label: "Nomor Sertifikat",
+      type: "text",
+      placeholder: "420/1013/101.6.9.19/2026",
+      width: "full",
+      required: false,
+      helpText: "Format: 420/[nomor_urut]/101.6.9.19/[tahun]. Contoh: 420/1013/101.6.9.19/2026\nBagian 101.6.9.19 tidak boleh diubah!"
     }
   ];
 
@@ -346,9 +500,10 @@ export default function DaftarFormPenilaian() {
     });
   }
 
-  // Table columns
+  // Table columns - tambahkan kolom Nomor Sertifikat
   const columns = [
     { label: "Nama Form", key: "nama" },
+    { label: "Nomor Sertifikat", key: "nomorSertifikat", sortable: false },
     { label: "Jumlah Item", key: "itemCount", sortable: false },
     { 
       label: "Status", 
@@ -367,14 +522,16 @@ export default function DaftarFormPenilaian() {
     { label: "Diperbarui", key: "updated_at", sortable: false },
   ];
 
-  // Prepare data for table with proper formatting
+  // Prepare data for table with proper formatting - tambahkan nomor sertifikat
   const tableData = filteredForms.map((form, index) => {
     const itemCount = form.items?.length || 0;
+    const nomorSertifikat = getNomorSertifikatFromLocal(form.id) || '-';
     
     return {
       id: form.id,
       no: index + 1,
       nama: form.nama || '-',
+      nomorSertifikat: nomorSertifikat,
       itemCount: `${itemCount} item${itemCount > 1 ? '' : ''}`,
       status: form.is_active === true ? 'Aktif' : 'Tidak Aktif',
       created_at: dayjs(form.created_at).format("DD/MM/YYYY"),
@@ -445,14 +602,14 @@ export default function DaftarFormPenilaian() {
     );
   }
 
-  // Form Edit Mode - PERBAIKAN: Kirim initialData dengan items array
+  // Form Edit Mode
   if (mode === "edit" && selectedForm) {
     return (
       <>
         <Add
           title="Ubah Berkas Penilaian"
           fields={formFields}
-          initialData={getEditInitialData()} // Sekarang berisi items array
+          initialData={getEditInitialData()}
           image={editGrafik}
           onSubmit={handleEditSubmit}
           onCancel={handleCancel}
@@ -502,7 +659,7 @@ export default function DaftarFormPenilaian() {
           <SearchBar
             query={searchTerm}
             setQuery={setSearchTerm}
-            placeholder="Cari Berkas penilaian..."
+            placeholder="Cari Berkas penilaian atau nomor sertifikat..."
             filters={[
               {
                 label: "Status",
