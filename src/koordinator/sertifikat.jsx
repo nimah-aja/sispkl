@@ -13,6 +13,7 @@ import { getApprovedPKL } from "../utils/services/koordinator/pengajuan";
 import { generateAndDownloadSertifikat } from "../utils/lettersApi";
 import { getDetailReviewPenilaian } from "../utils/services/koordinator/penilaian";
 import { getIndustri } from "../utils/services/admin/get_industri";
+import { getFormsPenilaian } from "../utils/services/koordinator/form";
 
 export default function UbahSertifikatPKL() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function UbahSertifikatPKL() {
   const [logoName, setLogoName] = useState("");
   const [siswaList, setSiswaList] = useState([]);
   const [industriList, setIndustriList] = useState([]);
+  const [industriDetailMap, setIndustriDetailMap] = useState({});
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -36,6 +38,10 @@ export default function UbahSertifikatPKL() {
   // State untuk menyimpan data aspek dari API
   const [aspekList, setAspekList] = useState([]);
 
+  // State untuk form ID dan mapping nomor sertifikat
+  const [currentFormId, setCurrentFormId] = useState(null);
+  const [nomorSertifikatMap, setNomorSertifikatMap] = useState({});
+
   // State untuk error nilai
   const [nilaiErrors, setNilaiErrors] = useState({
     nilai1: "",
@@ -44,10 +50,27 @@ export default function UbahSertifikatPKL() {
     nilai4: ""
   });
 
-  // State untuk form data
+  // FUNGSI BARU: Untuk mendapatkan jenis nomor dari localStorage berdasarkan industri ID
+  const getJenisNomorFromLocal = (industriId, jenis) => {
+    try {
+      if (!industriId) return null;
+      
+      const key = `jenis_nomor_industri_${industriId}`;
+      const existingData = localStorage.getItem(key);
+      if (!existingData) return null;
+      
+      const data = JSON.parse(existingData);
+      return data[jenis] || null;
+    } catch (error) {
+      console.error('Gagal membaca jenis nomor dari localStorage:', error);
+      return null;
+    }
+  };
+
+  // State untuk form data - TAMBAHKAN FIELD JENIS NOMOR
   const [formData, setFormData] = useState({
-    // Data Sertifikat PKL
-    nomorSertifikat: "420/1013/101.6.9.19/2026",
+    // Data Sertifikat PKL - nomorSertifikat akan diisi dari localStorage berdasarkan form ID
+    nomorSertifikat: "",
     siswaId: "",
     namaPeserta: "",
     nisnPeserta: "",
@@ -57,8 +80,18 @@ export default function UbahSertifikatPKL() {
     hasilPenilaian: "Baik",
     namaIndustri: "",
     jurusanNama: "",
+    
+    // Data Pimpinan
     namaPimpinan: "",
-    namaPembina: "", // Field untuk Nama Pembina Industri
+    nipPimpinan: "",
+    jabatanPimpinan: "",
+    jenisNomorPimpinan: "", // TAMBAHKAN
+    
+    // Data Pembimbing
+    namaPembimbing: "",
+    nipPembimbing: "",
+    jabatanPembimbing: "",
+    jenisNomorPembimbing: "", // TAMBAHKAN
     
     // Nilai (4 aspek)
     nilai1: "",
@@ -90,6 +123,44 @@ export default function UbahSertifikatPKL() {
     role: "Koordinator" 
   };
 
+  // Fungsi untuk mendapatkan nomor sertifikat dari localStorage berdasarkan form ID
+  const getNomorSertifikatByFormId = (formId) => {
+    try {
+      if (!formId) return null;
+      
+      const existingData = localStorage.getItem('nomorSertifikatForms');
+      if (!existingData) return null;
+      
+      const nomorSertifikatData = JSON.parse(existingData);
+      return nomorSertifikatData[formId]?.nomorSertifikat || null;
+    } catch (error) {
+      console.error('Gagal membaca nomor sertifikat dari localStorage:', error);
+      return null;
+    }
+  };
+
+  // Fungsi untuk memuat semua data form penilaian
+  const fetchForms = async () => {
+    try {
+      const response = await getFormsPenilaian();
+      const formsData = response.data || [];
+      
+      // Buat mapping form ID ke nomor sertifikat dari localStorage
+      const map = {};
+      formsData.forEach(form => {
+        const nomor = getNomorSertifikatByFormId(form.id);
+        if (nomor) {
+          map[form.id] = nomor;
+        }
+      });
+      setNomorSertifikatMap(map);
+      
+      console.log("Nomor sertifikat map:", map);
+    } catch (error) {
+      console.error("Gagal fetch forms:", error);
+    }
+  };
+
   // Fungsi untuk mendapatkan predikat berdasarkan nilai
   const getPredikat = (nilai) => {
     if (!nilai && nilai !== 0) return "";
@@ -111,9 +182,9 @@ export default function UbahSertifikatPKL() {
     }
   };
 
-  // Fungsi untuk mendapatkan data PIC (pimpinan) dari industri berdasarkan nama industri
-  const getPICByIndustriName = (industriNama) => {
-    if (!industriNama || industriList.length === 0) return "";
+  // Fungsi untuk mendapatkan detail industri berdasarkan nama
+  const getDetailIndustriByNama = (industriNama) => {
+    if (!industriNama || industriList.length === 0) return null;
     
     const industri = industriList.find(item => 
       item.nama.toLowerCase() === industriNama.toLowerCase() ||
@@ -121,7 +192,7 @@ export default function UbahSertifikatPKL() {
       industriNama.toLowerCase().includes(item.nama.toLowerCase())
     );
     
-    return industri?.pic || "";
+    return industri || null;
   };
 
   // Ambil application_id dari URL parameter
@@ -136,9 +207,10 @@ export default function UbahSertifikatPKL() {
     }
   }, [location.search]);
 
-  // Fetch data industri saat komponen dimuat
+  // Fetch data industri dan forms saat komponen dimuat
   useEffect(() => {
     fetchIndustri();
+    fetchForms(); // Panggil fungsi untuk mengambil data form
   }, []);
 
   // Fungsi untuk memformat tanggal dari YYYY-MM-DD ke format "DD Bulan YYYY"
@@ -158,12 +230,11 @@ export default function UbahSertifikatPKL() {
     return `${hari} ${bulan} ${tahun}`;
   };
 
-  // Fungsi untuk memuat data dari localStorage
+  // Fungsi untuk memuat data dari localStorage - MODIFIKASI
   const loadDataFromLocalStorage = async (applicationId) => {
     try {
       setLoadingData(true);
       
-      // Ambil data dasar dari localStorage
       const savedData = localStorage.getItem('sertifikat_data_lengkap');
       
       if (savedData) {
@@ -172,14 +243,26 @@ export default function UbahSertifikatPKL() {
         
         if (parsedData.application_id.toString() === applicationId) {
           
-          // Dapatkan nama pimpinan dari data industri jika ada
-          let namaPimpinan = parsedData.industri?.pic || "";
-          if (!namaPimpinan && parsedData.industri?.nama) {
-            namaPimpinan = getPICByIndustriName(parsedData.industri.nama);
+          // Set form ID dari data yang disimpan
+          const formId = parsedData.form_id;
+          setCurrentFormId(formId);
+          
+          // Dapatkan nomor sertifikat berdasarkan form ID
+          let nomorSertifikat = getNomorSertifikatByFormId(formId);
+          
+          // Jika tidak ditemukan, gunakan dari parsedData atau default
+          if (!nomorSertifikat) {
+            nomorSertifikat = parsedData.nomor_sertifikat || "420/1013/101.6.9.19/2026";
+            console.warn(`Nomor sertifikat tidak ditemukan untuk form ID: ${formId}, menggunakan dari data atau default`);
           }
           
-          // Gunakan nama yang SAMA untuk pembina (sesuai permintaan)
-          let namaPembina = namaPimpinan; // Isi dengan nilai yang sama dengan pimpinan
+          // Dapatkan detail industri dari nama industri
+          const industriDetail = getDetailIndustriByNama(parsedData.industri?.nama || parsedData.nama_industri);
+          
+          // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
+          const industriId = parsedData.industri?.id || industriDetail?.id;
+          let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan') || parsedData.jenis_nomor_pimpinan || "NP";
+          let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing') || parsedData.jenis_nomor_pembimbing || "NP";
           
           // Ambil data dari parsedData
           const nilai1 = parsedData.penilaian?.items?.[0]?.skor || parsedData.nilai?.nilai1 || "";
@@ -187,17 +270,17 @@ export default function UbahSertifikatPKL() {
           const nilai3 = parsedData.penilaian?.items?.[2]?.skor || parsedData.nilai?.nilai3 || "";
           const nilai4 = parsedData.penilaian?.items?.[3]?.skor || parsedData.nilai?.nilai4 || "";
           
-          // Ambil aspek (judul singkat) - jika ada di parsedData.aspek, gunakan itu, jika tidak gunakan default
-          const aspek1 = parsedData.aspek?.aspek1 || formData.aspek1;
-          const aspek2 = parsedData.aspek?.aspek2 || formData.aspek2;
-          const aspek3 = parsedData.aspek?.aspek3 || formData.aspek3;
-          const aspek4 = parsedData.aspek?.aspek4 || formData.aspek4;
+          // Ambil aspek (judul singkat)
+          const aspek1 = parsedData.nilai?.aspek1 || formData.aspek1;
+          const aspek2 = parsedData.nilai?.aspek2 || formData.aspek2;
+          const aspek3 = parsedData.nilai?.aspek3 || formData.aspek3;
+          const aspek4 = parsedData.nilai?.aspek4 || formData.aspek4;
           
           // Ambil deskripsi lengkap dari items (hanya untuk tampilan)
-          const deskripsi1 = parsedData.penilaian?.items?.[0]?.deskripsi || parsedData.deskripsi?.deskripsi1 || "";
-          const deskripsi2 = parsedData.penilaian?.items?.[1]?.deskripsi || parsedData.deskripsi?.deskripsi2 || "";
-          const deskripsi3 = parsedData.penilaian?.items?.[2]?.deskripsi || parsedData.deskripsi?.deskripsi3 || "";
-          const deskripsi4 = parsedData.penilaian?.items?.[3]?.deskripsi || parsedData.deskripsi?.deskripsi4 || "";
+          const deskripsi1 = parsedData.penilaian?.items?.[0]?.deskripsi || parsedData.nilai?.deskripsi1 || "";
+          const deskripsi2 = parsedData.penilaian?.items?.[1]?.deskripsi || parsedData.nilai?.deskripsi2 || "";
+          const deskripsi3 = parsedData.penilaian?.items?.[2]?.deskripsi || parsedData.nilai?.deskripsi3 || "";
+          const deskripsi4 = parsedData.penilaian?.items?.[3]?.deskripsi || parsedData.nilai?.deskripsi4 || "";
           
           // Hitung predikat (hanya untuk tampilan)
           const predikat1 = getPredikat(nilai1);
@@ -208,13 +291,24 @@ export default function UbahSertifikatPKL() {
           // Isi form dengan data dari localStorage
           setFormData(prev => ({
             ...prev,
+            nomorSertifikat: nomorSertifikat,
             siswaId: parsedData.application_id,
             namaPeserta: parsedData.siswa?.nama || "",
             nisnPeserta: parsedData.siswa?.nisn || "",
-            namaIndustri: parsedData.industri?.nama || "",
+            namaIndustri: parsedData.industri?.nama || parsedData.nama_industri || "",
             jurusanNama: parsedData.siswa?.jurusan || "",
-            namaPimpinan: namaPimpinan,
-            namaPembina: namaPembina, // Isi field pembina dengan nilai yang sama dengan pimpinan
+            
+            // Data Pimpinan dari industriDetail + jenis nomor
+            namaPimpinan: industriDetail?.nama_pimpinan || parsedData.nama_pimpinan || "",
+            nipPimpinan: industriDetail?.nip_pimpinan || parsedData.nip_pimpinan || "",
+            jabatanPimpinan: industriDetail?.jabatan_pimpinan || parsedData.jabatan_pimpinan || "",
+            jenisNomorPimpinan: jenisNomorPimpinan,
+            
+            // Data Pembimbing dari industriDetail + jenis nomor
+            namaPembimbing: industriDetail?.pic || parsedData.nama_pembimbing || "",
+            nipPembimbing: industriDetail?.nip_pembimbing || parsedData.nip_pembimbing || "",
+            jabatanPembimbing: industriDetail?.jabatan_pembimbing || parsedData.jabatan_pembimbing || "",
+            jenisNomorPembimbing: jenisNomorPembimbing,
             
             tanggalMulai: parsedData.tanggal?.mulai || parsedData.siswa?.tanggal_mulai || "",
             tanggalSelesai: parsedData.tanggal?.selesai || parsedData.siswa?.tanggal_selesai || "",
@@ -247,9 +341,7 @@ export default function UbahSertifikatPKL() {
             hasilPenilaian: parsedData.hasil || calculateHasilPenilaian(nilai1, nilai2, nilai3, nilai4),
           }));
 
-          // Set aspekList untuk keperluan lain jika diperlukan
           setAspekList(parsedData.form_items || []);
-
           setSelectedSiswaLabel(`${parsedData.siswa?.nama} - ${parsedData.siswa?.nisn}`);
           
           // Set jurusan berdasarkan data siswa
@@ -272,7 +364,6 @@ export default function UbahSertifikatPKL() {
           toast.success("Data sertifikat berhasil dimuat");
         }
       } else {
-        // Jika tidak ada di localStorage, coba fetch dari API
         await fetchDetailPenilaian(applicationId);
       }
     } catch (error) {
@@ -283,34 +374,45 @@ export default function UbahSertifikatPKL() {
     }
   };
 
-  // Fungsi untuk fetch detail penilaian dari API
+  // Fungsi untuk fetch detail penilaian dari API - MODIFIKASI
   const fetchDetailPenilaian = async (applicationId) => {
     try {
       const response = await getDetailReviewPenilaian(applicationId);
       console.log("Detail dari API:", response);
       
-      // Cari data siswa di list yang sudah di-fetch
+      // Set form ID dari response
+      const formId = response.form_id;
+      setCurrentFormId(formId);
+      
+      // Dapatkan nomor sertifikat berdasarkan form ID
+      let nomorSertifikat = getNomorSertifikatByFormId(formId);
+      
+      // Jika tidak ditemukan, gunakan default
+      if (!nomorSertifikat) {
+        nomorSertifikat = "420/1013/101.6.9.19/2026";
+        console.warn(`Nomor sertifikat tidak ditemukan untuk form ID: ${formId}, menggunakan default`);
+      }
+      
       const siswaData = siswaList.find(s => s.application_id === parseInt(applicationId));
       
-      // Dapatkan nama pimpinan dari industri
-      const namaPimpinan = getPICByIndustriName(siswaData?.industri_nama || "");
+      // Dapatkan detail industri dari nama industri
+      const industriDetail = getDetailIndustriByNama(siswaData?.industri_nama || "");
       
-      // Gunakan nama yang SAMA untuk pembina
-      const namaPembina = namaPimpinan; // Isi dengan nilai yang sama dengan pimpinan
+      // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
+      const industriId = siswaData?.industri_id || industriDetail?.id;
+      let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan') || "NP";
+      let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing') || "NP";
       
-      // Ambil nilai dari items
       const nilai1 = response.items?.[0]?.skor || "";
       const nilai2 = response.items?.[1]?.skor || "";
       const nilai3 = response.items?.[2]?.skor || "";
       const nilai4 = response.items?.[3]?.skor || "";
       
-      // Hitung predikat (hanya untuk tampilan)
       const predikat1 = getPredikat(nilai1);
       const predikat2 = getPredikat(nilai2);
       const predikat3 = getPredikat(nilai3);
       const predikat4 = getPredikat(nilai4);
       
-      // Ambil deskripsi lengkap dari items (hanya untuk tampilan)
       const deskripsi1 = response.items?.[0]?.deskripsi || "";
       const deskripsi2 = response.items?.[1]?.deskripsi || "";
       const deskripsi3 = response.items?.[2]?.deskripsi || "";
@@ -318,43 +420,48 @@ export default function UbahSertifikatPKL() {
       
       setFormData(prev => ({
         ...prev,
+        nomorSertifikat: nomorSertifikat,
         siswaId: applicationId,
         namaPeserta: siswaData?.siswa_username || "",
         nisnPeserta: siswaData?.siswa_nisn || "",
         namaIndustri: siswaData?.industri_nama || "",
         jurusanNama: siswaData?.jurusan_nama || "",
-        namaPimpinan: namaPimpinan,
-        namaPembina: namaPembina, // Isi field pembina dengan nilai yang sama dengan pimpinan
         
-        // Ambil tanggal dari siswaData
+        // Data Pimpinan dari industriDetail + jenis nomor
+        namaPimpinan: industriDetail?.nama_pimpinan || "",
+        nipPimpinan: industriDetail?.nip_pimpinan || "",
+        jabatanPimpinan: industriDetail?.jabatan_pimpinan || "",
+        jenisNomorPimpinan: jenisNomorPimpinan,
+        
+        // Data Pembimbing dari industriDetail + jenis nomor
+        namaPembimbing: industriDetail?.pic || "",
+        nipPembimbing: industriDetail?.nip_pembimbing || "",
+        jabatanPembimbing: industriDetail?.jabatan_pembimbing || "",
+        jenisNomorPembimbing: jenisNomorPembimbing,
+        
         tanggalMulai: siswaData?.tanggal_mulai || "",
         tanggalSelesai: siswaData?.tanggal_selesai || "",
         
-        // Nilai
         nilai1: nilai1,
         nilai2: nilai2,
         nilai3: nilai3,
         nilai4: nilai4,
         
-        // Predikat (hanya untuk tampilan)
         predikat1: predikat1,
         predikat2: predikat2,
         predikat3: predikat3,
         predikat4: predikat4,
         
-        // Deskripsi lengkap dari API (hanya untuk tampilan)
         deskripsi1: deskripsi1,
         deskripsi2: deskripsi2,
         deskripsi3: deskripsi3,
         deskripsi4: deskripsi4,
         
-        // Hasil penilaian dari rata-rata
         hasilPenilaian: calculateHasilPenilaian(nilai1, nilai2, nilai3, nilai4),
       }));
 
       setSelectedSiswaLabel(`${siswaData?.siswa_username} - ${siswaData?.siswa_nisn}`);
       
-      // Set jurusan berdasarkan data siswa
       if (siswaData?.jurusan_nama) {
         const jurusanMap = {
           "Rekayasa Perangkat Lunak": "rpl",
@@ -388,16 +495,13 @@ export default function UbahSertifikatPKL() {
         if (response && response.data) {
           setSiswaList(response.data);
           
-          // Setelah dapat data siswa, cek apakah ada application_id di URL
           const params = new URLSearchParams(location.search);
           const applicationId = params.get('application_id');
           
           if (applicationId) {
-            // Cari data siswa yang sesuai
             const siswaData = response.data.find(s => s.application_id === parseInt(applicationId));
             
             if (siswaData) {
-              // Update form dengan tanggal dari siswaData
               setFormData(prev => ({
                 ...prev,
                 tanggalMulai: siswaData.tanggal_mulai || prev.tanggalMulai,
@@ -459,10 +563,8 @@ export default function UbahSertifikatPKL() {
     const n3 = parseFloat(nilai3) || 0;
     const n4 = parseFloat(nilai4) || 0;
     
-    // Hitung rata-rata
     const average = (n1 + n2 + n3 + n4) / 4;
     
-    // Tentukan kategori berdasarkan rata-rata
     if (average >= 86 && average <= 100) {
       return "Sangat Baik";
     } else if (average >= 75 && average <= 85) {
@@ -477,18 +579,16 @@ export default function UbahSertifikatPKL() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
+    if (name === 'nomorSertifikat') {
+      return;
+    }
+    
     setFormData(prev => {
       const newFormData = {
         ...prev,
         [name]: value
       };
       
-      // Jika yang diubah adalah namaPimpinan, otomatis update namaPembina juga
-      if (name === 'namaPimpinan') {
-        newFormData.namaPembina = value; // Update pembina dengan nilai yang sama
-      }
-      
-      // Validasi untuk field nilai
       if (name.startsWith('nilai')) {
         const error = validateNilai(name, value);
         setNilaiErrors(prevErrors => ({
@@ -496,7 +596,6 @@ export default function UbahSertifikatPKL() {
           [name]: error
         }));
         
-        // Jika nilai diubah, update predikat (hanya untuk tampilan)
         if (name === 'nilai1') {
           newFormData.predikat1 = getPredikat(value);
         } else if (name === 'nilai2') {
@@ -508,7 +607,6 @@ export default function UbahSertifikatPKL() {
         }
       }
       
-      // Jika yang diubah adalah nilai, hitung ulang hasil penilaian
       if (name === 'nilai1' || name === 'nilai2' || name === 'nilai3' || name === 'nilai4') {
         const nilai1 = name === 'nilai1' ? value : prev.nilai1;
         const nilai2 = name === 'nilai2' ? value : prev.nilai2;
@@ -524,28 +622,64 @@ export default function UbahSertifikatPKL() {
   };
 
   const handleSelectSiswa = (siswa) => {
-    // Dapatkan nama pimpinan dari data industri
-    const namaPimpinan = getPICByIndustriName(siswa.industri_nama || "");
+    // Dapatkan detail industri dari nama industri
+    const industriDetail = getDetailIndustriByNama(siswa.industri_nama || "");
     
-    // Gunakan nama yang SAMA untuk pembina (sesuai permintaan)
-    const namaPembina = namaPimpinan; // Isi dengan nilai yang sama dengan pimpinan
+    // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
+    const industriId = siswa.industri_id || industriDetail?.id;
+    let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan') || "NP";
+    let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing') || "NP";
     
-    setFormData(prev => ({
-      ...prev,
-      siswaId: siswa.application_id,
-      namaPeserta: siswa.siswa_username,
-      nisnPeserta: siswa.siswa_nisn,
-      tanggalMulai: siswa.tanggal_mulai,
-      tanggalSelesai: siswa.tanggal_selesai,
-      namaIndustri: siswa.industri_nama || "",
-      jurusanNama: siswa.jurusan_nama || "",
-      namaPimpinan: namaPimpinan,
-      namaPembina: namaPembina // Isi dengan nilai yang SAMA dengan pimpinan
-    }));
+    // Untuk siswa yang dipilih manual, kita perlu fetch detail penilaian
+    // untuk mendapatkan form ID
+    const fetchAndSetData = async () => {
+      try {
+        const detailData = await getDetailReviewPenilaian(siswa.application_id);
+        const formId = detailData.form_id;
+        setCurrentFormId(formId);
+        
+        // Dapatkan nomor sertifikat berdasarkan form ID
+        let nomorSertifikat = getNomorSertifikatByFormId(formId);
+        
+        // Jika tidak ditemukan, gunakan default
+        if (!nomorSertifikat) {
+          nomorSertifikat = "420/1013/101.6.9.19/2026";
+          toast.warning(`Nomor sertifikat untuk form ID ${formId} belum diatur. Gunakan default.`);
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          nomorSertifikat: nomorSertifikat,
+          siswaId: siswa.application_id,
+          namaPeserta: siswa.siswa_username,
+          nisnPeserta: siswa.siswa_nisn,
+          tanggalMulai: siswa.tanggal_mulai,
+          tanggalSelesai: siswa.tanggal_selesai,
+          namaIndustri: siswa.industri_nama || "",
+          jurusanNama: siswa.jurusan_nama || "",
+          
+          // Data Pimpinan dari industriDetail + jenis nomor
+          namaPimpinan: industriDetail?.nama_pimpinan || "",
+          nipPimpinan: industriDetail?.nip_pimpinan || "",
+          jabatanPimpinan: industriDetail?.jabatan_pimpinan || "",
+          jenisNomorPimpinan: jenisNomorPimpinan,
+          
+          // Data Pembimbing dari industriDetail + jenis nomor
+          namaPembimbing: industriDetail?.pic || "",
+          nipPembimbing: industriDetail?.nip_pembimbing || "",
+          jabatanPembimbing: industriDetail?.jabatan_pembimbing || "",
+          jenisNomorPembimbing: jenisNomorPembimbing
+        }));
+      } catch (error) {
+        console.error("Error fetching detail for selected siswa:", error);
+        toast.error("Gagal mengambil data penilaian siswa");
+      }
+    };
+
+    fetchAndSetData();
 
     setSelectedSiswaLabel(`${siswa.siswa_username} - ${siswa.siswa_nisn} (${siswa.kelas_nama})`);
     
-    // Set jurusan berdasarkan data siswa untuk dropdown kompetensi keahlian
     if (siswa.jurusan_nama) {
       const jurusanMap = {
         "Rekayasa Perangkat Lunak": "rpl",
@@ -565,7 +699,6 @@ export default function UbahSertifikatPKL() {
     setIsSiswaDropdownOpen(false);
     setSearchQuery("");
     
-    // Fetch detail penilaian untuk mendapatkan deskripsi lengkap (hanya untuk tampilan)
     if (siswa.application_id) {
       fetchDetailPenilaian(siswa.application_id);
     }
@@ -581,18 +714,31 @@ export default function UbahSertifikatPKL() {
       tanggalSelesai: "",
       namaIndustri: "",
       jurusanNama: "",
+      
+      // Reset data pimpinan
       namaPimpinan: "",
-      namaPembina: "", // Reset field pembina
+      nipPimpinan: "",
+      jabatanPimpinan: "",
+      jenisNomorPimpinan: "",
+      
+      // Reset data pembimbing
+      namaPembimbing: "",
+      nipPembimbing: "",
+      jabatanPembimbing: "",
+      jenisNomorPembimbing: "",
+      
       // Reset nilai
       nilai1: "",
       nilai2: "",
       nilai3: "",
       nilai4: "",
+      
       // Reset predikat
       predikat1: "",
       predikat2: "",
       predikat3: "",
       predikat4: "",
+      
       // Reset deskripsi
       deskripsi1: "",
       deskripsi2: "",
@@ -600,11 +746,11 @@ export default function UbahSertifikatPKL() {
       deskripsi4: "",
       hasilPenilaian: "Baik"
     }));
+    setCurrentFormId(null);
     setSelectedSiswaLabel("");
     setJurusan("");
     setAspekList([]);
     
-    // Reset error nilai
     setNilaiErrors({
       nilai1: "",
       nilai2: "",
@@ -623,7 +769,6 @@ export default function UbahSertifikatPKL() {
   };
 
   const handleSave = () => {
-    // Validasi semua nilai sebelum menyimpan
     const hasErrors = Object.values(nilaiErrors).some(error => error !== "");
     
     if (hasErrors) {
@@ -631,17 +776,14 @@ export default function UbahSertifikatPKL() {
       return;
     }
     
-    // Validasi siswa harus dipilih
     if (!formData.siswaId) {
       toast.error("Silakan pilih siswa terlebih dahulu!");
       return;
     }
     
-    // Logic untuk menyimpan data
-    // Yang disimpan hanya aspek (judul singkat) - deskripsi dan predikat tidak disimpan ke BE
     const dataToSave = {
       ...formData,
-      // Hapus deskripsi dan predikat dari data yang akan disimpan ke BE
+      form_id: currentFormId, // Simpan form ID
       deskripsi1: undefined,
       deskripsi2: undefined,
       deskripsi3: undefined,
@@ -654,16 +796,15 @@ export default function UbahSertifikatPKL() {
     
     console.log("Data Sertifikat (yang dikirim ke BE):", dataToSave);
     console.log("Jurusan:", jurusan);
+    console.log("Form ID:", currentFormId);
     console.log("Logo:", logoFile);
     
-    // Simpan ke localStorage sebagai contoh
     localStorage.setItem('sertifikatData', JSON.stringify(dataToSave));
     toast.success("Data sertifikat berhasil disimpan!");
   };
 
   const handleDownloadPDF = async () => {
     try {
-      // Validasi semua nilai sebelum download
       const hasErrors = Object.values(nilaiErrors).some(error => error !== "");
       
       if (hasErrors) {
@@ -683,16 +824,10 @@ export default function UbahSertifikatPKL() {
 
       setDownloading(true);
 
-      // Dapatkan nama pimpinan jika belum ada
-      let namaPimpinan = formData.namaPimpinan;
-      if (!namaPimpinan && formData.namaIndustri) {
-        namaPimpinan = getPICByIndustriName(formData.namaIndustri);
-      }
+      // Dapatkan detail industri untuk memastikan data terbaru
+      const industriDetail = getDetailIndustriByNama(formData.namaIndustri);
 
-      // Gunakan nama yang SAMA untuk pembina
-      let namaPembina = namaPimpinan; // Isi dengan nilai yang sama dengan pimpinan
-
-      // Format payload sesuai dengan struktur yang diharapkan
+      // Format payload sesuai dengan struktur yang diharapkan - TAMBAHKAN JENIS NOMOR
       const payload = {
         nomor_sertifikat: formData.nomorSertifikat,
         siswa: {
@@ -704,8 +839,19 @@ export default function UbahSertifikatPKL() {
         tanggal_selesai: formatTanggalIndonesia(formData.tanggalSelesai),
         hasil_pkl: formData.hasilPenilaian,
         tanggal_terbit: formatTanggalIndonesia(formData.tanggalSertifikatDibuat),
-        nama_pimpinan: namaPimpinan,
-        nama_pembina: namaPembina, // Nilainya SAMA dengan pimpinan
+        
+        // Data Pimpinan (prioritaskan dari form, fallback ke industriDetail) + jenis nomor
+        nama_pimpinan: formData.namaPimpinan || industriDetail?.nama_pimpinan || "",
+        jenis_nomor_pimpinan: formData.jenisNomorPimpinan || "NP",
+        nip_pimpinan: formData.nipPimpinan || industriDetail?.nip_pimpinan || "",
+        jabatan_pimpinan: formData.jabatanPimpinan || industriDetail?.jabatan_pimpinan || "",
+        
+        // Data Pembimbing (prioritaskan dari form, fallback ke industriDetail) + jenis nomor
+        nama_pembimbing: formData.namaPembimbing || industriDetail?.pic || "",
+        jenis_nomor_pembimbing: formData.jenisNomorPembimbing || "NP",
+        nip_pembimbing: formData.nipPembimbing || industriDetail?.nip_pembimbing || "",
+        jabatan_pembimbing: formData.jabatanPembimbing || industriDetail?.jabatan_pembimbing || "",
+        
         nilai: {
           aspek_1: parseFloat(formData.nilai1) || 0,
           aspek_2: parseFloat(formData.nilai2) || 0,
@@ -719,8 +865,8 @@ export default function UbahSertifikatPKL() {
       };
 
       console.log("Payload untuk sertifikat:", payload);
+      console.log("Menggunakan nomor sertifikat dari form ID:", currentFormId);
       
-      // Panggil utils untuk generate dan download sertifikat
       const filename = await generateAndDownloadSertifikat(jurusan, payload);
       
       console.log("Sertifikat berhasil didownload:", filename);
@@ -818,19 +964,21 @@ export default function UbahSertifikatPKL() {
             {/* Data Sertifikat PKL - Grid 2 Kolom */}
             <div className="grid grid-cols-2 gap-x-12 gap-y-6">
               
-              {/* NOMOR SERTIFIKAT - FULL WIDTH (2 Kolom) */}
+              {/* NOMOR SERTIFIKAT - FULL WIDTH (2 Kolom) - READ ONLY */}
               <div className="col-span-2 mb-2">
                 <label className="block text-sm font-bold text-gray-700 mb-1">
                   NOMOR SERTIFIKAT
                 </label>
-                <input
-                  type="text"
-                  name="nomorSertifikat"
-                  value={formData.nomorSertifikat}
-                  onChange={handleChange}
-                  disabled={downloading}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="nomorSertifikat"
+                    value={formData.nomorSertifikat}
+                    readOnly
+                    disabled={downloading}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 focus:outline-none cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
               </div>
 
               {/* Kolom Kiri - Data Kiri */}
@@ -841,7 +989,6 @@ export default function UbahSertifikatPKL() {
                     NAMA PESERTA DIDIK DAN NISN
                   </label>
                   <div className="relative" ref={siswaDropdownRef}>
-                    {/* Trigger Dropdown */}
                     <div
                       onClick={() => !downloading && setIsSiswaDropdownOpen(!isSiswaDropdownOpen)}
                       className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] cursor-pointer flex justify-between items-center ${downloading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -869,10 +1016,8 @@ export default function UbahSertifikatPKL() {
                       </div>
                     </div>
 
-                    {/* Dropdown Menu */}
                     {isSiswaDropdownOpen && !downloading && (
                       <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-80 overflow-hidden flex flex-col">
-                        {/* Input Pencarian */}
                         <div className="relative border-b">
                           <input
                             type="text"
@@ -892,7 +1037,6 @@ export default function UbahSertifikatPKL() {
                           )}
                         </div>
 
-                        {/* Daftar Siswa */}
                         <div className="overflow-y-auto max-h-60">
                           {loading ? (
                             <div className="px-4 py-3 text-center text-gray-500">
@@ -933,7 +1077,7 @@ export default function UbahSertifikatPKL() {
                   </div>
                 </div>
 
-                {/* Tanggal Mulai PKL - Otomatis terisi */}
+                {/* Tanggal Mulai PKL */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     TANGGAL MULAI PKL
@@ -948,24 +1092,71 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
 
-                {/* NAMA PEMBINA INDUSTRI - Field di kolom kiri */}
+                {/* NAMA PIMPINAN INDUSTRI */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    NAMA PEMBINA INDUSTRI
+                    NAMA PIMPINAN INDUSTRI
                   </label>
                   <input
                     type="text"
-                    name="namaPembina"
-                    value={formData.namaPembina}
+                    name="namaPimpinan"
+                    value={formData.namaPimpinan}
                     onChange={handleChange}
                     disabled={downloading}
-                    placeholder="Nama pembina industri"
+                    placeholder="Nama pimpinan industri"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
-            
                 </div>
 
-                {/* Hasil Penilaian - Otomatis terisi berdasarkan rata-rata nilai */}
+                {/* NIP PIMPINAN INDUSTRI */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    {formData.jenisNomorPimpinan}  PIMPINAN INDUSTRI
+                  </label>
+                  <input
+                    type="text"
+                    name="nipPimpinan"
+                    value={formData.nipPimpinan}
+                    onChange={handleChange}
+                    disabled={downloading}
+                    placeholder="NIP pimpinan industri"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* JABATAN PIMPINAN INDUSTRI */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    JABATAN PIMPINAN INDUSTRI
+                  </label>
+                  <input
+                    type="text"
+                    name="jabatanPimpinan"
+                    value={formData.jabatanPimpinan}
+                    onChange={handleChange}
+                    disabled={downloading}
+                    placeholder="Jabatan pimpinan industri"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* JENIS NOMOR PIMPINAN - FIELD BARU */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    JENIS NOMOR PIMPINAN
+                  </label>
+                  <input
+                    type="text"
+                    name="jenisNomorPimpinan"
+                    value={formData.jenisNomorPimpinan}
+                    onChange={handleChange}
+                    disabled={downloading}
+                    placeholder="Contoh: NIP, NIK, NIDN, dll"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Hasil Penilaian */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     HASIL PENILAIAN
@@ -988,7 +1179,7 @@ export default function UbahSertifikatPKL() {
 
               {/* Kolom Kanan - Data Kanan */}
               <div className="space-y-5">
-                {/* Nama Industri - Otomatis terisi */}
+                {/* Nama Industri */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     NAMA INDUSTRI
@@ -1004,7 +1195,7 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
 
-                {/* Tanggal Selesai PKL - Otomatis terisi */}
+                {/* Tanggal Selesai PKL */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     TANGGAL SELESAI PKL
@@ -1019,7 +1210,7 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
 
-                {/* Tanggal Sertifikat PKL Dibuat - Default hari ini */}
+                {/* Tanggal Sertifikat PKL Dibuat */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     TANGGAL SERTIFIKAT PKL DIBUAT
@@ -1034,18 +1225,66 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
 
-                {/* Nama Pimpinan Industri */}
+                {/* NAMA PEMBIMBING INDUSTRI */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    NAMA PIMPINAN INDUSTRI
+                    NAMA PEMBIMBING INDUSTRI
                   </label>
                   <input
                     type="text"
-                    name="namaPimpinan"
-                    value={formData.namaPimpinan}
+                    name="namaPembimbing"
+                    value={formData.namaPembimbing}
                     onChange={handleChange}
                     disabled={downloading}
-                    placeholder="Nama pimpinan industri"
+                    placeholder="Nama pembimbing industri"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* NIP PEMBIMBING INDUSTRI */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    {formData.jenisNomorPembimbing}  PEMBIMBING INDUSTRI
+                  </label>
+                  <input
+                    type="text"
+                    name="nipPembimbing"
+                    value={formData.nipPembimbing}
+                    onChange={handleChange}
+                    disabled={downloading}
+                    placeholder="NIP pembimbing industri"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* JABATAN PEMBIMBING INDUSTRI */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    JABATAN PEMBIMBING INDUSTRI
+                  </label>
+                  <input
+                    type="text"
+                    name="jabatanPembimbing"
+                    value={formData.jabatanPembimbing}
+                    onChange={handleChange}
+                    disabled={downloading}
+                    placeholder="Jabatan pembimbing industri"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* JENIS NOMOR PEMBIMBING - FIELD BARU */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    JENIS NOMOR PEMBIMBING
+                  </label>
+                  <input
+                    type="text"
+                    name="jenisNomorPembimbing"
+                    value={formData.jenisNomorPembimbing}
+                    onChange={handleChange}
+                    disabled={downloading}
+                    placeholder="Contoh: NIP, NIK, NIDN, dll"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#EC933A] disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
@@ -1060,7 +1299,6 @@ export default function UbahSertifikatPKL() {
               
               {/* Aspek 1 */}
               <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-                {/* ASPEK - Full Width */}
                 <div className="mb-4">
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     ASPEK 1
@@ -1076,7 +1314,6 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
                 
-                {/* NILAI dan PREDIKAT - Setengah-setengah */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">
@@ -1115,7 +1352,6 @@ export default function UbahSertifikatPKL() {
                   </div>
                 </div>
                 
-                {/* DESKRIPSI - Full Width (hanya untuk tampilan) */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     DESKRIPSI 1
@@ -1134,7 +1370,6 @@ export default function UbahSertifikatPKL() {
 
               {/* Aspek 2 */}
               <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-                {/* ASPEK - Full Width */}
                 <div className="mb-4">
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     ASPEK 2
@@ -1150,7 +1385,6 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
                 
-                {/* NILAI dan PREDIKAT - Setengah-setengah */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">
@@ -1189,7 +1423,6 @@ export default function UbahSertifikatPKL() {
                   </div>
                 </div>
                 
-                {/* DESKRIPSI - Full Width (hanya untuk tampilan) */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     DESKRIPSI 2
@@ -1208,7 +1441,6 @@ export default function UbahSertifikatPKL() {
 
               {/* Aspek 3 */}
               <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-                {/* ASPEK - Full Width */}
                 <div className="mb-4">
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     ASPEK 3
@@ -1224,7 +1456,6 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
                 
-                {/* NILAI dan PREDIKAT - Setengah-setengah */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">
@@ -1263,7 +1494,6 @@ export default function UbahSertifikatPKL() {
                   </div>
                 </div>
                 
-                {/* DESKRIPSI - Full Width (hanya untuk tampilan) */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     DESKRIPSI 3
@@ -1282,7 +1512,6 @@ export default function UbahSertifikatPKL() {
 
               {/* Aspek 4 */}
               <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-                {/* ASPEK - Full Width */}
                 <div className="mb-4">
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     ASPEK 4
@@ -1298,7 +1527,6 @@ export default function UbahSertifikatPKL() {
                   />
                 </div>
                 
-                {/* NILAI dan PREDIKAT - Setengah-setengah */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">
@@ -1337,7 +1565,6 @@ export default function UbahSertifikatPKL() {
                   </div>
                 </div>
                 
-                {/* DESKRIPSI - Full Width (hanya untuk tampilan) */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     DESKRIPSI 4

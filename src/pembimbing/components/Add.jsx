@@ -463,6 +463,130 @@ export default function Add({
     });
   };
 
+  // Fungsi untuk merender field dari array fields
+  const renderFieldFromArray = (field, idx) => {
+    // Jika field adalah untuk industri, kita render sesuai dengan nilaiForm
+    if (field.name === 'nama_pimpinan' || 
+        field.name === 'jabatan_pimpinan' || 
+        field.name === 'nip_pimpinan' || 
+        field.name === 'jenis_nomor_pimpinan' || 
+        field.name === 'jabatan_pembimbing' || 
+        field.name === 'nip_pembimbing' || 
+        field.name === 'jenis_nomor_pembimbing') {
+      
+      // Untuk field jenis nomor (pimpinan dan pembimbing) - UBAH JADI INPUT TEXT
+      if (field.name === 'jenis_nomor_pimpinan' || field.name === 'jenis_nomor_pembimbing') {
+        return (
+          <div className="col-span-1">
+            <label className="block mb-1 text-sm font-bold text-gray-700">
+              {field.label}
+            </label>
+            <input
+              type="text"
+              name={field.name}
+              value={nilaiForm[field.name] || ""}
+              onChange={(e) => {
+                onNilaiFormChange(field.name, e.target.value);
+                setIsChanged(true);
+              }}
+              placeholder={field.placeholder || `Masukkan ${field.label}`}
+              className="w-full p-3 !border !border-gray-300 rounded-lg !focus:ring-2 !focus:ring-[#641E21] focus:border-transparent"
+            />
+          </div>
+        );
+      }
+      
+      // Untuk field select lainnya (jika ada)
+      if (field.type === "select") {
+        return (
+          <div className="col-span-1 relative">
+            <label className="block mb-1 text-sm font-bold text-gray-700">
+              {field.label}
+            </label>
+            <div className="relative w-full max-w-[600px]">
+              {/* Trigger */}
+              <div
+                onClick={() => toggleDropdown(field.name)}
+                className="cursor-pointer border border-[#C9CFCF] rounded-lg px-4 py-4 bg-white text-sm flex justify-between items-center"
+              >
+                {selectedLabels[field.name] || nilaiForm[field.name] || field.placeholder || `Pilih ${field.label}`}
+                <img
+                  src={arrow}
+                  alt="arrow"
+                  className={`w-4 h-4 ml-2 transition-transform duration-200 ${
+                    dropdownState[field.name] ? "rotate-180" : "rotate-0"
+                  }`}
+                />
+              </div>
+
+              {dropdownState[field.name] && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border-2 border-[#C9CFCF] rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                  {/* Input Search */}
+                  <input
+                    type="text"
+                    placeholder={`Cari ${field.label}...`}
+                    className="w-full px-3 py-2 border-b text-sm focus:outline-none"
+                    value={searchQueries[field.name] || ""}
+                    onChange={(e) => handleSearchChange(field.name, e.target.value)}
+                  />
+
+                  <ul className="max-h-48 overflow-y-auto">
+                    {field.options
+                      .filter((opt) =>
+                        opt.label
+                          .toLowerCase()
+                          .includes((searchQueries[field.name] || "").toLowerCase())
+                      )
+                      .map((opt) => (
+                        <li
+                          key={opt.value}
+                          onClick={() => {
+                            onNilaiFormChange(field.name, opt.value);
+                            setSelectedLabels((prev) => ({ ...prev, [field.name]: opt.label }));
+                            setDropdownState((prev) => ({
+                              ...prev,
+                              [field.name]: false,
+                            }));
+                            handleSearchChange(field.name, "");
+                          }}
+                          className="px-4 py-2 cursor-pointer hover:bg-orange-50"
+                        >
+                          {opt.label}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+      
+      // Untuk field text biasa (selain jenis nomor)
+      return (
+        <div className="col-span-1">
+          <label className="block mb-1 text-sm font-bold text-gray-700">
+            {field.label}
+          </label>
+          <input
+            type={field.type || "text"}
+            name={field.name}
+            value={nilaiForm[field.name] || ""}
+            onChange={(e) => {
+              onNilaiFormChange(field.name, e.target.value);
+              setIsChanged(true);
+            }}
+            placeholder={field.placeholder || ""}
+            className="w-full p-3 !border !border-gray-300 rounded-lg !focus:ring-2 !focus:ring-[#641E21] focus:border-transparent"
+          />
+        </div>
+      );
+    }
+    
+    // Untuk field lain (jika ada)
+    return null;
+  };
+
   // Jika ini adalah form penilaian, render tampilan khusus
   if (isPenilaianForm && selectedItem && onNilaiFormChange) {
     const formItems = selectedItem.form_items || [];
@@ -570,6 +694,16 @@ export default function Add({
                     placeholder="Masukkan catatan akhir penilaian..."
                   />
                 </div>
+
+                {/* Separator Data Industri */}
+                <div className="col-span-1 mt-2 mb-2">
+                  <div className="border-t-2 border-gray-300 pt-4">
+                    <h3 className="font-bold text-lg text-gray-800">DATA PIMPINAN DAN PEMBIMBING INDUSTRI</h3>
+                  </div>
+                </div>
+
+                {/* Render field-field dari array fields */}
+                {fields.map((field, idx) => renderFieldFromArray(field, idx))}
               </form>
             </div>
           </div>

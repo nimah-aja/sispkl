@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Download, FileSpreadsheet, FileText, Star, Printer, CheckCircle, AlertTriangle, X } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Star, Printer, CheckCircle, AlertTriangle, X, Edit } from "lucide-react";
 import toast from "react-hot-toast";
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -15,6 +15,11 @@ import {
   finalizePenilaian 
 } from "../utils/services/pembimbing/penilaian";
 import { getGuruSiswa } from "../utils/services/pembimbing/guru";
+import { getSummaryIzinSiswa } from "../utils/services/pembimbing/izin";
+
+// IMPORT BARU: Service untuk industri
+import { getIndustri, getIndustriById } from "../utils/services/admin/get_industri";
+import { updateIndustri} from "../utils/services/admin/edit_industri";
 
 import Add from "./components/Add";
 import Detail from "./components/Detail";
@@ -31,6 +36,43 @@ import saveImg from "../assets/save.svg";
 
 dayjs.locale('id');
 
+// FUNGSI BARU: Untuk menyimpan jenis nomor ke localStorage
+const saveJenisNomorToLocal = (industriId, jenis, nilai) => {
+  try {
+    if (!industriId) return false;
+    
+    const key = `jenis_nomor_industri_${industriId}`;
+    const existingData = localStorage.getItem(key);
+    let data = existingData ? JSON.parse(existingData) : {};
+    
+    data[jenis] = nilai;
+    data.updatedAt = dayjs().toISOString();
+    
+    localStorage.setItem(key, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error('Gagal menyimpan jenis nomor ke localStorage:', error);
+    return false;
+  }
+};
+
+// FUNGSI BARU: Untuk mengambil jenis nomor dari localStorage
+const getJenisNomorFromLocal = (industriId, jenis) => {
+  try {
+    if (!industriId) return null;
+    
+    const key = `jenis_nomor_industri_${industriId}`;
+    const existingData = localStorage.getItem(key);
+    if (!existingData) return null;
+    
+    const data = JSON.parse(existingData);
+    return data[jenis] || null;
+  } catch (error) {
+    console.error('Gagal membaca jenis nomor dari localStorage:', error);
+    return null;
+  }
+};
+
 export default function DataPenilaianPKL() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,6 +84,13 @@ export default function DataPenilaianPKL() {
   const [loading, setLoading] = useState(false);
   const [loadingCetak, setLoadingCetak] = useState(false);
   const [finalizingId, setFinalizingId] = useState(null);
+
+  // STATE BARU: Untuk edit data industri
+  const [industriData, setIndustriData] = useState([]);
+  const [selectedIndustri, setSelectedIndustri] = useState(null);
+  const [loadingIndustri, setLoadingIndustri] = useState(false);
+  const [isIndustriSaveOpen, setIsIndustriSaveOpen] = useState(false);
+  const [pendingIndustriData, setPendingIndustriData] = useState(null);
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -69,6 +118,15 @@ export default function DataPenilaianPKL() {
     skor_3: "",
     skor_4: "",
     catatan_akhir: "",
+    // Field untuk industri
+    nama_pimpinan: "",
+    jabatan_pimpinan: "",
+    nip_pimpinan: "",
+    jabatan_pembimbing: "",
+    nip_pembimbing: "",
+    // FIELD BARU: Jenis nomor
+    jenis_nomor_pimpinan: "",
+    jenis_nomor_pembimbing: "",
   });
 
   const itemsPerPage = 10;
@@ -82,6 +140,114 @@ export default function DataPenilaianPKL() {
     { label: "Belum Dinilai", value: "belum_dinilai" },
     { label: "Sudah Dinilai", value: "sudah_dinilai" },
   ];
+
+  // FUNGSI BARU: Fetch semua data industri
+  const fetchIndustri = async () => {
+    setLoadingIndustri(true);
+    try {
+      const data = await getIndustri();
+      setIndustriData(data);
+    } catch (error) {
+      console.error("Gagal fetch industri:", error);
+      toast.error("Gagal memuat data industri");
+    } finally {
+      setLoadingIndustri(false);
+    }
+  };
+
+  // FUNGSI BARU: Fetch detail industri berdasarkan ID
+  const fetchIndustriDetail = async (id) => {
+    try {
+      const data = await getIndustriById(id);
+      return data;
+    } catch (error) {
+      console.error(`Gagal fetch industri dengan ID ${id}:`, error);
+      return null;
+    }
+  };
+
+  // FUNGSI BARU: Load data industri ke form + jenis nomor dari localStorage
+  const loadIndustriData = async (industriId) => {
+    if (!industriId) return;
+    
+    try {
+      const detail = await fetchIndustriDetail(industriId);
+      if (detail) {
+        setSelectedIndustri(detail);
+        
+        // Ambil jenis nomor dari localStorage
+        const jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan');
+        const jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing');
+        
+        setNilaiForm(prev => ({
+          ...prev,
+          nama_pimpinan: detail.nama_pimpinan || "",
+          jabatan_pimpinan: detail.jabatan_pimpinan || "",
+          nip_pimpinan: detail.nip_pimpinan || "",
+          jabatan_pembimbing: detail.jabatan_pembimbing || "",
+          nip_pembimbing: detail.nip_pembimbing || "",
+          jenis_nomor_pimpinan: jenisNomorPimpinan || "",
+          jenis_nomor_pembimbing: jenisNomorPembimbing || "",
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading industri data:", error);
+    }
+  };
+
+  // FUNGSI BARU: Submit update industri + simpan jenis nomor ke localStorage
+  const handleIndustriSubmit = async () => {
+    if (!selectedIndustri) return;
+    
+    try {
+      setLoadingIndustri(true);
+      
+      const payload = {
+        // Field dari data industri yang sudah ada (tetap)
+        alamat: selectedIndustri.alamat,
+        bidang: selectedIndustri.bidang,
+        email: selectedIndustri.email,
+        jurusan_id: selectedIndustri.jurusan_id,
+        nama: selectedIndustri.nama,
+        no_telp: selectedIndustri.no_telp,
+        pic: selectedIndustri.pic,
+        pic_telp: selectedIndustri.pic_telp,
+        
+        // Field yang diedit (pembimbing & pimpinan)
+        nama_pimpinan: nilaiForm.nama_pimpinan || null,
+        jabatan_pimpinan: nilaiForm.jabatan_pimpinan || null,
+        nip_pimpinan: nilaiForm.nip_pimpinan || null,
+        jabatan_pembimbing: nilaiForm.jabatan_pembimbing || null,
+        nip_pembimbing: nilaiForm.nip_pembimbing || null,
+      };
+
+      console.log("Payload update industri:", payload);
+      
+      await updateIndustri(selectedIndustri.id, payload);
+      
+      // Simpan jenis nomor ke localStorage
+      if (selectedIndustri.id) {
+        saveJenisNomorToLocal(selectedIndustri.id, 'jenis_nomor_pimpinan', nilaiForm.jenis_nomor_pimpinan);
+        saveJenisNomorToLocal(selectedIndustri.id, 'jenis_nomor_pembimbing', nilaiForm.jenis_nomor_pembimbing);
+      }
+      
+      toast.success("Data industri berhasil diperbarui");
+      
+      // Refresh data industri
+      await fetchIndustri();
+      
+    } catch (error) {
+      console.error("Error updating industri:", error);
+      toast.error(error?.response?.data?.message || "Gagal memperbarui data industri");
+    } finally {
+      setLoadingIndustri(false);
+    }
+  };
+
+  // AMBIL DATA INDUSTRI SAAT KOMPONEN DIMUAT
+  useEffect(() => {
+    fetchIndustri();
+  }, []);
 
   const getKonsentrasiKeahlian = (kelas) => {
     if (!kelas) return "";
@@ -131,9 +297,21 @@ export default function DataPenilaianPKL() {
       if (item) {
         setSelectedItem(item);
         
+        // Load data industri
+        if (item.industri_id) {
+          loadIndustriData(item.industri_id);
+        }
+        
         // Inisialisasi nilaiForm dari items yang sudah ada
         const initialNilaiForm = {
           catatan_akhir: item.catatan_akhir || "",
+          nama_pimpinan: "",
+          jabatan_pimpinan: "",
+          nip_pimpinan: "",
+          jabatan_pembimbing: "",
+          nip_pembimbing: "",
+          jenis_nomor_pimpinan: "",
+          jenis_nomor_pembimbing: "",
         };
         
         // Isi nilai dari items yang sudah ada
@@ -158,9 +336,21 @@ export default function DataPenilaianPKL() {
       params.set('id', item.application_id);
       setSelectedItem(item);
       
+      // Load data industri
+      if (item.industri_id) {
+        loadIndustriData(item.industri_id);
+      }
+      
       // Inisialisasi nilaiForm dari items yang sudah ada (jika ada)
       const initialNilaiForm = {
         catatan_akhir: item.catatan_akhir || "",
+        nama_pimpinan: "",
+        jabatan_pimpinan: "",
+        nip_pimpinan: "",
+        jabatan_pembimbing: "",
+        nip_pembimbing: "",
+        jenis_nomor_pimpinan: "",
+        jenis_nomor_pembimbing: "",
       };
       
       // Isi nilai dari items yang sudah ada
@@ -180,7 +370,15 @@ export default function DataPenilaianPKL() {
         skor_3: "",
         skor_4: "",
         catatan_akhir: "",
+        nama_pimpinan: "",
+        jabatan_pimpinan: "",
+        nip_pimpinan: "",
+        jabatan_pembimbing: "",
+        nip_pembimbing: "",
+        jenis_nomor_pimpinan: "",
+        jenis_nomor_pembimbing: "",
       });
+      setSelectedIndustri(null);
     }
     
     if (newMode !== 'detail') {
@@ -247,6 +445,22 @@ export default function DataPenilaianPKL() {
     }
   };
 
+  // FUNGSI BARU: Fetch dan simpan summary izin ke localStorage
+  const fetchAndStoreIzinSummary = async (siswa_id, application_id) => {
+    try {
+      const response = await getSummaryIzinSiswa(siswa_id);
+      console.log(`Summary izin untuk siswa ${siswa_id}:`, response);
+      
+      // Simpan ke localStorage dengan key yang unik berdasarkan application_id
+      localStorage.setItem(`izin_summary_${application_id}`, JSON.stringify(response));
+      
+      return response;
+    } catch (error) {
+      console.error(`Gagal fetch summary izin untuk siswa ${siswa_id}:`, error);
+      return null;
+    }
+  };
+
   const handleCetakLembarPenilaian = async (item) => {
     try {
       setLoadingCetak(true);
@@ -255,6 +469,12 @@ export default function DataPenilaianPKL() {
       const response = await getPenilaianApplicationById(item.application_id);
       const dataPkl = dataGuruSiswa.find(d => d.application_id === item.application_id);
       const konsentrasiKeahlian = getKonsentrasiKeahlian(item.kelas);
+      
+      // AMBIL DATA SUMMARY IZIN
+      let izinSummary = null;
+      if (item.siswa_id) {
+        izinSummary = await fetchAndStoreIzinSummary(item.siswa_id, item.application_id);
+      }
       
       const penilaianData = {
         application_id: response.application_id,
@@ -273,11 +493,19 @@ export default function DataPenilaianPKL() {
           kelas: item.kelas,
           konsentrasi_keahlian: konsentrasiKeahlian,
           industri: item.industri,
+          industri_id: item.industri_id, // TAMBAHKAN industri_id
           pkl_status: item.pkl_status,
           tanggal_mulai_input: dataPkl ? formatTanggalInput(dataPkl.tanggal_mulai) : "",
           tanggal_mulai_preview: dataPkl ? formatTanggalIndonesia(dataPkl.tanggal_mulai) : "",
           tanggal_selesai_input: dataPkl ? formatTanggalInput(dataPkl.tanggal_selesai) : "",
           tanggal_selesai_preview: dataPkl ? formatTanggalIndonesia(dataPkl.tanggal_selesai) : "",
+          // Tambahkan data instruktur jika ada di response
+          nama_instruktur: response.nama_instruktur || "",
+          jabatan_instruktur: response.jabatan_instruktur || "",
+          nip_instruktur: response.nip_instruktur || "",
+          nama_pembimbing: response.nama_pembimbing || localStorage.getItem("nama_guru") || "",
+          jabatan_pembimbing: response.jabatan_pembimbing || "Guru Mapel PKL",
+          nip_pembimbing: response.nip_pembimbing || localStorage.getItem("nip_guru") || ""
         },
         nilai: {
           skor_1: response.items?.find(i => i.form_item_id === response.form_items?.[0]?.id)?.skor || "",
@@ -288,7 +516,11 @@ export default function DataPenilaianPKL() {
           desc_2: response.items?.find(i => i.form_item_id === response.form_items?.[1]?.id)?.deskripsi || response.form_items?.[1]?.tujuan_pembelajaran || "",
           desc_3: response.items?.find(i => i.form_item_id === response.form_items?.[2]?.id)?.deskripsi || response.form_items?.[2]?.tujuan_pembelajaran || "",
           desc_4: response.items?.find(i => i.form_item_id === response.form_items?.[3]?.id)?.deskripsi || response.form_items?.[3]?.tujuan_pembelajaran || "",
-        }
+        },
+        // TAMBAHKAN DATA SUMMARY IZIN
+        sakit: izinSummary?.sakit || 0,
+        izin: izinSummary?.izin || 0,
+        alpa: izinSummary?.alpa || 0
       };
       
       localStorage.setItem('penilaian_data', JSON.stringify(penilaianData));
@@ -363,19 +595,34 @@ export default function DataPenilaianPKL() {
     return "";
   };
 
+  // UBAH FUNGSI INI: Tambahkan pengambilan summary izin
   const fetchPenilaianDetails = async (students) => {
     const details = {};
     for (const student of students) {
       if (student.application_id) {
         try {
           const response = await getPenilaianApplicationById(student.application_id);
+          
+          // Ambil data summary izin
+          let izinSummary = null;
+          if (student.siswa_id) {
+            try {
+              izinSummary = await getSummaryIzinSiswa(student.siswa_id);
+              // Simpan ke localStorage untuk digunakan nanti
+              localStorage.setItem(`izin_summary_${student.application_id}`, JSON.stringify(izinSummary));
+            } catch (izinError) {
+              console.error(`Error fetching izin summary for ${student.siswa_id}:`, izinError);
+            }
+          }
+          
           details[student.application_id] = {
             status: response.status,
             hasItems: response.items && response.items.length > 0,
             data: response,
             finalized_at: response.finalized_at,
             form_items: response.form_items || [],
-            form_nama: response.form_nama
+            form_nama: response.form_nama,
+            izin_summary: izinSummary // Simpan summary izin
           };
         } catch (error) {
           console.error(`Error fetching details for ${student.application_id}:`, error);
@@ -385,7 +632,8 @@ export default function DataPenilaianPKL() {
             data: null,
             finalized_at: null,
             form_items: [],
-            form_nama: ''
+            form_nama: '',
+            izin_summary: null
           };
         }
       }
@@ -414,7 +662,7 @@ export default function DataPenilaianPKL() {
           nama: item.siswa_username,
           nisn: item.siswa_nisn,
           kelas: item.kelas_nama,
-          industri_id: item.industri_id,
+          industri_id: item.industri_id, // PASTIKAN INI ADA
           industri: item.industri_nama,
           pkl_status: item.pkl_status,
           penilaian_status: item.penilaian_status,
@@ -430,6 +678,7 @@ export default function DataPenilaianPKL() {
           nilai_akhir: detail.data?.total_skor || null,
           catatan: detail.data?.catatan_akhir || "-",
           tanggal_penilaian: detail.finalized_at || null,
+          izin_summary: detail.izin_summary // Tambahkan ini
         };
       });
       
@@ -492,10 +741,7 @@ export default function DataPenilaianPKL() {
         }
       }
 
-      if (!raw.catatan_akhir) {
-        toast.error("Catatan akhir harus diisi");
-        return;
-      }
+      // Catatan akhir bersifat opsional - tidak perlu validasi
       
       // Hitung deskripsi berdasarkan nilai untuk setiap aspek
       const items = formItems.map((item, index) => {
@@ -507,10 +753,10 @@ export default function DataPenilaianPKL() {
         };
       });
       
-      // Format payload
+      // Format payload untuk penilaian
       const payload = {
         items: items,
-        catatan_akhir: raw.catatan_akhir
+        catatan_akhir: raw.catatan_akhir || "" // Jika kosong, kirim string kosong
       };
       
       console.log("Submitting penilaian with payload:", payload);
@@ -521,6 +767,11 @@ export default function DataPenilaianPKL() {
       const response = await setPenilaianToDraft(selectedItem.application_id, payload);
       
       console.log("Response from setPenilaianToDraft:", response);
+      
+      // Update data industri jika ada perubahan
+      if (selectedIndustri) {
+        await handleIndustriSubmit();
+      }
       
       toast.success("Penilaian berhasil disimpan sebagai draft");
       
@@ -658,10 +909,7 @@ export default function DataPenilaianPKL() {
         return;
       }
 
-      if (!raw.catatan) {
-        toast.error("Catatan harus diisi");
-        return;
-      }
+      // Catatan bersifat opsional - tidak perlu validasi
       
       const selectedSiswa = dataPenilaian.find(s => s.nama === raw.nama);
       
@@ -674,7 +922,7 @@ export default function DataPenilaianPKL() {
         siswa_id: selectedSiswa.siswa_id,
         application_id: selectedSiswa.application_id,
         nilai_akhir: parseInt(raw.nilai_akhir),
-        catatan: raw.catatan,
+        catatan: raw.catatan || "", // Jika kosong, kirim string kosong
         status: "sudah_dinilai",
       };
       
@@ -695,10 +943,7 @@ export default function DataPenilaianPKL() {
         return;
       }
 
-      if (!raw.catatan) {
-        toast.error("Catatan harus diisi");
-        return;
-      }
+      // Catatan bersifat opsional - tidak perlu validasi
 
       if (!raw.status) {
         toast.error("Status harus dipilih");
@@ -707,7 +952,7 @@ export default function DataPenilaianPKL() {
       
       const payload = {
         nilai_akhir: parseInt(raw.nilai_akhir),
-        catatan: raw.catatan,
+        catatan: raw.catatan || "", // Jika kosong, kirim string kosong
         status: raw.status,
       };
       
@@ -824,13 +1069,12 @@ export default function DataPenilaianPKL() {
                     placeholder: "Masukkan nilai akhir",
                   },
                   {
-                    label: "Catatan",
+                    label: "Catatan (Opsional)",
                     name: "catatan",
                     type: "textarea",
                     rows: 4,
                     width: "full",
-                    required: true,
-                    placeholder: "Masukkan catatan penilaian...",
+                    placeholder: "Masukkan catatan penilaian (opsional)...",
                   },
                 ]}
                 onSubmit={handleAddSubmit}
@@ -905,12 +1149,11 @@ export default function DataPenilaianPKL() {
                     max: 100,
                   },
                   {
-                    label: "Catatan",
+                    label: "Catatan (Opsional)",
                     name: "catatan",
                     type: "textarea",
                     rows: 4,
                     width: "full",
-                    required: true,
                   },
                   {
                     label: "Status",
@@ -1004,8 +1247,100 @@ export default function DataPenilaianPKL() {
     );
   }
 
-  // MODE NILAI
+  // MODE NILAI (GABUNGAN DENGAN EDIT INDUSTRI + JENIS NOMOR)
   if (mode === "nilai" && selectedItem) {
+    const nilaiFields = [
+      // Aspek Penilaian (4 aspek)
+      ...(selectedItem.form_items || []).map((item, index) => ({
+        label: `Aspek ${index + 1}`,
+        name: `skor_${index + 1}`,
+        type: "number",
+        width: "half",
+        min: 0,
+        max: 100,
+        required: true,
+        helperText: item.tujuan_pembelajaran,
+      })),
+      
+      // Catatan Akhir
+      {
+        label: "Catatan Akhir (Opsional)",
+        name: "catatan_akhir",
+        type: "textarea",
+        rows: 3,
+        width: "full",
+      },
+      
+      // DATA INDUSTRI (PEMBIMBING & PIMPINAN)
+      {
+        label: "Nama Pimpinan Industri",
+        name: "nama_pimpinan",
+        type: "text",
+        width: "half",
+        defaultValue: nilaiForm.nama_pimpinan,
+      },
+      {
+        label: "Jabatan Pimpinan",
+        name: "jabatan_pimpinan",
+        type: "text",
+        width: "half",
+        defaultValue: nilaiForm.jabatan_pimpinan,
+      },
+      {
+        label: "Nomor Pokok Pimpinan",
+        name: "nip_pimpinan",
+        type: "text",
+        width: "half",
+        defaultValue: nilaiForm.nip_pimpinan,
+      },
+      {
+        label: "Jenis Nomor Pimpinan",
+        name: "jenis_nomor_pimpinan",
+        type: "select",
+        options: [
+          { label: "-- Pilih Jenis Nomor --", value: "" },
+          { label: "NIP", value: "NIP" },
+          { label: "NIK", value: "NIK" },
+          { label: "NIDN", value: "NIDN" },
+          { label: "NRP", value: "NRP" },
+          { label: "NIPPK", value: "NIPPK" },
+          { label: "Lainnya", value: "Lainnya" },
+        ],
+        width: "half",
+        defaultValue: nilaiForm.jenis_nomor_pimpinan,
+      },
+      {
+        label: "Jabatan Pembimbing Industri",
+        name: "jabatan_pembimbing",
+        type: "text",
+        width: "half",
+        defaultValue: nilaiForm.jabatan_pembimbing,
+      },
+      {
+        label: "Nomor Pokok Pembimbing Industri",
+        name: "nip_pembimbing",
+        type: "text",
+        width: "half",
+        defaultValue: nilaiForm.nip_pembimbing,
+      },
+      {
+        label: "Jenis Nomor Pembimbing",
+        name: "jenis_nomor_pembimbing",
+        type: "select",
+        options: [
+          { label: "-- Pilih Jenis Nomor --", value: "" },
+          { label: "NIP", value: "NIP" },
+          { label: "NIK", value: "NIK" },
+          { label: "NIDN", value: "NIDN" },
+          { label: "NRP", value: "NRP" },
+          { label: "NIPPK", value: "NIPPK" },
+          { label: "Lainnya", value: "Lainnya" },
+        ],
+        width: "half",
+        defaultValue: nilaiForm.jenis_nomor_pembimbing,
+      },
+    ];
+
     return (
       <Add
         isPenilaianForm={true}
@@ -1016,6 +1351,7 @@ export default function DataPenilaianPKL() {
         onSubmit={handleNilaiSubmit}
         onCancel={() => handleModeChange("list")}
         image={editGrafik}
+        fields={nilaiFields}
         backgroundStyle={{ backgroundColor: "#641E21" }}
         containerClassName="w-full max-w-6xl bg-white mx-auto"
         containerStyle={{ maxHeight: "600px" }}

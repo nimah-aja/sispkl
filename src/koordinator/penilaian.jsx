@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Download, FileSpreadsheet, FileText, Star, Printer, CheckCircle, Building2, Users, ChevronDown, ChevronUp, FileDown, GraduationCap, Edit } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Star, Printer, CheckCircle, Building2, Users, ChevronDown, ChevronUp, FileDown, GraduationCap, Edit, Award, Hash } from "lucide-react";
 import toast from "react-hot-toast";
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -10,9 +10,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 import { getReviewPenilaian, getDetailReviewPenilaian } from "../utils/services/koordinator/penilaian";
 import { getApprovedPKL } from "../utils/services/koordinator/pengajuan";
-import { getIndustri } from "../utils/services/admin/get_industri";
+import { getIndustri, getIndustriById } from "../utils/services/admin/get_industri";
 import { generateAndDownloadSertifikat } from "../utils/lettersApi";
-import { getSummaryIzinSiswa } from "../utils/services/pembimbing/izin"; // Import service izin
+import { getSummaryIzinSiswa } from "../utils/services/pembimbing/izin";
+import { getFormsPenilaian } from "../utils/services/koordinator/form";
 
 import Detail from "./components/Detail";
 import Sidebar from "./components/SidebarBiasa";
@@ -37,10 +38,16 @@ export default function ReviewPenilaianPKL() {
   const [loadingCetak, setLoadingCetak] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [loadingIzinData, setLoadingIzinData] = useState(false);
+  const [tempat, setTempat] = useState("Singosari");
+
+  // State untuk menyimpan data form penilaian dan nomor sertifikat dari localStorage
+  const [formsList, setFormsList] = useState([]);
+  const [nomorSertifikatMap, setNomorSertifikatMap] = useState({});
 
   const [dataPenilaian, setDataPenilaian] = useState([]);
   const [siswaList, setSiswaList] = useState([]);
   const [industriList, setIndustriList] = useState([]);
+  const [industriDetailMap, setIndustriDetailMap] = useState({});
   const [groupedByIndustri, setGroupedByIndustri] = useState({});
   const [groupedByKelas, setGroupedByKelas] = useState({});
   const [totalData, setTotalData] = useState(0);
@@ -51,8 +58,8 @@ export default function ReviewPenilaianPKL() {
   // State untuk menyimpan data izin siswa
   const [izinDataMap, setIzinDataMap] = useState({});
   
-  const [mode, setMode] = useState("list"); // list | detail
-  const [viewMode, setViewMode] = useState("list"); // list | industri | kelas
+  const [mode, setMode] = useState("list");
+  const [viewMode, setViewMode] = useState("list");
   const [detailMode, setDetailMode] = useState("view");
   const [currentPage, setCurrentPage] = useState(1);
   const [processingId, setProcessingId] = useState(null);
@@ -64,6 +71,77 @@ export default function ReviewPenilaianPKL() {
   const user = {
     name: localStorage.getItem("nama_guru") || "Koordinator PKL",
     role: "Koordinator",
+  };
+
+  const schoolInfo = {
+    alamat_jalan: "Jalan Perusahaan No. 20",
+    email: "smkn2singosari@yahoo.co.id",
+    kab_kota: "Kab. Malang",
+    kecamatan: "Singosari",
+    kelurahan: "Tunjungtirto",
+    kode_pos: "65153",
+    logo_url: "https://upload.wikimedia.org/wikipedia/commons/7/74/Coat_of_arms_of_East_Java.svg",
+    nama_sekolah: "SMK NEGERI 2 SINGOSARI",
+    provinsi: "Jawa Timur",
+    telepon: "(0341) 4345127",
+    website: "www.smkn2singosari.sch.id"
+  };
+
+  // Fungsi untuk mendapatkan nomor sertifikat dari localStorage berdasarkan form ID
+  const getNomorSertifikatByFormId = (formId) => {
+    try {
+      if (!formId) return null;
+      
+      const existingData = localStorage.getItem('nomorSertifikatForms');
+      if (!existingData) return null;
+      
+      const nomorSertifikatData = JSON.parse(existingData);
+      return nomorSertifikatData[formId]?.nomorSertifikat || null;
+    } catch (error) {
+      console.error('Gagal membaca nomor sertifikat dari localStorage:', error);
+      return null;
+    }
+  };
+
+  // FUNGSI BARU: Untuk mendapatkan jenis nomor dari localStorage berdasarkan industri ID
+  const getJenisNomorFromLocal = (industriId, jenis) => {
+    try {
+      if (!industriId) return null;
+      
+      const key = `jenis_nomor_industri_${industriId}`;
+      const existingData = localStorage.getItem(key);
+      if (!existingData) return null;
+      
+      const data = JSON.parse(existingData);
+      return data[jenis] || null;
+    } catch (error) {
+      console.error('Gagal membaca jenis nomor dari localStorage:', error);
+      return null;
+    }
+  };
+
+  // Fungsi untuk memuat semua data form penilaian
+  const fetchForms = async () => {
+    try {
+      const response = await getFormsPenilaian();
+      const formsData = response.data || [];
+      setFormsList(formsData);
+      
+      // Buat mapping form ID ke nomor sertifikat dari localStorage
+      const map = {};
+      formsData.forEach(form => {
+        const nomor = getNomorSertifikatByFormId(form.id);
+        if (nomor) {
+          map[form.id] = nomor;
+        }
+      });
+      setNomorSertifikatMap(map);
+      
+      console.log("Form data loaded:", formsData);
+      console.log("Nomor sertifikat map:", map);
+    } catch (error) {
+      console.error("Gagal fetch forms:", error);
+    }
   };
 
   // Mapping jurusan ke kode untuk API
@@ -137,7 +215,38 @@ export default function ReviewPenilaianPKL() {
     } else if (average > 0 && average < 75) {
       return "Kurang";
     } else {
+      return "Belum Dinilai";
+    }
+  };
+
+  // Fungsi untuk mendapatkan predikat berdasarkan rata-rata
+  const getPredikat = (rataRata) => {
+    if (!rataRata || rataRata === "-" || rataRata === 0) return "Belum Dinilai";
+    
+    const avg = parseFloat(rataRata);
+    
+    if (avg >= 86 && avg <= 100) {
+      return "Sangat Baik";
+    } else if (avg >= 75 && avg <= 85) {
       return "Baik";
+    } else if (avg < 75 && avg > 0) {
+      return "Kurang";
+    } else {
+      return "Belum Dinilai";
+    }
+  };
+
+  // Fungsi untuk mendapatkan warna badge berdasarkan predikat
+  const getPredikatColor = (predikat) => {
+    switch(predikat) {
+      case "Sangat Baik":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "Baik":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "Kurang":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -171,7 +280,6 @@ export default function ReviewPenilaianPKL() {
   // Group data by industry and class
   useEffect(() => {
     if (dataPenilaian.length > 0) {
-      // Group by Industri
       const industriGroups = {};
       dataPenilaian.forEach(item => {
         const industri = item.industri_nama || "Industri Lainnya";
@@ -182,7 +290,6 @@ export default function ReviewPenilaianPKL() {
       });
       setGroupedByIndustri(industriGroups);
 
-      // Group by Kelas
       const kelasGroups = {};
       dataPenilaian.forEach(item => {
         const kelas = item.kelas_nama || "Kelas Lainnya";
@@ -193,7 +300,6 @@ export default function ReviewPenilaianPKL() {
       });
       setGroupedByKelas(kelasGroups);
       
-      // Initialize expanded state for all groups
       const initialExpanded = {};
       Object.keys(industriGroups).forEach(key => {
         initialExpanded[key] = true;
@@ -219,7 +325,7 @@ export default function ReviewPenilaianPKL() {
           return { siswa_id: siswaId, data: response };
         } catch (error) {
           console.error(`Gagal mengambil data izin untuk siswa ID ${siswaId}:`, error);
-          return { siswa_id: siswaId, data: { sakit: 0, izin: 0 } };
+          return { siswa_id: siswaId, data: { sakit: 0, izin: 0, alpa: 0 } };
         }
       });
       
@@ -234,6 +340,46 @@ export default function ReviewPenilaianPKL() {
       console.error("Error fetching all izin data:", error);
     } finally {
       setLoadingIzinData(false);
+    }
+  };
+
+  // Fungsi untuk mengambil detail semua industri berdasarkan nama
+  const fetchAllIndustriDetails = async (industriNames) => {
+    if (!industriNames || industriNames.length === 0) return;
+    
+    try {
+      const uniqueNames = [...new Set(industriNames)];
+      const industriPromises = uniqueNames.map(async (industriNama) => {
+        const industri = industriList.find(item => 
+          item.nama.toLowerCase() === industriNama.toLowerCase() ||
+          item.nama.toLowerCase().includes(industriNama.toLowerCase()) ||
+          industriNama.toLowerCase().includes(item.nama.toLowerCase())
+        );
+        
+        if (industri) {
+          try {
+            const detail = await getIndustriById(industri.id);
+            console.log(`Detail industri untuk ${industriNama}:`, detail);
+            return { nama: industriNama, data: detail };
+          } catch (error) {
+            console.error(`Gagal mengambil detail industri untuk ${industriNama}:`, error);
+            return { nama: industriNama, data: industri };
+          }
+        }
+        return { nama: industriNama, data: null };
+      });
+      
+      const results = await Promise.all(industriPromises);
+      const newIndustriMap = {};
+      results.forEach(result => {
+        if (result.data) {
+          newIndustriMap[result.nama] = result.data;
+        }
+      });
+      
+      setIndustriDetailMap(prevMap => ({ ...prevMap, ...newIndustriMap }));
+    } catch (error) {
+      console.error("Error fetching all industri details:", error);
     }
   };
 
@@ -293,6 +439,7 @@ export default function ReviewPenilaianPKL() {
         
         "Total Skor": response.total_skor || "-",
         "Rata-rata": response.rata_rata || "-",
+        "Predikat": getPredikat(response.rata_rata),
         "Catatan Akhir": response.catatan_akhir || "-",
         "Tanggal Finalisasi": formatTanggalIndonesia(response.finalized_at) || "-",
         "Form Penilaian": response.form_nama || "-",
@@ -335,35 +482,21 @@ export default function ReviewPenilaianPKL() {
     }
   };
 
-  // Fungsi untuk mendapatkan data PIC (pimpinan) dari industri berdasarkan nama industri
-  const getPICByIndustriName = (industriNama) => {
-    if (!industriNama || industriList.length === 0) return "";
+  // Fungsi untuk mendapatkan detail industri berdasarkan nama
+  const getDetailIndustriByNama = (industriNama) => {
+    if (!industriNama || industriList.length === 0) return null;
     
-    // Cari industri yang namanya match (case insensitive)
+    // Cari industri di industriList berdasarkan nama (case insensitive)
     const industri = industriList.find(item => 
       item.nama.toLowerCase() === industriNama.toLowerCase() ||
       item.nama.toLowerCase().includes(industriNama.toLowerCase()) ||
       industriNama.toLowerCase().includes(item.nama.toLowerCase())
     );
     
-    return industri?.pic || "";
+    return industri || null;
   };
 
-  // Fungsi untuk mendapatkan tanggal dari siswaList berdasarkan application_id
-  const getTanggalDariSiswa = (applicationId) => {
-    const siswa = siswaList.find(s => s.application_id === parseInt(applicationId));
-    return {
-      tanggalMulai: siswa?.tanggal_mulai || "",
-      tanggalSelesai: siswa?.tanggal_selesai || ""
-    };
-  };
-
-  // Fungsi untuk mendapatkan data izin siswa berdasarkan siswa_id
-  const getIzinDataBySiswaId = (siswaId) => {
-    return izinDataMap[siswaId] || { sakit: 0, izin: 0 };
-  };
-
-  // Fungsi untuk generate sertifikat single (LANGSUNG DOWNLOAD, TIDAK NAVIGASI)
+  // Fungsi untuk generate sertifikat single - MODIFIKASI UTAMA
   const handleCetakSertifikat = async (item) => {
     try {
       setLoadingCetak(true);
@@ -380,11 +513,11 @@ export default function ReviewPenilaianPKL() {
       // Dapatkan tanggal mulai dan selesai dari siswaList
       const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(item.application_id);
       
-      // Dapatkan nama PIC (pimpinan) dari industri
-      const namaPimpinan = getPICByIndustriName(item.industri_nama);
+      // Dapatkan detail industri berdasarkan nama
+      const industriDetail = getDetailIndustriByNama(item.industri_nama);
       
-      // Dapatkan kode jurusan
-      const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
+      // Log untuk debugging
+      console.log("Industri Detail untuk", item.industri_nama, ":", industriDetail);
       
       // Ambil nilai dari items
       const nilai1 = parseFloat(detailData.items?.[0]?.skor) || 0;
@@ -392,17 +525,56 @@ export default function ReviewPenilaianPKL() {
       const nilai3 = parseFloat(detailData.items?.[2]?.skor) || 0;
       const nilai4 = parseFloat(detailData.items?.[3]?.skor) || 0;
       
-      // Hitung hasil penilaian
-      const hasilPenilaian = hitungHasilPenilaian(nilai1, nilai2, nilai3, nilai4);
+      // Hitung hasil penilaian berdasarkan rata-rata nilai
+      const average = (nilai1 + nilai2 + nilai3 + nilai4) / 4;
+      let hasilPkl = "Belum Dinilai";
+      if (average >= 86 && average <= 100) {
+        hasilPkl = "Sangat Baik";
+      } else if (average >= 75 && average <= 85) {
+        hasilPkl = "Baik";
+      } else if (average > 0 && average < 75) {
+        hasilPkl = "Kurang";
+      }
       
       // Format tanggal
       const tanggalMulaiFormatted = formatTanggalIndonesia(tanggalMulai);
       const tanggalSelesaiFormatted = formatTanggalIndonesia(tanggalSelesai);
-      const tanggalTerbit = formatTanggalIndonesia(new Date().toISOString().split('T')[0]);
+      const tanggalTerbitFormatted = formatTanggalIndonesia(new Date().toISOString().split('T')[0]);
       
-      // Format payload sesuai dengan struktur yang diharapkan lettersApi
+      // Dapatkan nomor sertifikat berdasarkan form ID yang digunakan
+      const formId = detailData.form_id;
+      let nomorSertifikat = getNomorSertifikatByFormId(formId);
+      
+      // Jika tidak ditemukan, gunakan default atau tampilkan warning
+      if (!nomorSertifikat) {
+        nomorSertifikat = "420/1013/101.6.9.19/2026"; // Default fallback
+        console.warn(`Nomor sertifikat tidak ditemukan untuk form ID: ${formId}, menggunakan default`);
+        toast.warning(`Nomor sertifikat untuk form "${detailData.form_nama}" belum diatur. Gunakan default.`, { id: 'singleCetak' });
+      }
+      
+      // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
+      const industriId = item.industri_id || industriDetail?.id;
+      let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan');
+      let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing');
+      
+      // Jika tidak ditemukan, gunakan default "NP"
+      if (!jenisNomorPimpinan) {
+        jenisNomorPimpinan = "NP";
+        console.log(`Jenis nomor pimpinan tidak ditemukan untuk industri ID: ${industriId}, menggunakan default "NP"`);
+      }
+      
+      if (!jenisNomorPembimbing) {
+        jenisNomorPembimbing = "NP";
+        console.log(`Jenis nomor pembimbing tidak ditemukan untuk industri ID: ${industriId}, menggunakan default "NP"`);
+      }
+      
+      console.log(`Menggunakan nomor sertifikat untuk form ID ${formId}:`, nomorSertifikat);
+      console.log(`Menggunakan jenis nomor pimpinan:`, jenisNomorPimpinan);
+      console.log(`Menggunakan jenis nomor pembimbing:`, jenisNomorPembimbing);
+      
+      // Format payload SESUAI DENGAN STRUKTUR YANG DIHARAPKAN
       const payload = {
-        nomor_sertifikat: `420/1013/101.6.9.19/${new Date().getFullYear()}`,
+        nomor_sertifikat: nomorSertifikat,
         siswa: {
           nama: item.siswa_username,
           nisn: item.siswa_nisn
@@ -410,9 +582,8 @@ export default function ReviewPenilaianPKL() {
         nama_industri: item.industri_nama || "Industri",
         tanggal_mulai: tanggalMulaiFormatted,
         tanggal_selesai: tanggalSelesaiFormatted,
-        hasil_pkl: hasilPenilaian,
-        tanggal_terbit: tanggalTerbit,
-        nama_pimpinan: namaPimpinan,
+        hasil_pkl: hasilPkl,
+        tanggal_terbit: tanggalTerbitFormatted,
         nilai: {
           aspek_1: nilai1,
           desc_1: detailData.form_items?.[0]?.tujuan_pembelajaran || "MENERAPKAN SOFT SKILL YANG DIBUTUHKAN DI DUNIA KERJA (TEMPAT PKL).",
@@ -422,10 +593,23 @@ export default function ReviewPenilaianPKL() {
           desc_3: detailData.form_items?.[2]?.tujuan_pembelajaran || "MENERAPKAN KOMPETENSI TEKNIS YANG SUDAH DIPELAJARI DI SEKOLAH DAN/ATAU BARU DIPELAJARI DI DUNIA KERJA (TEMPAT PKL).",
           aspek_4: nilai4,
           desc_4: detailData.form_items?.[3]?.tujuan_pembelajaran || "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA."
-        }
+        },
+        // Data pimpinan dari industri dengan jenis nomor
+        nama_pimpinan: industriDetail?.nama_pimpinan || "",
+        jenis_nomor_pimpinan: jenisNomorPimpinan,
+        nip_pimpinan: industriDetail?.nip_pimpinan || "",
+        jabatan_pimpinan: industriDetail?.jabatan_pimpinan || "",
+        // Data pembimbing dari industri dengan jenis nomor
+        nama_pembimbing: industriDetail?.pic || "",
+        jenis_nomor_pembimbing: jenisNomorPembimbing,
+        nip_pembimbing: industriDetail?.nip_pembimbing || "",
+        jabatan_pembimbing: industriDetail?.jabatan_pembimbing || ""
       };
 
       console.log("Payload untuk sertifikat single:", payload);
+      
+      // Dapatkan kode jurusan (tetap diperlukan untuk penamaan file)
+      const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
       
       // Generate dan download langsung
       const filename = await generateAndDownloadSertifikat(jurusanValue, payload);
@@ -442,7 +626,158 @@ export default function ReviewPenilaianPKL() {
     }
   };
 
-  // Fungsi untuk navigasi ke halaman ubah sertifikat
+  // Fungsi untuk bulk generate sertifikat - MODIFIKASI UTAMA
+  const handleBulkGenerateSertifikat = async (items) => {
+    if (items.length === 0) {
+      toast.error("Pilih minimal satu siswa");
+      return;
+    }
+
+    try {
+      setLoadingCetak(true);
+      toast.loading(`Menyiapkan ${items.length} sertifikat...`, { id: 'bulkGenerate' });
+
+      let successCount = 0;
+      let failCount = 0;
+      let missingNomorCount = 0;
+      let missingJenisNomorCount = 0;
+      
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        
+        try {
+          toast.loading(`Memproses ${i+1} dari ${items.length} sertifikat...`, { id: 'bulkGenerate' });
+          
+          const detailData = await getDetailReviewPenilaian(item.application_id);
+          
+          const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(item.application_id);
+          
+          const industriDetail = getDetailIndustriByNama(item.industri_nama);
+          
+          console.log("Industri Detail untuk", item.industri_nama, ":", industriDetail);
+          
+          const nilai1 = parseFloat(detailData.items?.[0]?.skor) || 0;
+          const nilai2 = parseFloat(detailData.items?.[1]?.skor) || 0;
+          const nilai3 = parseFloat(detailData.items?.[2]?.skor) || 0;
+          const nilai4 = parseFloat(detailData.items?.[3]?.skor) || 0;
+          
+          const average = (nilai1 + nilai2 + nilai3 + nilai4) / 4;
+          let hasilPkl = "Belum Dinilai";
+          if (average >= 86 && average <= 100) {
+            hasilPkl = "Sangat Baik";
+          } else if (average >= 75 && average <= 85) {
+            hasilPkl = "Baik";
+          } else if (average > 0 && average < 75) {
+            hasilPkl = "Kurang";
+          }
+          
+          const tanggalMulaiFormatted = formatTanggalIndonesia(tanggalMulai);
+          const tanggalSelesaiFormatted = formatTanggalIndonesia(tanggalSelesai);
+          const tanggalTerbitFormatted = formatTanggalIndonesia(new Date().toISOString().split('T')[0]);
+          
+          // Dapatkan nomor sertifikat berdasarkan form ID yang digunakan
+          const formId = detailData.form_id;
+          let nomorSertifikat = getNomorSertifikatByFormId(formId);
+          
+          // Jika tidak ditemukan, gunakan default
+          if (!nomorSertifikat) {
+            nomorSertifikat = "420/1013/101.6.9.19/2026"; // Default fallback
+            missingNomorCount++;
+          }
+          
+          // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
+          const industriId = item.industri_id || industriDetail?.id;
+          let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan');
+          let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing');
+          
+          // Jika tidak ditemukan, gunakan default "NP"
+          if (!jenisNomorPimpinan) {
+            jenisNomorPimpinan = "NP";
+            missingJenisNomorCount++;
+          }
+          
+          if (!jenisNomorPembimbing) {
+            jenisNomorPembimbing = "NP";
+            missingJenisNomorCount++;
+          }
+          
+          const payload = {
+            nomor_sertifikat: nomorSertifikat,
+            siswa: {
+              nama: item.siswa_username,
+              nisn: item.siswa_nisn
+            },
+            nama_industri: item.industri_nama || "Industri",
+            tanggal_mulai: tanggalMulaiFormatted,
+            tanggal_selesai: tanggalSelesaiFormatted,
+            hasil_pkl: hasilPkl,
+            tanggal_terbit: tanggalTerbitFormatted,
+            nilai: {
+              aspek_1: nilai1,
+              desc_1: detailData.form_items?.[0]?.tujuan_pembelajaran || "MENERAPKAN SOFT SKILL YANG DIBUTUHKAN DI DUNIA KERJA (TEMPAT PKL).",
+              aspek_2: nilai2,
+              desc_2: detailData.form_items?.[1]?.tujuan_pembelajaran || "MENERAPKAN NORMA, PROSEDUR OPERASIONAL STANDAR (POS), SERTA KESEHATAN, KESELAMATAN KERJA, DAN LINGKUNGAN HIDUP (K3LH) YANG ADA DI DUNIA KERJA (TEMPAT PKL).",
+              aspek_3: nilai3,
+              desc_3: detailData.form_items?.[2]?.tujuan_pembelajaran || "MENERAPKAN KOMPETENSI TEKNIS YANG SUDAH DIPELAJARI DI SEKOLAH DAN/ATAU BARU DIPELAJARI DI DUNIA KERJA (TEMPAT PKL).",
+              aspek_4: nilai4,
+              desc_4: detailData.form_items?.[3]?.tujuan_pembelajaran || "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA."
+            },
+            // Data pimpinan dari industri dengan jenis nomor
+            nama_pimpinan: industriDetail?.nama_pimpinan || "",
+            jenis_nomor_pimpinan: jenisNomorPimpinan,
+            nip_pimpinan: industriDetail?.nip_pimpinan || "",
+            jabatan_pimpinan: industriDetail?.jabatan_pimpinan || "",
+            // Data pembimbing dari industri dengan jenis nomor
+            nama_pembimbing: industriDetail?.pic || "",
+            jenis_nomor_pembimbing: jenisNomorPembimbing,
+            nip_pembimbing: industriDetail?.nip_pembimbing || "",
+            jabatan_pembimbing: industriDetail?.jabatan_pembimbing || ""
+          };
+
+          console.log(`Payload untuk sertifikat ${item.siswa_username}:`, payload);
+          
+          const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
+          
+          await generateAndDownloadSertifikat(jurusanValue, payload);
+          
+          successCount++;
+          
+          if (i < items.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          
+        } catch (error) {
+          console.error(`Gagal generate sertifikat untuk ${item.siswa_username}:`, error);
+          failCount++;
+        }
+      }
+      
+      let message = `${successCount} berhasil, ${failCount} gagal`;
+      if (missingNomorCount > 0) {
+        message += `, ${missingNomorCount} menggunakan nomor default (form tanpa nomor)`;
+      }
+      if (missingJenisNomorCount > 0) {
+        message += `, ${missingJenisNomorCount} menggunakan jenis nomor default "NP"`;
+      }
+      
+      if (failCount === 0) {
+        toast.success(message, { id: 'bulkGenerate' });
+      } else {
+        toast.warning(message, { id: 'bulkGenerate' });
+      }
+      
+      setSelectedItems({});
+      setOpenBulkExport(false);
+      
+    } catch (error) {
+      console.error("Gagal bulk generate sertifikat:", error);
+      toast.error("Gagal memproses bulk generate", { id: 'bulkGenerate' });
+    } finally {
+      setLoadingCetak(false);
+    }
+  };
+
+  // Fungsi untuk navigasi ke halaman ubah sertifikat - MODIFIKASI UTAMA
   const handleUbahSertifikat = async (item) => {
     try {
       setLoadingCetak(true);
@@ -459,11 +794,10 @@ export default function ReviewPenilaianPKL() {
       // Dapatkan tanggal mulai dan selesai dari siswaList
       const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(item.application_id);
       
-      // Dapatkan nama PIC (pimpinan) dari industri
-      const namaPimpinan = getPICByIndustriName(item.industri_nama);
+      // Dapatkan detail industri berdasarkan nama
+      const industriDetail = getDetailIndustriByNama(item.industri_nama);
       
-      // Dapatkan kode jurusan
-      const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
+      console.log("Industri Detail untuk", item.industri_nama, ":", industriDetail);
       
       // Ambil nilai dari items
       const nilai1 = parseFloat(detailData.items?.[0]?.skor) || 0;
@@ -471,19 +805,61 @@ export default function ReviewPenilaianPKL() {
       const nilai3 = parseFloat(detailData.items?.[2]?.skor) || 0;
       const nilai4 = parseFloat(detailData.items?.[3]?.skor) || 0;
       
-      // Hitung hasil penilaian
-      const hasilPenilaian = hitungHasilPenilaian(nilai1, nilai2, nilai3, nilai4);
+      // Ambil deskripsi dari items (untuk ditampilkan di form)
+      const deskripsi1 = detailData.items?.[0]?.deskripsi || detailData.form_items?.[0]?.tujuan_pembelajaran || "";
+      const deskripsi2 = detailData.items?.[1]?.deskripsi || detailData.form_items?.[1]?.tujuan_pembelajaran || "";
+      const deskripsi3 = detailData.items?.[2]?.deskripsi || detailData.form_items?.[2]?.tujuan_pembelajaran || "";
+      const deskripsi4 = detailData.items?.[3]?.deskripsi || detailData.form_items?.[3]?.tujuan_pembelajaran || "";
       
-      // Format tanggal terbit (hari ini)
+      // Ambil aspek (tujuan pembelajaran)
+      const aspek1 = detailData.form_items?.[0]?.tujuan_pembelajaran || "MENERAPKAN SOFT SKILL YANG DIBUTUHKAN DI DUNIA KERJA (TEMPAT PKL).";
+      const aspek2 = detailData.form_items?.[1]?.tujuan_pembelajaran || "MENERAPKAN NORMA, PROSEDUR OPERASIONAL STANDAR (POS), SERTA KESEHATAN, KESELAMATAN KERJA, DAN LINGKUNGAN HIDUP (K3LH) YANG ADA DI DUNIA KERJA (TEMPAT PKL).";
+      const aspek3 = detailData.form_items?.[2]?.tujuan_pembelajaran || "MENERAPKAN KOMPETENSI TEKNIS YANG SUDAH DIPELAJARI DI SEKOLAH DAN/ATAU BARU DIPELAJARI DI DUNIA KERJA (TEMPAT PKL).";
+      const aspek4 = detailData.form_items?.[3]?.tujuan_pembelajaran || "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA.";
+      
+      // Hitung rata-rata untuk hasil penilaian
+      const average = (nilai1 + nilai2 + nilai3 + nilai4) / 4;
+      let hasilPkl = "Belum Dinilai";
+      if (average >= 86 && average <= 100) {
+        hasilPkl = "Sangat Baik";
+      } else if (average >= 75 && average <= 85) {
+        hasilPkl = "Baik";
+      } else if (average > 0 && average < 75) {
+        hasilPkl = "Kurang";
+      }
+      
       const tanggalTerbit = new Date().toISOString().split('T')[0];
       
-      // Format tanggal untuk ditampilkan di form
-      const tanggalMulaiFormatted = tanggalMulai;
-      const tanggalSelesaiFormatted = tanggalSelesai;
+      const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
       
-      // Buat objek data sertifikat lengkap
+      // Dapatkan nomor sertifikat berdasarkan form ID yang digunakan
+      const formId = detailData.form_id;
+      let nomorSertifikat = getNomorSertifikatByFormId(formId);
+      
+      // Jika tidak ditemukan, gunakan default
+      if (!nomorSertifikat) {
+        nomorSertifikat = "420/1013/101.6.9.19/2026"; // Default fallback
+        toast.warning(`Nomor sertifikat untuk form "${detailData.form_nama}" belum diatur. Gunakan default.`, { id: 'ubahSertifikat' });
+      }
+      
+      // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
+      const industriId = item.industri_id || industriDetail?.id;
+      let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan');
+      let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing');
+      
+      // Jika tidak ditemukan, gunakan default "NP"
+      if (!jenisNomorPimpinan) {
+        jenisNomorPimpinan = "NP";
+      }
+      
+      if (!jenisNomorPembimbing) {
+        jenisNomorPembimbing = "NP";
+      }
+      
       const sertifikatData = {
         application_id: item.application_id,
+        form_id: formId, // Simpan form ID untuk referensi
+        nomor_sertifikat: nomorSertifikat,
         siswa: {
           nama: item.siswa_username,
           nisn: item.siswa_nisn,
@@ -492,7 +868,12 @@ export default function ReviewPenilaianPKL() {
         },
         industri: {
           nama: item.industri_nama,
-          pic: namaPimpinan
+          pic: industriDetail?.pic || "",
+          nama_pimpinan: industriDetail?.nama_pimpinan || "",
+          jabatan_pimpinan: industriDetail?.jabatan_pimpinan || "",
+          nip_pimpinan: industriDetail?.nip_pimpinan || "",
+          jabatan_pembimbing: industriDetail?.jabatan_pembimbing || "",
+          nip_pembimbing: industriDetail?.nip_pembimbing || ""
         },
         penilaian: {
           items: detailData.items,
@@ -504,12 +885,37 @@ export default function ReviewPenilaianPKL() {
           form_nama: detailData.form_nama
         },
         tanggal: {
-          mulai: tanggalMulaiFormatted,
-          selesai: tanggalSelesaiFormatted,
+          mulai: tanggalMulai,
+          selesai: tanggalSelesai,
           terbit: tanggalTerbit
         },
-        hasil: hasilPenilaian,
-        jurusan_kode: jurusanValue
+        // DATA NILAI, ASPEK, DAN DESKRIPSI
+        nilai: {
+          nilai1: nilai1,
+          nilai2: nilai2,
+          nilai3: nilai3,
+          nilai4: nilai4,
+          aspek1: aspek1,
+          aspek2: aspek2,
+          aspek3: aspek3,
+          aspek4: aspek4,
+          deskripsi1: deskripsi1,
+          deskripsi2: deskripsi2,
+          deskripsi3: deskripsi3,
+          deskripsi4: deskripsi4
+        },
+        hasil: hasilPkl,
+        jurusan_kode: jurusanValue,
+        
+        // Data pimpinan dan pembimbing dengan jenis nomor
+        nama_pimpinan: industriDetail?.nama_pimpinan || "",
+        jenis_nomor_pimpinan: jenisNomorPimpinan,
+        nip_pimpinan: industriDetail?.nip_pimpinan || "",
+        jabatan_pimpinan: industriDetail?.jabatan_pimpinan || "",
+        nama_pembimbing: industriDetail?.pic || "",
+        jenis_nomor_pembimbing: jenisNomorPembimbing,
+        nip_pembimbing: industriDetail?.nip_pembimbing || "",
+        jabatan_pembimbing: industriDetail?.jabatan_pembimbing || ""
       };
       
       // Simpan ke localStorage
@@ -529,112 +935,18 @@ export default function ReviewPenilaianPKL() {
     }
   };
 
-  // Fungsi untuk bulk generate sertifikat
-  const handleBulkGenerateSertifikat = async (items) => {
-    if (items.length === 0) {
-      toast.error("Pilih minimal satu siswa");
-      return;
-    }
+  // Fungsi untuk mendapatkan tanggal dari siswaList berdasarkan application_id
+  const getTanggalDariSiswa = (applicationId) => {
+    const siswa = siswaList.find(s => s.application_id === parseInt(applicationId));
+    return {
+      tanggalMulai: siswa?.tanggal_mulai || "",
+      tanggalSelesai: siswa?.tanggal_selesai || ""
+    };
+  };
 
-    try {
-      setLoadingCetak(true);
-      toast.loading(`Menyiapkan ${items.length} sertifikat...`, { id: 'bulkGenerate' });
-
-      // Proses setiap item secara berurutan agar tidak overload
-      let successCount = 0;
-      let failCount = 0;
-      
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        
-        try {
-          // Update toast progress
-          toast.loading(`Memproses ${i+1} dari ${items.length} sertifikat...`, { id: 'bulkGenerate' });
-          
-          // Ambil detail penilaian
-          const detailData = await getDetailReviewPenilaian(item.application_id);
-          
-          // Dapatkan tanggal mulai dan selesai dari siswaList
-          const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(item.application_id);
-          
-          // Dapatkan nama PIC (pimpinan) dari industri
-          const namaPimpinan = getPICByIndustriName(item.industri_nama);
-          
-          // Dapatkan kode jurusan
-          const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
-          
-          // Ambil nilai dari items
-          const nilai1 = parseFloat(detailData.items?.[0]?.skor) || 0;
-          const nilai2 = parseFloat(detailData.items?.[1]?.skor) || 0;
-          const nilai3 = parseFloat(detailData.items?.[2]?.skor) || 0;
-          const nilai4 = parseFloat(detailData.items?.[3]?.skor) || 0;
-          
-          // Hitung hasil penilaian
-          const hasilPenilaian = hitungHasilPenilaian(nilai1, nilai2, nilai3, nilai4);
-          
-          // Format tanggal
-          const tanggalMulaiFormatted = formatTanggalIndonesia(tanggalMulai);
-          const tanggalSelesaiFormatted = formatTanggalIndonesia(tanggalSelesai);
-          const tanggalTerbit = formatTanggalIndonesia(new Date().toISOString().split('T')[0]);
-          
-          // Format payload
-          const payload = {
-            nomor_sertifikat: `420/1013/101.6.9.19/${new Date().getFullYear()}`,
-            siswa: {
-              nama: item.siswa_username,
-              nisn: item.siswa_nisn
-            },
-            nama_industri: item.industri_nama || "Industri",
-            tanggal_mulai: tanggalMulaiFormatted,
-            tanggal_selesai: tanggalSelesaiFormatted,
-            hasil_pkl: hasilPenilaian,
-            tanggal_terbit: tanggalTerbit,
-            nama_pimpinan: namaPimpinan,
-            nilai: {
-              aspek_1: nilai1,
-              desc_1: detailData.form_items?.[0]?.tujuan_pembelajaran || "MENERAPKAN SOFT SKILL YANG DIBUTUHKAN DI DUNIA KERJA (TEMPAT PKL).",
-              aspek_2: nilai2,
-              desc_2: detailData.form_items?.[1]?.tujuan_pembelajaran || "MENERAPKAN NORMA, PROSEDUR OPERASIONAL STANDAR (POS), SERTA KESEHATAN, KESELAMATAN KERJA, DAN LINGKUNGAN HIDUP (K3LH) YANG ADA DI DUNIA KERJA (TEMPAT PKL).",
-              aspek_3: nilai3,
-              desc_3: detailData.form_items?.[2]?.tujuan_pembelajaran || "MENERAPKAN KOMPETENSI TEKNIS YANG SUDAH DIPELAJARI DI SEKOLAH DAN/ATAU BARU DIPELAJARI DI DUNIA KERJA (TEMPAT PKL).",
-              aspek_4: nilai4,
-              desc_4: detailData.form_items?.[3]?.tujuan_pembelajaran || "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA."
-            }
-          };
-
-          // Generate dan download langsung
-          await generateAndDownloadSertifikat(jurusanValue, payload);
-          
-          successCount++;
-          
-          // Beri jeda kecil antara download agar browser tidak kewalahan
-          if (i < items.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-          
-        } catch (error) {
-          console.error(`Gagal generate sertifikat untuk ${item.siswa_username}:`, error);
-          failCount++;
-        }
-      }
-      
-      // Tampilkan hasil akhir
-      if (failCount === 0) {
-        toast.success(`Berhasil mengenerate ${successCount} sertifikat!`, { id: 'bulkGenerate' });
-      } else {
-        toast.success(`${successCount} berhasil, ${failCount} gagal`, { id: 'bulkGenerate' });
-      }
-      
-      // Reset pilihan setelah selesai
-      setSelectedItems({});
-      setOpenBulkExport(false);
-      
-    } catch (error) {
-      console.error("Gagal bulk generate sertifikat:", error);
-      toast.error("Gagal memproses bulk generate", { id: 'bulkGenerate' });
-    } finally {
-      setLoadingCetak(false);
-    }
+  // Fungsi untuk mendapatkan data izin siswa berdasarkan siswa_id
+  const getIzinDataBySiswaId = (siswaId) => {
+    return izinDataMap[siswaId] || { sakit: 0, izin: 0, alpa: 0 };
   };
 
   const handleSelectItem = (id) => {
@@ -712,15 +1024,20 @@ export default function ReviewPenilaianPKL() {
       setDataPenilaian(students);
       setTotalData(response?.total || students.length);
       
-      // Reset selected items when data changes
       setSelectedItems({});
       
-      // Ambil data izin untuk semua siswa langsung dari response
       const siswaIds = students.map(item => item.siswa_id).filter(id => id !== null && id !== undefined);
       
       if (siswaIds.length > 0) {
         console.log("Mengambil data izin untuk siswa IDs:", siswaIds);
         await fetchAllIzinData(siswaIds);
+      }
+      
+      const industriNames = students.map(item => item.industri_nama).filter(nama => nama !== null && nama !== undefined);
+      
+      if (industriNames.length > 0 && industriList.length > 0) {
+        console.log("Mengambil detail industri untuk:", industriNames);
+        await fetchAllIndustriDetails(industriNames);
       }
       
     } catch (error) {
@@ -731,17 +1048,16 @@ export default function ReviewPenilaianPKL() {
     }
   };
 
-  // Fetch data siswa approved dan data industri saat komponen dimuat
   useEffect(() => {
     fetchSiswaApproved();
     fetchIndustri();
+    fetchForms(); // Panggil fungsi untuk mengambil data form
   }, []);
 
   useEffect(() => {
     fetchReviewPenilaian();
   }, [currentPage]);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (currentPage === 1) {
@@ -754,7 +1070,6 @@ export default function ReviewPenilaianPKL() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fields untuk komponen Detail
   const getDetailFields = () => {
     if (!detailPenilaian) return [];
     
@@ -762,29 +1077,24 @@ export default function ReviewPenilaianPKL() {
       name: key,
       label: key,
       type: key.includes("Deskripsi") || key.includes("Tujuan") || key.includes("Catatan") ? "textarea" : "text",
-      half: key.includes("Catatan") || key.includes("Form") || key.includes("Industri") || key.includes("Tujuan"),
+      half: key.includes("Catatan") || key.includes("Form") || key.includes("Industri") || key.includes("Tujuan") || key.includes("Predikat"),
     }));
   };
 
-  // Fungsi untuk mendapatkan data ekspor dengan kolom izin
   const exportData = async (items) => {
-    // Kumpulkan semua siswa_id langsung dari items
     const siswaIds = items
       .map(item => item.siswa_id)
       .filter(id => id !== null && id !== undefined);
     
-    // Ambil data izin jika belum ada di izinDataMap
     const missingSiswaIds = siswaIds.filter(id => !izinDataMap[id]);
     if (missingSiswaIds.length > 0) {
       console.log("Mengambil data izin untuk siswa yang belum ada:", missingSiswaIds);
       await fetchAllIzinData(missingSiswaIds);
     }
     
-    // Buat data untuk diekspor
     const exportItems = items.map((item, index) => {
       const izinData = getIzinDataBySiswaId(item.siswa_id);
-      
-      // Hitung alpa (misalnya 0 karena tidak ada data alpa dari API)
+      const predikat = getPredikat(item.rata_rata);
       const alpa = 0;
       
       return {
@@ -799,6 +1109,7 @@ export default function ReviewPenilaianPKL() {
         "Alpa": alpa,
         "Total Skor": item.total_skor || "-",
         "Rata-rata": item.rata_rata || "-",
+        "Predikat": predikat,
         "Tanggal Finalisasi": formatTanggalPendek(item.finalized_at) || "-",
       };
     });
@@ -844,28 +1155,28 @@ export default function ReviewPenilaianPKL() {
       
       doc.text("Review Penilaian PKL", 14, 15);
 
-      // Definisikan kolom untuk PDF
       const headers = Object.keys(data[0]);
       
       autoTable(doc, {
         startY: 20,
         head: [headers],
         body: data.map((item) => Object.values(item)),
-        styles: { fontSize: 7 }, // Ukuran font lebih kecil karena ada kolom baru
+        styles: { fontSize: 7 },
         headStyles: { fillColor: [100, 30, 33] },
         columnStyles: {
-          0: { cellWidth: 10 }, // No
-          1: { cellWidth: 30 }, // Nama Siswa
-          2: { cellWidth: 20 }, // NISN
-          3: { cellWidth: 15 }, // Kelas
-          4: { cellWidth: 20 }, // Jurusan
-          5: { cellWidth: 30 }, // Industri
-          6: { cellWidth: 10 }, // Sakit
-          7: { cellWidth: 10 }, // Izin
-          8: { cellWidth: 10 }, // Alpa
-          9: { cellWidth: 15 }, // Total Skor
-          10: { cellWidth: 15 }, // Rata-rata
-          11: { cellWidth: 20 }, // Tanggal Finalisasi
+          0: { cellWidth: 10 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 15 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 30 },
+          6: { cellWidth: 10 },
+          7: { cellWidth: 10 },
+          8: { cellWidth: 10 },
+          9: { cellWidth: 15 },
+          10: { cellWidth: 15 },
+          11: { cellWidth: 20 },
+          12: { cellWidth: 20 },
         }
       });
 
@@ -906,7 +1217,6 @@ export default function ReviewPenilaianPKL() {
           
           return (
             <div key={groupName} className="bg-white rounded-xl overflow-hidden">
-              {/* Group Header */}
               <div 
                 className="bg-gray-50 p-4 border-b flex items-center justify-between cursor-pointer hover:bg-gray-100"
                 onClick={() => toggleGroup(groupName, isKelas)}
@@ -936,12 +1246,13 @@ export default function ReviewPenilaianPKL() {
                 </div>
               </div>
 
-              {/* Students List */}
               {isExpanded && (
                 <div className="p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {items.map(item => {
                       const izinData = getIzinDataBySiswaId(item.siswa_id);
+                      const predikat = getPredikat(item.rata_rata);
+                      const predikatColor = getPredikatColor(predikat);
                       
                       return (
                         <div 
@@ -977,12 +1288,15 @@ export default function ReviewPenilaianPKL() {
                               <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
                                 {item.rata_rata}
                               </span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded border ${predikatColor} flex items-center gap-0.5`}>
+                                <Award size={10} />
+                                {predikat}
+                              </span>
                               {!isKelas && (
                                 <span className="text-xs text-gray-500 truncate max-w-[100px]">
                                   {item.kelas_nama}
                                 </span>
                               )}
-                              {/* Tampilkan data izin */}
                               <div className="flex items-center gap-1 text-xs">
                                 <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded">
                                   S: {izinData.sakit}
@@ -1031,7 +1345,6 @@ export default function ReviewPenilaianPKL() {
     );
   };
 
-  // Mode Detail menggunakan komponen Detail yang sudah ada
   if (mode === "detail" && selectedItem && detailPenilaian) {
     return (
       <Detail
@@ -1060,7 +1373,6 @@ export default function ReviewPenilaianPKL() {
             </h2>
             
             <div className="flex items-center gap-2">
-              {/* Tab View Mode */}
               <div className="flex bg-white/10 rounded-lg p-1 mr-2">
                 <button
                   onClick={() => setViewMode("list")}
@@ -1096,7 +1408,6 @@ export default function ReviewPenilaianPKL() {
                 </button>
               </div>
 
-              {/* Bulk Actions */}
               {selectedCount > 0 && (
                 <div className="relative mr-2">
                   <button
@@ -1191,11 +1502,12 @@ export default function ReviewPenilaianPKL() {
           ) : (
             <>
               {viewMode === "list" ? (
-                /* List View */
                 <>
                   <div className="mt-6 space-y-3">
                     {dataPenilaian.map(item => {
                       const izinData = getIzinDataBySiswaId(item.siswa_id);
+                      const predikat = getPredikat(item.rata_rata);
+                      const predikatColor = getPredikatColor(predikat);
                       
                       return (
                         <div 
@@ -1247,7 +1559,13 @@ export default function ReviewPenilaianPKL() {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
-                                    Rata-rata: {item.rata_rata}
+                                    Rata: {item.rata_rata}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className={`text-xs px-2 py-0.5 rounded-full border ${predikatColor} flex items-center gap-1`}>
+                                    <Award size={12} />
+                                    {predikat}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -1256,7 +1574,6 @@ export default function ReviewPenilaianPKL() {
                                     {formatTanggalPendek(item.finalized_at)}
                                   </span>
                                 </div>
-                                {/* Tampilkan data izin */}
                                 <div className="flex items-center gap-1 text-xs">
                                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
                                     S: {izinData.sakit}
@@ -1315,10 +1632,8 @@ export default function ReviewPenilaianPKL() {
                   )}
                 </>
               ) : viewMode === "industri" ? (
-                /* Group by Industry View */
                 renderGroupedView(groupedByIndustri, 'industri')
               ) : (
-                /* Group by Class View */
                 renderGroupedView(groupedByKelas, 'kelas')
               )}
             </>
@@ -1326,7 +1641,6 @@ export default function ReviewPenilaianPKL() {
         </main>
       </div>
 
-      {/* Loading Modal untuk Detail */}
       {loadingDetail && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 text-center">
