@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Download, FileSpreadsheet, FileText, Star, Printer, CheckCircle, Building2, Users, ChevronDown, ChevronUp, FileDown, GraduationCap, Edit, Award, Hash, X } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Star, Printer, CheckCircle, Building2, Users, ChevronDown, ChevronUp, FileDown, GraduationCap, Edit, Award, Hash } from "lucide-react";
 import toast from "react-hot-toast";
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -31,14 +31,10 @@ export default function ReviewPenilaianPKL() {
 
   const [openExport, setOpenExport] = useState(false);
   const [openBulkExport, setOpenBulkExport] = useState(false);
-  const [openNomorSertifikatPopup, setOpenNomorSertifikatPopup] = useState(false);
-  const [openSettingNomor, setOpenSettingNomor] = useState(false);
-  const [currentCetakItem, setCurrentCetakItem] = useState(null);
-  const [currentBulkItems, setCurrentBulkItems] = useState([]);
-  const [isBulkCetak, setIsBulkCetak] = useState(false);
-  const [tempNomorSertifikat, setTempNomorSertifikat] = useState("");
-  const [nomorSertifikatBase, setNomorSertifikatBase] = useState("");
-  const [autoTahun, setAutoTahun] = useState(true);
+  const [openNomorSertifikat, setOpenNomorSertifikat] = useState(false);
+  const [nomorSertifikatGlobal, setNomorSertifikatGlobal] = useState("");
+  const [nomorSertifikatBase, setNomorSertifikatBase] = useState(""); // Base number without year
+  const [autoTahun, setAutoTahun] = useState(true); // Auto add year from finalization date
   const [active, setActive] = useState("sertifikat");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -113,65 +109,102 @@ export default function ReviewPenilaianPKL() {
   };
 
   // Fungsi untuk mendapatkan nomor sertifikat lengkap dengan tahun dari tanggal finalisasi
-  const getNomorSertifikatLengkap = (finalizedAt, customNomor = null) => {
-    let baseNomor = customNomor || nomorSertifikatBase;
+  const getNomorSertifikatWithTahun = (finalizedAt) => {
+    const savedBase = localStorage.getItem('nomorSertifikatBase');
+    const autoTahunSetting = localStorage.getItem('autoTahunSertifikat') === 'true';
     
-    if (!baseNomor) return null;
+    if (!savedBase) return null;
     
-    if (autoTahun && finalizedAt) {
+    if (autoTahunSetting && finalizedAt) {
       const tahun = getTahunFromFinalisasi(finalizedAt);
-      return addTahunToNomorSertifikat(baseNomor, tahun);
+      return addTahunToNomorSertifikat(savedBase, tahun);
     }
     
-    return baseNomor;
+    return savedBase;
   };
 
   // Load nomor sertifikat dari localStorage saat component mount
-useEffect(() => {
-  const savedBase = localStorage.getItem('nomorSertifikatBase');
-  const savedAutoTahun = localStorage.getItem('autoTahunSertifikat');
-  
-  if (savedBase) {
-    // Pastikan formatnya tetap 420/.../101.6.9.19
-    const parts = savedBase.split('/');
-    if (parts[0] !== '420') parts[0] = '420';
-    if (parts[2] !== '101.6.9.19') parts[2] = '101.6.9.19';
-    setNomorSertifikatBase(parts.join('/'));
-  } else {
-    // Default format
-    setNomorSertifikatBase("420/1013/101.6.9.19");
-  }
-  
-  if (savedAutoTahun !== null) {
-    setAutoTahun(savedAutoTahun === 'true');
-  }
-}, []);
+  useEffect(() => {
+    const savedBase = localStorage.getItem('nomorSertifikatBase');
+    const savedAutoTahun = localStorage.getItem('autoTahunSertifikat');
+    
+    if (savedBase) {
+      setNomorSertifikatBase(savedBase);
+      // Tampilkan preview dengan tahun berjalan untuk UI
+      const currentYear = new Date().getFullYear();
+      const previewNomor = savedAutoTahun === 'true' ? addTahunToNomorSertifikat(savedBase, currentYear) : savedBase;
+      setNomorSertifikatGlobal(previewNomor);
+    }
+    
+    if (savedAutoTahun !== null) {
+      setAutoTahun(savedAutoTahun === 'true');
+    }
+  }, []);
 
-  // Fungsi untuk menyimpan nomor sertifikat base ke localStorage
-  // Fungsi untuk menyimpan nomor sertifikat base ke localStorage
-const handleSaveBaseNomor = () => {
-  const parts = nomorSertifikatBase.split('/');
-  const middleNumber = parts[1];
-  
-  if (!middleNumber || !middleNumber.trim()) {
-    toast.error("Masukkan angka tengah nomor sertifikat");
-    return;
-  }
-  
-  // Pastikan format selalu 420/.../101.6.9.19
-  const formattedBase = `420/${middleNumber}/101.6.9.19`;
-  
-  try {
-    localStorage.setItem('nomorSertifikatBase', formattedBase);
-    localStorage.setItem('autoTahunSertifikat', autoTahun.toString());
-    setNomorSertifikatBase(formattedBase);
-    toast.success(`Nomor sertifikat base berhasil disimpan${autoTahun ? ' (auto tambah tahun)' : ''}`);
-    setOpenSettingNomor(false);
-  } catch (error) {
-    console.error("Gagal menyimpan nomor sertifikat:", error);
-    toast.error("Gagal menyimpan nomor sertifikat");
-  }
-};
+  // Fungsi untuk mendapatkan nomor sertifikat dari localStorage dengan tahun dari tanggal finalisasi
+  const getNomorSertifikatByFinalisasi = (finalizedAt) => {
+    const savedBase = localStorage.getItem('nomorSertifikatBase');
+    const autoTahunSetting = localStorage.getItem('autoTahunSertifikat') === 'true';
+    
+    if (!savedBase) return null;
+    
+    if (autoTahunSetting && finalizedAt) {
+      const tahun = getTahunFromFinalisasi(finalizedAt);
+      return addTahunToNomorSertifikat(savedBase, tahun);
+    }
+    
+    return savedBase;
+  };
+
+  // Fungsi untuk menyimpan nomor sertifikat ke localStorage
+  const handleSaveNomorSertifikat = () => {
+    if (!nomorSertifikatBase.trim()) {
+      toast.error("Masukkan nomor sertifikat");
+      return;
+    }
+    
+    try {
+      // Simpan base nomor (tanpa tahun) ke localStorage
+      localStorage.setItem('nomorSertifikatBase', nomorSertifikatBase);
+      localStorage.setItem('autoTahunSertifikat', autoTahun.toString());
+      
+      // Update preview
+      const currentYear = new Date().getFullYear();
+      const previewNomor = autoTahun ? addTahunToNomorSertifikat(nomorSertifikatBase, currentYear) : nomorSertifikatBase;
+      setNomorSertifikatGlobal(previewNomor);
+      
+      toast.success(`Nomor sertifikat berhasil disimpan${autoTahun ? ' (auto tambah tahun)' : ''}`);
+      setOpenNomorSertifikat(false);
+    } catch (error) {
+      console.error("Gagal menyimpan nomor sertifikat:", error);
+      toast.error("Gagal menyimpan nomor sertifikat");
+    }
+  };
+
+  // Fungsi untuk menghapus nomor sertifikat
+  const handleDeleteNomorSertifikat = () => {
+    try {
+      localStorage.removeItem('nomorSertifikatBase');
+      localStorage.removeItem('autoTahunSertifikat');
+      setNomorSertifikatBase("");
+      setNomorSertifikatGlobal("");
+      setAutoTahun(true);
+      toast.success("Nomor sertifikat berhasil dihapus");
+      setOpenNomorSertifikat(false);
+    } catch (error) {
+      console.error("Gagal menghapus nomor sertifikat:", error);
+      toast.error("Gagal menghapus nomor sertifikat");
+    }
+  };
+
+  // Preview nomor sertifikat berdasarkan tahun yang dipilih
+  const getPreviewNomorSertifikat = (tahun) => {
+    if (!nomorSertifikatBase) return "";
+    if (autoTahun) {
+      return addTahunToNomorSertifikat(nomorSertifikatBase, tahun);
+    }
+    return nomorSertifikatBase;
+  };
 
   // FUNGSI BARU: Untuk mendapatkan jenis nomor dari localStorage berdasarkan industri ID
   const getJenisNomorFromLocal = (industriId, jenis) => {
@@ -306,36 +339,6 @@ const handleSaveBaseNomor = () => {
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  };
-
-  // Fungsi untuk mendeteksi data dummy
-  const isDummyData = (applicationId) => {
-    return applicationId === 99999;
-  };
-
-  // Data dummy untuk detail penilaian
-  const getDummyDetailPenilaian = () => {
-    return {
-      application_id: 99999,
-      items: [
-        { skor: 90, deskripsi: "Sangat baik dalam menerapkan soft skill yang dibutuhkan di dunia kerja" },
-        { skor: 92, deskripsi: "Memahami dan menerapkan prosedur operasional standar dengan sangat baik" },
-        { skor: 91, deskripsi: "Kompetensi teknis sangat memuaskan dan mampu mengikuti perkembangan teknologi" },
-        { skor: 92, deskripsi: "Memahami alur bisnis perusahaan dengan baik dan memiliki wawasan wirausaha" }
-      ],
-      form_items: [
-        { tujuan_pembelajaran: "MENERAPKAN SOFT SKILL YANG DIBUTUHKAN DI DUNIA KERJA (TEMPAT PKL)." },
-        { tujuan_pembelajaran: "MENERAPKAN NORMA, PROSEDUR OPERASIONAL STANDAR (POS), SERTA KESEHATAN, KESELAMATAN KERJA, DAN LINGKUNGAN HIDUP (K3LH) YANG ADA DI DUNIA KERJA (TEMPAT PKL)." },
-        { tujuan_pembelajaran: "MENERAPKAN KOMPETENSI TEKNIS YANG SUDAH DIPELAJARI DI SEKOLAH DAN/ATAU BARU DIPELAJARI DI DUNIA KERJA (TEMPAT PKL)." },
-        { tujuan_pembelajaran: "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA." }
-      ],
-      total_skor: 365,
-      rata_rata: 91.25,
-      catatan_akhir: "Siswa sangat berprestasi selama PKL, menunjukkan dedikasi dan profesionalisme yang tinggi",
-      finalized_at: "2025-02-15T08:30:00.000Z",
-      form_nama: "Form Penilaian PKL RPL",
-      status: "final"
-    };
   };
 
   const getModeFromUrl = () => {
@@ -496,14 +499,8 @@ const handleSaveBaseNomor = () => {
     try {
       setLoadingDetail(true);
       
-      let response;
-      if (isDummyData(item.application_id)) {
-        response = getDummyDetailPenilaian();
-        console.log("Detail penilaian (DUMMY):", response);
-      } else {
-        response = await getDetailReviewPenilaian(item.application_id);
-        console.log("Detail penilaian:", response);
-      }
+      const response = await getDetailReviewPenilaian(item.application_id);
+      console.log("Detail penilaian:", response);
       
       setRawDetailData(response);
       
@@ -590,86 +587,28 @@ const handleSaveBaseNomor = () => {
     return industri || null;
   };
 
-  // Fungsi untuk membuka popup cetak single
-  // Fungsi untuk membuka popup cetak single
-const openCetakPopup = (item) => {
-  if (!nomorSertifikatBase) {
-    toast.error("Silakan atur nomor sertifikat base terlebih dahulu");
-    setOpenSettingNomor(true);
-    return;
-  }
-  setCurrentCetakItem(item);
-  setIsBulkCetak(false);
-  
-  // Buat nomor sertifikat dengan format yang benar
-  const parts = nomorSertifikatBase.split('/');
-  const middleNumber = parts[1] || "1013";
-  const tahun = autoTahun ? getTahunFromFinalisasi(item.finalized_at) : "";
-  
-  let nomorSertifikat = `420/${middleNumber}/101.6.9.19`;
-  if (tahun) {
-    nomorSertifikat += `/${tahun}`;
-  }
-  
-  setTempNomorSertifikat(nomorSertifikat);
-  setOpenNomorSertifikatPopup(true);
-};
-
-// Fungsi untuk membuka popup bulk cetak
-const openBulkCetakPopup = (items) => {
-  if (!nomorSertifikatBase) {
-    toast.error("Silakan atur nomor sertifikat base terlebih dahulu");
-    setOpenSettingNomor(true);
-    return;
-  }
-  setCurrentBulkItems(items);
-  setIsBulkCetak(true);
-  
-  // Buat nomor sertifikat dengan format yang benar (tanpa tahun untuk bulk)
-  const parts = nomorSertifikatBase.split('/');
-  const middleNumber = parts[1] || "1013";
-  
-  let nomorSertifikat = `420/${middleNumber}/101.6.9.19`;
-  if (!autoTahun) {
-    nomorSertifikat += `/${new Date().getFullYear()}`;
-  }
-  
-  setTempNomorSertifikat(nomorSertifikat);
-  setOpenNomorSertifikatPopup(true);
-};
-
-  // Fungsi untuk membuka popup bulk cetak
-  
-
-  // Fungsi untuk melakukan cetak single setelah konfirmasi nomor
-  const prosesCetakSingle = async () => {
-    if (!currentCetakItem) return;
-    if (!tempNomorSertifikat.trim()) {
-      toast.error("Masukkan nomor sertifikat");
-      return;
-    }
-
+  // Fungsi untuk generate sertifikat single - MODIFIKASI UTAMA dengan auto tahun
+  const handleCetakSertifikat = async (item) => {
     try {
       setLoadingCetak(true);
-      setProcessingId(currentCetakItem.application_id);
+      setProcessingId(item.application_id);
       
-      toast.loading(`Menyiapkan sertifikat untuk ${currentCetakItem.siswa_username}...`, { id: 'singleCetak' });
+      toast.loading(`Menyiapkan sertifikat untuk ${item.siswa_username}...`, { id: 'singleCetak' });
       
       // Ambil detail penilaian
       let detailData = rawDetailData;
-      if (!detailData || detailData.application_id !== currentCetakItem.application_id) {
-        if (isDummyData(currentCetakItem.application_id)) {
-          detailData = getDummyDetailPenilaian();
-        } else {
-          detailData = await getDetailReviewPenilaian(currentCetakItem.application_id);
-        }
+      if (!detailData || detailData.application_id !== item.application_id) {
+        detailData = await getDetailReviewPenilaian(item.application_id);
       }
       
       // Dapatkan tanggal mulai dan selesai dari siswaList
-      const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(currentCetakItem.application_id);
+      const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(item.application_id);
       
       // Dapatkan detail industri berdasarkan nama
-      const industriDetail = getDetailIndustriByNama(currentCetakItem.industri_nama);
+      const industriDetail = getDetailIndustriByNama(item.industri_nama);
+      
+      // Log untuk debugging
+      console.log("Industri Detail untuk", item.industri_nama, ":", industriDetail);
       
       // Ambil nilai dari items
       const nilai1 = parseFloat(detailData.items?.[0]?.skor) || 0;
@@ -677,7 +616,7 @@ const openBulkCetakPopup = (items) => {
       const nilai3 = parseFloat(detailData.items?.[2]?.skor) || 0;
       const nilai4 = parseFloat(detailData.items?.[3]?.skor) || 0;
       
-      // Hitung hasil penilaian
+      // Hitung hasil penilaian berdasarkan rata-rata nilai
       const average = (nilai1 + nilai2 + nilai3 + nilai4) / 4;
       let hasilPkl = "Belum Dinilai";
       if (average >= 86 && average <= 100) {
@@ -693,21 +632,44 @@ const openBulkCetakPopup = (items) => {
       const tanggalSelesaiFormatted = formatTanggalIndonesia(tanggalSelesai);
       const tanggalTerbitFormatted = formatTanggalIndonesia(new Date().toISOString().split('T')[0]);
       
-      // Dapatkan jenis nomor dari localStorage
-      const industriId = currentCetakItem.industri_id || industriDetail?.id;
+      // Dapatkan nomor sertifikat dengan tahun dari tanggal finalisasi
+      let nomorSertifikat = getNomorSertifikatByFinalisasi(detailData.finalized_at);
+      
+      // Jika tidak ditemukan, gunakan default atau tampilkan warning
+      if (!nomorSertifikat) {
+        nomorSertifikat = `420/1013/101.6.9.19/${getTahunFromFinalisasi(detailData.finalized_at)}`; // Default fallback with year
+        console.warn(`Nomor sertifikat tidak ditemukan di localStorage, menggunakan default`);
+        toast.warning(`Nomor sertifikat belum diatur. Silakan atur nomor sertifikat terlebih dahulu.`, { id: 'singleCetak' });
+      }
+      
+      // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
+      const industriId = item.industri_id || industriDetail?.id;
       let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan');
       let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing');
       
-      if (!jenisNomorPimpinan) jenisNomorPimpinan = "NP";
-      if (!jenisNomorPembimbing) jenisNomorPembimbing = "NP";
+      // Jika tidak ditemukan, gunakan default "NP"
+      if (!jenisNomorPimpinan) {
+        jenisNomorPimpinan = "NP";
+        console.log(`Jenis nomor pimpinan tidak ditemukan untuk industri ID: ${industriId}, menggunakan default "NP"`);
+      }
       
+      if (!jenisNomorPembimbing) {
+        jenisNomorPembimbing = "NP";
+        console.log(`Jenis nomor pembimbing tidak ditemukan untuk industri ID: ${industriId}, menggunakan default "NP"`);
+      }
+      
+      console.log(`Menggunakan nomor sertifikat:`, nomorSertifikat);
+      console.log(`Menggunakan jenis nomor pimpinan:`, jenisNomorPimpinan);
+      console.log(`Menggunakan jenis nomor pembimbing:`, jenisNomorPembimbing);
+      
+      // Format payload SESUAI DENGAN STRUKTUR YANG DIHARAPKAN
       const payload = {
-        nomor_sertifikat: tempNomorSertifikat,
+        nomor_sertifikat: nomorSertifikat,
         siswa: {
-          nama: currentCetakItem.siswa_username,
-          nisn: currentCetakItem.siswa_nisn
+          nama: item.siswa_username,
+          nisn: item.siswa_nisn
         },
-        nama_industri: currentCetakItem.industri_nama || "Industri",
+        nama_industri: item.industri_nama || "Industri",
         tanggal_mulai: tanggalMulaiFormatted,
         tanggal_selesai: tanggalSelesaiFormatted,
         hasil_pkl: hasilPkl,
@@ -722,23 +684,28 @@ const openBulkCetakPopup = (items) => {
           aspek_4: nilai4,
           desc_4: detailData.form_items?.[3]?.tujuan_pembelajaran || "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA."
         },
+        // Data pimpinan dari industri dengan jenis nomor
         nama_pimpinan: industriDetail?.nama_pimpinan || "",
         jenis_nomor_pimpinan: jenisNomorPimpinan,
         nip_pimpinan: industriDetail?.nip_pimpinan || "",
         jabatan_pimpinan: industriDetail?.jabatan_pimpinan || "",
+        // Data pembimbing dari industri dengan jenis nomor
         nama_pembimbing: industriDetail?.pic || "",
         jenis_nomor_pembimbing: jenisNomorPembimbing,
         nip_pembimbing: industriDetail?.nip_pembimbing || "",
         jabatan_pembimbing: industriDetail?.jabatan_pembimbing || ""
       };
+
+      console.log("Payload untuk sertifikat single:", payload);
       
-      const jurusanValue = jurusanKeKode[currentCetakItem.jurusan_nama] || "rpl";
-      await generateAndDownloadSertifikat(jurusanValue, payload);
+      // Dapatkan kode jurusan (tetap diperlukan untuk penamaan file)
+      const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
       
-      toast.success(`Sertifikat ${currentCetakItem.siswa_username} berhasil didownload!`, { id: 'singleCetak' });
-      setOpenNomorSertifikatPopup(false);
-      setCurrentCetakItem(null);
-      setTempNomorSertifikat("");
+      // Generate dan download langsung
+      const filename = await generateAndDownloadSertifikat(jurusanValue, payload);
+      
+      toast.success(`Sertifikat ${item.siswa_username} berhasil didownload!`, { id: 'singleCetak' });
+      console.log("Sertifikat berhasil didownload:", filename);
       
     } catch (error) {
       console.error("Gagal generate sertifikat:", error);
@@ -749,36 +716,41 @@ const openBulkCetakPopup = (items) => {
     }
   };
 
-  // Fungsi untuk melakukan bulk cetak
-  const prosesCetakBulk = async () => {
-    if (currentBulkItems.length === 0) return;
-    if (!tempNomorSertifikat.trim()) {
-      toast.error("Masukkan nomor sertifikat");
+  // Fungsi untuk bulk generate sertifikat - MODIFIKASI UTAMA dengan auto tahun
+  const handleBulkGenerateSertifikat = async (items) => {
+    if (items.length === 0) {
+      toast.error("Pilih minimal satu siswa");
+      return;
+    }
+
+    // Cek apakah nomor sertifikat sudah diatur
+    const savedBase = localStorage.getItem('nomorSertifikatBase');
+    if (!savedBase) {
+      toast.error("Silakan atur nomor sertifikat terlebih dahulu melalui tombol 'Nomor Sertifikat'");
       return;
     }
 
     try {
       setLoadingCetak(true);
-      toast.loading(`Menyiapkan ${currentBulkItems.length} sertifikat...`, { id: 'bulkGenerate' });
+      toast.loading(`Menyiapkan ${items.length} sertifikat...`, { id: 'bulkGenerate' });
 
       let successCount = 0;
       let failCount = 0;
+      let missingJenisNomorCount = 0;
       
-      for (let i = 0; i < currentBulkItems.length; i++) {
-        const item = currentBulkItems[i];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
         
         try {
-          toast.loading(`Memproses ${i+1} dari ${currentBulkItems.length} sertifikat...`, { id: 'bulkGenerate' });
+          toast.loading(`Memproses ${i+1} dari ${items.length} sertifikat...`, { id: 'bulkGenerate' });
           
-          let detailData;
-          if (isDummyData(item.application_id)) {
-            detailData = getDummyDetailPenilaian();
-          } else {
-            detailData = await getDetailReviewPenilaian(item.application_id);
-          }
+          const detailData = await getDetailReviewPenilaian(item.application_id);
           
           const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(item.application_id);
+          
           const industriDetail = getDetailIndustriByNama(item.industri_nama);
+          
+          console.log("Industri Detail untuk", item.industri_nama, ":", industriDetail);
           
           const nilai1 = parseFloat(detailData.items?.[0]?.skor) || 0;
           const nilai2 = parseFloat(detailData.items?.[1]?.skor) || 0;
@@ -799,16 +771,27 @@ const openBulkCetakPopup = (items) => {
           const tanggalSelesaiFormatted = formatTanggalIndonesia(tanggalSelesai);
           const tanggalTerbitFormatted = formatTanggalIndonesia(new Date().toISOString().split('T')[0]);
           
+          // Dapatkan nomor sertifikat dengan tahun dari tanggal finalisasi
+          let nomorSertifikat = getNomorSertifikatByFinalisasi(detailData.finalized_at);
+          
+          // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
           const industriId = item.industri_id || industriDetail?.id;
           let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan');
           let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing');
           
-          if (!jenisNomorPimpinan) jenisNomorPimpinan = "NP";
-          if (!jenisNomorPembimbing) jenisNomorPembimbing = "NP";
+          // Jika tidak ditemukan, gunakan default "NP"
+          if (!jenisNomorPimpinan) {
+            jenisNomorPimpinan = "NP";
+            missingJenisNomorCount++;
+          }
           
-          // Untuk bulk, kita tetap pakai nomor yang sama untuk semua
+          if (!jenisNomorPembimbing) {
+            jenisNomorPembimbing = "NP";
+            missingJenisNomorCount++;
+          }
+          
           const payload = {
-            nomor_sertifikat: tempNomorSertifikat,
+            nomor_sertifikat: nomorSertifikat,
             siswa: {
               nama: item.siswa_username,
               nisn: item.siswa_nisn
@@ -828,21 +811,27 @@ const openBulkCetakPopup = (items) => {
               aspek_4: nilai4,
               desc_4: detailData.form_items?.[3]?.tujuan_pembelajaran || "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA."
             },
+            // Data pimpinan dari industri dengan jenis nomor
             nama_pimpinan: industriDetail?.nama_pimpinan || "",
             jenis_nomor_pimpinan: jenisNomorPimpinan,
             nip_pimpinan: industriDetail?.nip_pimpinan || "",
             jabatan_pimpinan: industriDetail?.jabatan_pimpinan || "",
+            // Data pembimbing dari industri dengan jenis nomor
             nama_pembimbing: industriDetail?.pic || "",
             jenis_nomor_pembimbing: jenisNomorPembimbing,
             nip_pembimbing: industriDetail?.nip_pembimbing || "",
             jabatan_pembimbing: industriDetail?.jabatan_pembimbing || ""
           };
+
+          console.log(`Payload untuk sertifikat ${item.siswa_username}:`, payload);
           
           const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
+          
           await generateAndDownloadSertifikat(jurusanValue, payload);
+          
           successCount++;
           
-          if (i < currentBulkItems.length - 1) {
+          if (i < items.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
           
@@ -852,10 +841,17 @@ const openBulkCetakPopup = (items) => {
         }
       }
       
-      toast.success(`${successCount} berhasil, ${failCount} gagal`, { id: 'bulkGenerate' });
-      setOpenNomorSertifikatPopup(false);
-      setCurrentBulkItems([]);
-      setTempNomorSertifikat("");
+      let message = `${successCount} berhasil, ${failCount} gagal`;
+      if (missingJenisNomorCount > 0) {
+        message += `, ${missingJenisNomorCount} menggunakan jenis nomor default "NP"`;
+      }
+      
+      if (failCount === 0) {
+        toast.success(message, { id: 'bulkGenerate' });
+      } else {
+        toast.warning(message, { id: 'bulkGenerate' });
+      }
+      
       setSelectedItems({});
       setOpenBulkExport(false);
       
@@ -875,33 +871,39 @@ const openBulkCetakPopup = (items) => {
       
       toast.loading(`Menyiapkan data sertifikat untuk ${item.siswa_username}...`, { id: 'ubahSertifikat' });
       
+      // Ambil detail penilaian
       let detailData = rawDetailData;
       if (!detailData || detailData.application_id !== item.application_id) {
-        if (isDummyData(item.application_id)) {
-          detailData = getDummyDetailPenilaian();
-        } else {
-          detailData = await getDetailReviewPenilaian(item.application_id);
-        }
+        detailData = await getDetailReviewPenilaian(item.application_id);
       }
       
+      // Dapatkan tanggal mulai dan selesai dari siswaList
       const { tanggalMulai, tanggalSelesai } = getTanggalDariSiswa(item.application_id);
+      
+      // Dapatkan detail industri berdasarkan nama
       const industriDetail = getDetailIndustriByNama(item.industri_nama);
       
+      console.log("Industri Detail untuk", item.industri_nama, ":", industriDetail);
+      
+      // Ambil nilai dari items
       const nilai1 = parseFloat(detailData.items?.[0]?.skor) || 0;
       const nilai2 = parseFloat(detailData.items?.[1]?.skor) || 0;
       const nilai3 = parseFloat(detailData.items?.[2]?.skor) || 0;
       const nilai4 = parseFloat(detailData.items?.[3]?.skor) || 0;
       
+      // Ambil deskripsi dari items (untuk ditampilkan di form)
       const deskripsi1 = detailData.items?.[0]?.deskripsi || detailData.form_items?.[0]?.tujuan_pembelajaran || "";
       const deskripsi2 = detailData.items?.[1]?.deskripsi || detailData.form_items?.[1]?.tujuan_pembelajaran || "";
       const deskripsi3 = detailData.items?.[2]?.deskripsi || detailData.form_items?.[2]?.tujuan_pembelajaran || "";
       const deskripsi4 = detailData.items?.[3]?.deskripsi || detailData.form_items?.[3]?.tujuan_pembelajaran || "";
       
+      // Ambil aspek (tujuan pembelajaran)
       const aspek1 = detailData.form_items?.[0]?.tujuan_pembelajaran || "MENERAPKAN SOFT SKILL YANG DIBUTUHKAN DI DUNIA KERJA (TEMPAT PKL).";
       const aspek2 = detailData.form_items?.[1]?.tujuan_pembelajaran || "MENERAPKAN NORMA, PROSEDUR OPERASIONAL STANDAR (POS), SERTA KESEHATAN, KESELAMATAN KERJA, DAN LINGKUNGAN HIDUP (K3LH) YANG ADA DI DUNIA KERJA (TEMPAT PKL).";
       const aspek3 = detailData.form_items?.[2]?.tujuan_pembelajaran || "MENERAPKAN KOMPETENSI TEKNIS YANG SUDAH DIPELAJARI DI SEKOLAH DAN/ATAU BARU DIPELAJARI DI DUNIA KERJA (TEMPAT PKL).";
       const aspek4 = detailData.form_items?.[3]?.tujuan_pembelajaran || "MEMAHAMI ALUR BISNIS DUNIA KERJA TEMPAT PKL DAN WAWASAN WIRAUSAHA.";
       
+      // Hitung rata-rata untuk hasil penilaian
       const average = (nilai1 + nilai2 + nilai3 + nilai4) / 4;
       let hasilPkl = "Belum Dinilai";
       if (average >= 86 && average <= 100) {
@@ -913,19 +915,31 @@ const openBulkCetakPopup = (items) => {
       }
       
       const tanggalTerbit = new Date().toISOString().split('T')[0];
+      
       const jurusanValue = jurusanKeKode[item.jurusan_nama] || "rpl";
       
-      let nomorSertifikat = getNomorSertifikatLengkap(detailData.finalized_at);
+      // Dapatkan nomor sertifikat dengan tahun dari tanggal finalisasi
+      let nomorSertifikat = getNomorSertifikatByFinalisasi(detailData.finalized_at);
+      
+      // Jika tidak ditemukan, gunakan default
       if (!nomorSertifikat) {
-        nomorSertifikat = `420/1013/101.6.9.19/${getTahunFromFinalisasi(detailData.finalized_at)}`;
+        nomorSertifikat = `420/1013/101.6.9.19/${getTahunFromFinalisasi(detailData.finalized_at)}`; // Default fallback with year
+        toast.warning(`Nomor sertifikat belum diatur. Gunakan default.`, { id: 'ubahSertifikat' });
       }
       
+      // Dapatkan jenis nomor dari localStorage berdasarkan industri ID
       const industriId = item.industri_id || industriDetail?.id;
       let jenisNomorPimpinan = getJenisNomorFromLocal(industriId, 'jenis_nomor_pimpinan');
       let jenisNomorPembimbing = getJenisNomorFromLocal(industriId, 'jenis_nomor_pembimbing');
       
-      if (!jenisNomorPimpinan) jenisNomorPimpinan = "NP";
-      if (!jenisNomorPembimbing) jenisNomorPembimbing = "NP";
+      // Jika tidak ditemukan, gunakan default "NP"
+      if (!jenisNomorPimpinan) {
+        jenisNomorPimpinan = "NP";
+      }
+      
+      if (!jenisNomorPembimbing) {
+        jenisNomorPembimbing = "NP";
+      }
       
       const sertifikatData = {
         application_id: item.application_id,
@@ -959,6 +973,7 @@ const openBulkCetakPopup = (items) => {
           selesai: tanggalSelesai,
           terbit: tanggalTerbit
         },
+        // DATA NILAI, ASPEK, DAN DESKRIPSI
         nilai: {
           nilai1: nilai1,
           nilai2: nilai2,
@@ -975,6 +990,8 @@ const openBulkCetakPopup = (items) => {
         },
         hasil: hasilPkl,
         jurusan_kode: jurusanValue,
+        
+        // Data pimpinan dan pembimbing dengan jenis nomor
         nama_pimpinan: industriDetail?.nama_pimpinan || "",
         jenis_nomor_pimpinan: jenisNomorPimpinan,
         nip_pimpinan: industriDetail?.nip_pimpinan || "",
@@ -985,10 +1002,13 @@ const openBulkCetakPopup = (items) => {
         jabatan_pembimbing: industriDetail?.jabatan_pembimbing || ""
       };
       
+      // Simpan ke localStorage
       localStorage.setItem('sertifikat_data_lengkap', JSON.stringify(sertifikatData));
       localStorage.setItem('sertifikat_application_id', item.application_id);
       
       toast.success(`Data sertifikat ${item.siswa_username} siap diubah!`, { id: 'ubahSertifikat' });
+      
+      // Navigasi ke halaman ubah sertifikat dengan parameter application_id
       navigate(`/guru/koordinator/sertifikat?application_id=${item.application_id}`);
       
     } catch (error) {
@@ -999,16 +1019,8 @@ const openBulkCetakPopup = (items) => {
     }
   };
 
-  // Fungsi untuk mendapatkan tanggal dari siswaList
+  // Fungsi untuk mendapatkan tanggal dari siswaList berdasarkan application_id
   const getTanggalDariSiswa = (applicationId) => {
-    // Cek data dummy
-    if (isDummyData(applicationId)) {
-      return {
-        tanggalMulai: "2025-01-10",
-        tanggalSelesai: "2025-02-10"
-      };
-    }
-    
     const siswa = siswaList.find(s => s.application_id === parseInt(applicationId));
     return {
       tanggalMulai: siswa?.tanggal_mulai || "",
@@ -1016,11 +1028,8 @@ const openBulkCetakPopup = (items) => {
     };
   };
 
+  // Fungsi untuk mendapatkan data izin siswa berdasarkan siswa_id
   const getIzinDataBySiswaId = (siswaId) => {
-    // Cek data dummy
-    if (siswaId === 9999) {
-      return { sakit: 0, izin: 1, alpa: 0 };
-    }
     return izinDataMap[siswaId] || { sakit: 0, izin: 0, alpa: 0 };
   };
 
@@ -1096,39 +1105,19 @@ const openBulkCetakPopup = (items) => {
       console.log("Review penilaian response:", response);
       
       const students = response?.data || [];
-      
-      // Data dummy untuk tahun 2025
-      const dummyData2025 = {
-        application_id: 99999,
-        siswa_username: "Anastasya Dyah",
-        siswa_nisn: "0051234567",
-        siswa_id: 9999,
-        kelas_nama: "XII RPL 1",
-        jurusan_nama: "Rekayasa Perangkat Lunak",
-        industri_nama: "JV Partner Indonesia",
-        industri_id: 999,
-        total_skor: 365,
-        rata_rata: 91.25,
-        finalized_at: "2025-02-15T08:30:00.000Z",
-        status: "final"
-      };
-      
-      // Gabungkan data asli dengan data dummy
-      const allStudents = [...students, dummyData2025];
-      
-      setDataPenilaian(allStudents);
-      setTotalData(response?.total ? response.total + 1 : allStudents.length);
+      setDataPenilaian(students);
+      setTotalData(response?.total || students.length);
       
       setSelectedItems({});
       
-      const siswaIds = allStudents.map(item => item.siswa_id).filter(id => id !== null && id !== undefined);
+      const siswaIds = students.map(item => item.siswa_id).filter(id => id !== null && id !== undefined);
       
       if (siswaIds.length > 0) {
         console.log("Mengambil data izin untuk siswa IDs:", siswaIds);
         await fetchAllIzinData(siswaIds);
       }
       
-      const industriNames = allStudents.map(item => item.industri_nama).filter(nama => nama !== null && nama !== undefined);
+      const industriNames = students.map(item => item.industri_nama).filter(nama => nama !== null && nama !== undefined);
       
       if (industriNames.length > 0 && industriList.length > 0) {
         console.log("Mengambil detail industri untuk:", industriNames);
@@ -1407,7 +1396,7 @@ const openBulkCetakPopup = (items) => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openCetakPopup(item);
+                                handleCetakSertifikat(item);
                               }}
                               disabled={loadingCetak && processingId === item.application_id}
                               className="opacity-0 group-hover:opacity-100 transition-opacity !bg-orange-500 text-white p-2 rounded-lg hover:!bg-orange-600 disabled:opacity-50 flex-shrink-0"
@@ -1504,15 +1493,128 @@ const openBulkCetakPopup = (items) => {
                 </button>
               </div>
 
-              {/* Tombol Pengaturan Nomor Sertifikat Base */}
+              {/* Tombol Nomor Sertifikat - VERSI DENGAN AUTO TAHUN */}
               <div className="relative mr-2">
                 <button
-                  onClick={() => setOpenSettingNomor(true)}
+                  onClick={() => setOpenNomorSertifikat(!openNomorSertifikat)}
                   className="!bg-orange-500 flex items-center gap-2 px-4 py-2 text-white hover:!bg-orange-700 rounded-lg"
                 >
                   <Hash size={18} />
-                  <span>Pengaturan Nomor Sertifikat</span>
+                  <span>Nomor Sertifikat</span>
                 </button>
+
+                {openNomorSertifikat && (
+                  <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[400px]">
+                    <h3 className="font-semibold text-gray-800 mb-3">Pengaturan Nomor Sertifikat</h3>
+                    
+                    <p className="text-sm text-gray-600 mb-3">
+                      Nomor sertifikat akan digunakan untuk semua sertifikat yang dicetak.
+                    </p>
+                    
+                    {/* Input Nomor Sertifikat Base */}
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nomor Sertifikat
+                      </label>
+                      <input
+                        type="text"
+                        value={nomorSertifikatBase}
+                        onChange={(e) => setNomorSertifikatBase(e.target.value)}
+                        placeholder="Contoh: 420/1013/101.6.9.19"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      {/* <p className="text-xs text-gray-500 mt-1">
+                        Masukkan nomor sertifikat tanpa tahun di belakang
+                      </p> */}
+                    </div>
+                    
+                    {/* Checkbox Auto Tambah Tahun */}
+                    <div className="mb-3 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="autoTahun"
+                        checked={autoTahun}
+                        onChange={(e) => setAutoTahun(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <label htmlFor="autoTahun" className="text-sm font-medium text-gray-700">
+                        Tambahkan tahun otomatis di belakang nomor sertifikat
+                      </label>
+                    </div>
+                    
+                    {/* Preview Nomor Sertifikat */}
+                    {/* {nomorSertifikatBase && (
+                      <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-xs font-medium text-gray-600 mb-1">Preview:</p>
+                        <div className="space-y-1">
+                          <p className="text-sm text-gray-700">
+                            <span className="font-medium">Tahun berjalan ({currentYear}):</span>{' '}
+                            <span className="font-mono text-purple-600">
+                              {autoTahun ? addTahunToNomorSertifikat(nomorSertifikatBase, currentYear) : nomorSertifikatBase}
+                            </span>
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            <span className="font-medium">Contoh dengan tahun 2025:</span>{' '}
+                            <span className="font-mono">
+                              {autoTahun ? addTahunToNomorSertifikat(nomorSertifikatBase, 2025) : nomorSertifikatBase}
+                            </span>
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            <span className="font-medium">Contoh dengan tahun 2026:</span>{' '}
+                            <span className="font-mono">
+                              {autoTahun ? addTahunToNomorSertifikat(nomorSertifikatBase, 2026) : nomorSertifikatBase}
+                            </span>
+                          </p>
+                        </div>
+                        <p className="text-xs text-green-600 mt-2">
+                          {autoTahun 
+                            ? "✓ Tahun akan diambil otomatis dari tanggal finalisasi penilaian" 
+                            : "ℹ Tahun tidak ditambahkan otomatis"}
+                        </p>
+                      </div>
+                    )} */}
+                    
+                    {/* Tombol Aksi */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveNomorSertifikat}
+                        disabled={!nomorSertifikatBase.trim()}
+                        className="flex-1 !bg-red-700 text-white py-2 rounded-lg hover:!bg-red-700 disabled:opacity-50"
+                      >
+                        Simpan
+                      </button>
+                      {/* {nomorSertifikatBase && (
+                        <button
+                          onClick={handleDeleteNomorSertifikat}
+                          className="!bg-red-600 text-white px-3 py-2 rounded-lg hover:!bg-red-700"
+                        >
+                          Hapus
+                        </button>
+                      )} */}
+                      <button
+                        onClick={() => {
+                          setOpenNomorSertifikat(false);
+                        }}
+                        className="!bg-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:!bg-gray-400"
+                      >
+                        Tutup
+                      </button>
+                    </div>
+                    
+                    {/* Info nomor yang sedang aktif */}
+                    {nomorSertifikatBase && (
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs font-medium text-gray-600 mb-1">Nomor aktif saat ini:</p>
+                        <p className="text-sm text-purple-600 font-mono bg-purple-50 p-2 rounded break-all">
+                          {nomorSertifikatGlobal}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {autoTahun ? `Tahun diambil dari tanggal finalisasi setiap siswa` : `Tanpa tambahan tahun`}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {selectedCount > 0 && (
@@ -1542,11 +1644,7 @@ const openBulkCetakPopup = (items) => {
                         Export PDF Terpilih
                       </button>
                       <button
-                        onClick={() => {
-                          const selectedData = dataPenilaian.filter(item => selectedItems[item.application_id]);
-                          openBulkCetakPopup(selectedData);
-                          setOpenBulkExport(false);
-                        }}
+                        onClick={() => handleBulkGenerateSertifikat(dataPenilaian.filter(item => selectedItems[item.application_id]))}
                         disabled={loadingCetak}
                         className="!bg-transparent flex items-center gap-2 px-3 py-2 hover:!bg-gray-100 text-sm w-full rounded disabled:opacity-50"
                       >
@@ -1712,7 +1810,7 @@ const openBulkCetakPopup = (items) => {
                                 </span>
                               </button>
                               <button
-                                onClick={() => openCetakPopup(item)}
+                                onClick={() => handleCetakSertifikat(item)}
                                 disabled={loadingCetak && processingId === item.application_id}
                                 className="px-4 py-2 text-sm rounded !bg-orange-500 text-white hover:!bg-orange-600 flex items-center gap-1 disabled:opacity-50"
                                 title="Cetak Sertifikat"
@@ -1751,399 +1849,6 @@ const openBulkCetakPopup = (items) => {
           )}
         </main>
       </div>
-
-      {/* Popup Setting Nomor Sertifikat Base */}
-      {openSettingNomor && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[500px] max-w-[90%]">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Pengaturan Nomor Sertifikat</h3>
-              <button
-                onClick={() => setOpenSettingNomor(false)}
-                className="!bg-transparent text-gray-500 hover:text-gray-700"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Format Nomor Sertifikat
-              </label>
-              
-              {/* Preview format */}
-              <div className="bg-gray-50 p-3 rounded-lg mb-3">
-                <p className="text-sm text-gray-600 mb-2">Format:</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2 py-1 bg-gray-200 rounded text-sm font-mono">420</span>
-                  <span className="text-gray-400">/</span>
-                  <input
-                    type="text"
-                    value={(() => {
-                      // Extract angka tengah dari nomorSertifikatBase
-                      const parts = nomorSertifikatBase.split('/');
-                      return parts[1] || "1013";
-                    })()}
-                    onChange={(e) => {
-                      const newMiddle = e.target.value.replace(/[^0-9]/g, '');
-                      const parts = nomorSertifikatBase.split('/');
-                      parts[1] = newMiddle;
-                      if (parts[2]) {
-                        setNomorSertifikatBase(`${parts[0]}/${newMiddle}/${parts[2]}`);
-                      } else {
-                        setNomorSertifikatBase(`${parts[0]}/${newMiddle}/101.6.9.19`);
-                      }
-                    }}
-                    className="w-24 px-2 py-1 border rounded text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="1013"
-                  />
-                  <span className="text-gray-400">/</span>
-                  <span className="px-2 py-1 bg-gray-200 rounded text-sm font-mono">101.6.9.19</span>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Angka <strong>420</strong> dan <strong>101.6.9.19</strong> bersifat tetap (tidak dapat diubah)
-                </p>
-              </div>
-
-              {/* Input untuk angka tengah saja */}
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Angka Tengah
-                </label>
-                <input
-                  type="text"
-                  value={(() => {
-                    const parts = nomorSertifikatBase.split('/');
-                    return parts[1] || "1013";
-                  })()}
-                  onChange={(e) => {
-                    const newMiddle = e.target.value.replace(/[^0-9]/g, '');
-                    const parts = nomorSertifikatBase.split('/');
-                    parts[1] = newMiddle;
-                    if (parts[2]) {
-                      setNomorSertifikatBase(`${parts[0]}/${newMiddle}/${parts[2]}`);
-                    } else {
-                      setNomorSertifikatBase(`420/${newMiddle}/101.6.9.19`);
-                    }
-                  }}
-                  placeholder="Contoh: 1013"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Masukkan angka tengah (contoh: 1013)
-                </p>
-              </div>
-
-              {/* Preview hasil akhir */}
-              {/* <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                <p className="text-sm font-medium text-purple-700 mb-1">Preview Hasil Akhir:</p>
-                <p className="text-sm font-mono text-purple-800">
-                  420 / {(() => {
-                    const parts = nomorSertifikatBase.split('/');
-                    return parts[1] || "1013";
-                  })()} / 101.6.9.19
-                </p>
-                <p className="text-xs text-purple-600 mt-1">
-                  Hasil akhir: 420/.../101.6.9.19/{autoTahun ? "{tahun}" : "(tanpa tahun)"}
-                </p>
-              </div> */}
-            </div>
-
-            <div className="mb-4 flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="autoTahunSetting"
-                checked={autoTahun}
-                onChange={(e) => setAutoTahun(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-              />
-              <label htmlFor="autoTahunSetting" className="text-sm font-medium text-gray-700">
-                Tambahkan tahun otomatis dari tanggal finalisasi
-              </label>
-            </div>
-
-            {autoTahun && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tahun (Preview)
-                </label>
-                <input
-                  type="text"
-                  value={new Date().getFullYear()}
-                  disabled
-                  className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500 font-mono"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Tahun akan diambil otomatis dari tanggal finalisasi nilai siswa
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleSaveBaseNomor}
-                disabled={!(() => {
-                  const parts = nomorSertifikatBase.split('/');
-                  return parts[1] && parts[1].trim();
-                })()}
-                className="flex-1 !bg-red-700 text-white py-2 rounded-lg hover:!bg-red-800 disabled:opacity-50 transition-colors"
-              >
-                Simpan Pengaturan
-              </button>
-              {/* <button
-                onClick={() => {
-                  // Reset ke default jika perlu
-                  setNomorSertifikatBase("420/1013/101.6.9.19");
-                  setOpenSettingNomor(false);
-                }}
-                className="px-4 py-2 !bg-gray-300 text-gray-700 rounded-lg hover:!bg-gray-400 transition-colors"
-              >
-                Reset
-              </button> */}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Popup Cetak Sertifikat */}
-{openNomorSertifikatPopup && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl p-6 w-[500px] max-w-[90%]">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">
-          {isBulkCetak ? "Cetak Sertifikat Massal" : "Cetak Sertifikat"}
-        </h3>
-        <button
-          onClick={() => {
-            setOpenNomorSertifikatPopup(false);
-            setCurrentCetakItem(null);
-            setCurrentBulkItems([]);
-            setTempNomorSertifikat("");
-          }}
-          className="!bg-transparent text-gray-500 hover:text-gray-700"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Format Nomor Sertifikat
-        </label>
-        
-        {/* Preview format dengan bagian yang bisa diedit */}
-        <div className="bg-gray-50 p-3 rounded-lg mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2 py-1 bg-gray-200 rounded text-sm font-mono">420</span>
-            <span className="text-gray-400">/</span>
-            
-            {/* Input untuk angka tengah */}
-            <input
-              type="text"
-              value={(() => {
-                // Extract angka tengah dari tempNomorSertifikat
-                const parts = tempNomorSertifikat.split('/');
-                return parts[1] || (() => {
-                  const baseParts = nomorSertifikatBase.split('/');
-                  return baseParts[1] || "1013";
-                })();
-              })()}
-              onChange={(e) => {
-                const newMiddle = e.target.value.replace(/[^0-9]/g, '');
-                const parts = tempNomorSertifikat.split('/');
-                const tahun = parts[3] || (autoTahun && !isBulkCetak && currentCetakItem 
-                  ? getTahunFromFinalisasi(currentCetakItem.finalized_at).toString()
-                  : (autoTahun && isBulkCetak ? "{tahun}" : ""));
-                
-                // Bangun nomor sertifikat baru dengan format 420/{angka_tengah}/101.6.9.19/{tahun}
-                let newNomor = `420/${newMiddle}/101.6.9.19`;
-                if (tahun && tahun !== "{tahun}") {
-                  newNomor += `/${tahun}`;
-                }
-                setTempNomorSertifikat(newNomor);
-              }}
-              className="w-24 px-2 py-1 border rounded text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="1013"
-            />
-            
-            <span className="text-gray-400">/</span>
-            <span className="px-2 py-1 bg-gray-200 rounded text-sm font-mono">101.6.9.19</span>
-            <span className="text-gray-400">/</span>
-            
-            {/* Input untuk tahun (hanya jika autoTahun false) */}
-            {!autoTahun ? (
-              <input
-                type="text"
-                value={(() => {
-                  const parts = tempNomorSertifikat.split('/');
-                  return parts[3] || new Date().getFullYear().toString();
-                })()}
-                onChange={(e) => {
-                  const newTahun = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
-                  const parts = tempNomorSertifikat.split('/');
-                  const middle = parts[1] || (() => {
-                    const baseParts = nomorSertifikatBase.split('/');
-                    return baseParts[1] || "1013";
-                  })();
-                  
-                  let newNomor = `420/${middle}/101.6.9.19`;
-                  if (newTahun) {
-                    newNomor += `/${newTahun}`;
-                  }
-                  setTempNomorSertifikat(newNomor);
-                }}
-                className="w-24 px-2 py-1 border rounded text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Tahun"
-                maxLength={4}
-              />
-            ) : (
-              <span className="px-2 py-1 bg-gray-100 rounded text-sm font-mono text-gray-600">
-                {!isBulkCetak && currentCetakItem 
-                  ? getTahunFromFinalisasi(currentCetakItem.finalisasi_at) || new Date().getFullYear()
-                  : (isBulkCetak ? "[Tahun Otomatis]" : new Date().getFullYear())
-                }
-              </span>
-            )}
-          </div>
-          
-          <p className="text-xs text-gray-500 mt-2">
-            Angka <strong>420</strong> dan <strong>101.6.9.19</strong> bersifat tetap
-          </p>
-        </div>
-
-        {/* Input terpisah untuk kemudahan */}
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Angka Tengah
-            </label>
-            <input
-              type="text"
-              value={(() => {
-                const parts = tempNomorSertifikat.split('/');
-                return parts[1] || (() => {
-                  const baseParts = nomorSertifikatBase.split('/');
-                  return baseParts[1] || "1013";
-                })();
-              })()}
-              onChange={(e) => {
-                const newMiddle = e.target.value.replace(/[^0-9]/g, '');
-                const parts = tempNomorSertifikat.split('/');
-                const tahun = parts[3] || (autoTahun && !isBulkCetak && currentCetakItem 
-                  ? getTahunFromFinalisasi(currentCetakItem.finalized_at).toString()
-                  : (autoTahun && isBulkCetak ? "" : ""));
-                
-                let newNomor = `420/${newMiddle}/101.6.9.19`;
-                if (tahun) {
-                  newNomor += `/${tahun}`;
-                }
-                setTempNomorSertifikat(newNomor);
-              }}
-              placeholder="Contoh: 1013"
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono"
-            />
-          </div>
-
-          {!autoTahun && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tahun
-              </label>
-              <input
-                type="text"
-                value={(() => {
-                  const parts = tempNomorSertifikat.split('/');
-                  return parts[3] || "";
-                })()}
-                onChange={(e) => {
-                  const newTahun = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
-                  const parts = tempNomorSertifikat.split('/');
-                  const middle = parts[1] || (() => {
-                    const baseParts = nomorSertifikatBase.split('/');
-                    return baseParts[1] || "1013";
-                  })();
-                  
-                  let newNomor = `420/${middle}/101.6.9.19`;
-                  if (newTahun) {
-                    newNomor += `/${newTahun}`;
-                  }
-                  setTempNomorSertifikat(newNomor);
-                }}
-                placeholder="Contoh: 2025"
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono"
-                maxLength={4}
-              />
-            </div>
-          )}
-
-          {autoTahun && !isBulkCetak && currentCetakItem && (
-            <div className="bg-orange-50 p-2 rounded-lg">
-              <p className="text-xs text-orange-700">
-                📅 Tahun otomatis: <strong>{getTahunFromFinalisasi(currentCetakItem.finalized_at)}</strong>
-                <br />
-                <span className="text-orange-600">(diambil dari tanggal finalisasi nilai)</span>
-              </p>
-            </div>
-          )}
-
-          {autoTahun && isBulkCetak && (
-            <div className="bg-orange-50 p-2 rounded-lg">
-              <p className="text-xs text-orange-700">
-                📅 Tahun akan diambil otomatis dari tanggal finalisasi masing-masing siswa
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Preview lengkap */}
-        <div className="mt-3 bg-gray-100 p-2 rounded-lg">
-          <p className="text-xs text-gray-600 mb-1">Preview lengkap:</p>
-          <p className="text-sm font-mono text-gray-800 break-all">
-            {tempNomorSertifikat || "420/..../101.6.9.19/...."}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <button
-          onClick={() => {
-            if (isBulkCetak) {
-              prosesCetakBulk();
-            } else {
-              prosesCetakSingle();
-            }
-          }}
-          disabled={!(() => {
-            const parts = tempNomorSertifikat.split('/');
-            const middle = parts[1];
-            return middle && middle.trim() && middle !== "....";
-          })() || loadingCetak}
-          className="flex-1 !bg-orange-500 text-white py-2 rounded-lg hover:!bg-orange-600 disabled:opacity-50 transition-colors"
-        >
-          {loadingCetak ? (
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Memproses...
-            </div>
-          ) : (
-            "Cetak Sertifikat"
-          )}
-        </button>
-        <button
-          onClick={() => {
-            setOpenNomorSertifikatPopup(false);
-            setCurrentCetakItem(null);
-            setCurrentBulkItems([]);
-            setTempNomorSertifikat("");
-          }}
-          className="px-4 py-2 !bg-gray-300 text-gray-700 rounded-lg hover:!bg-gray-400 transition-colors"
-        >
-          Batal
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 
       {loadingDetail && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

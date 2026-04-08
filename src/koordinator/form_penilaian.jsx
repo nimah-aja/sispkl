@@ -476,15 +476,15 @@ export default function DaftarFormPenilaian() {
       required: true,
       minLength: 3
     },
-    {
-      name: "nomor_sertifikat",
-      label: "Nomor Sertifikat",
-      type: "text",
-      placeholder: "420/1013/101.6.9.19/2026",
-      width: "full",
-      required: false,
-      helpText: "Format: 420/[nomor_urut]/101.6.9.19/[tahun]. Contoh: 420/1013/101.6.9.19/2026\nBagian 101.6.9.19 tidak boleh diubah!"
-    }
+    // {
+    //   name: "nomor_sertifikat",
+    //   label: "Nomor Sertifikat",
+    //   type: "text",
+    //   placeholder: "420/1013/101.6.9.19/2026",
+    //   width: "full",
+    //   required: false,
+    //   helpText: "Format: 420/[nomor_urut]/101.6.9.19/[tahun]. Contoh: 420/1013/101.6.9.19/2026\nBagian 101.6.9.19 tidak boleh diubah!"
+    // }
   ];
 
   // Tambahkan field TP dinamis berdasarkan MAX_TP
@@ -503,7 +503,7 @@ export default function DaftarFormPenilaian() {
   // Table columns - tambahkan kolom Nomor Sertifikat
   const columns = [
     { label: "Nama Form", key: "nama" },
-    { label: "Nomor Sertifikat", key: "nomorSertifikat", sortable: false },
+    // { label: "Nomor Sertifikat", key: "nomorSertifikat", sortable: false },
     { label: "Jumlah Item", key: "itemCount", sortable: false },
     { 
       label: "Status", 
