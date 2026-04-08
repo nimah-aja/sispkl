@@ -1,6 +1,9 @@
 // utils/api/lettersApi.js
 import axios from "axios";
 
+// Debug: cek apakah URL terbaca dengan benar
+console.log("VITE_SERTIF_API_URL:", import.meta.env.VITE_SERTIF_API_URL);
+
 export const lettersApi = axios.create({
   baseURL: import.meta.env.VITE_SERTIF_API_URL,
   timeout: 90000,
@@ -8,6 +11,33 @@ export const lettersApi = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+// Interceptor untuk logging request (optional, membantu debugging)
+lettersApi.interceptors.request.use(
+  (config) => {
+    console.log(`📤 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor untuk logging response (optional)
+lettersApi.interceptors.response.use(
+  (response) => {
+    console.log(`📥 API Response: ${response.status} ${response.config.url}`);
+    return response;
+  },
+  (error) => {
+    console.error(`❌ API Error:`, error.message);
+    if (error.response) {
+      console.error(`   Status: ${error.response.status}`);
+      console.error(`   Data:`, error.response.data);
+    }
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Generate Surat Tugas PDF
